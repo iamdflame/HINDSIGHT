@@ -10,7 +10,10 @@
   },
   "contracts": {
     "EthereumMirror": "0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB",
-    "AbsenceRegistry": "0x6CD4398974c464F0D782D0640DADb70d7910682d"
+    "AbsenceRegistry": "0x6CD4398974c464F0D782D0640DADb70d7910682d",
+    "AbsenceRegistryV2": "0x32d507DCC049A228831b7C23E4fe22A62db4E7b6",
+    "UnderwritingDesk": "0x5C5D121C6A4c5bfC7C09eAdD1Fcc04F97F26Cc28",
+    "MissingHeightBounty": "0x39c1527866a07E18BbBa889D849515d8E7e30042"
   },
   "precompiles": {
     "BlockProver": "0x0000000000000000000000000000000000000FD2",
@@ -36,7 +39,19 @@
     "gasVerifyOnChainCall_7_6KB_tx": 217664,
     "creditcoinBlockGasLimit": 75000000,
     "differentialChecks": 34,
-    "differentialDivergences": 0
+    "differentialDivergences": 0,
+    "heightsRetained": 100801,
+    "heightsAnswerable": 100777,
+    "emptyBlocksInRange": 24,
+    "archiveFrom": 25863300,
+    "archiveTo": 25964100,
+    "contiguousRuns": 25,
+    "longestRunBlocks": 18443,
+    "longestRunFrom": 25903243,
+    "claimsTotal": 32,
+    "claimsOpen": 32,
+    "claimsRefuted": 0,
+    "claimsStanding": 0
   },
   "contracts_note": "span bounds snapshotted at assertion; verifyOrRevert/tryVerify split; commit-reveal refutation",
   "verified": {
