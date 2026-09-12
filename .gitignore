@@ -23,3 +23,6 @@ research/
 
 # Vercel CLI project link
 .vercel
+
+# Local convenience symlink so packages/ can resolve the worker's deps without a second install
+packages/*/node_modules

@@ -1,0 +1,15 @@
+{
+  "name": "@hindsight/mirror",
+  "version": "0.1.0",
+  "description": "Verify Ethereum mainnet transactions on Creditcoin without the prover or the block-prover precompile.",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": { "hindsight": "src/cli.ts" },
+  "files": ["src", "README.md"],
+  "keywords": ["creditcoin", "attestcoin", "ethereum", "merkle", "cross-chain"],
+  "license": "MIT",
+  "peerDependencies": {
+    "ethers": "^6.15.0",
+    "@gluwa/usc-sdk": "^0.18.0"
+  }
+}
