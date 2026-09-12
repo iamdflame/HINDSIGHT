@@ -1,0 +1,22 @@
+# Keys and local secrets — never committed
+.secrets/
+.env
+.env.*
+
+# Dependencies
+node_modules/
+
+# Build output
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+web/dist/
+
+# Raw research captures (the useful parts live in contracts/test/fixtures)
+research/
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+*.log
