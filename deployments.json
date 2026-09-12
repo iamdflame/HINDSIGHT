@@ -1,0 +1,46 @@
+{
+  "network": "Creditcoin CC3 Testnet",
+  "chainId": 102031,
+  "rpc": "https://rpc.cc3-testnet.creditcoin.network",
+  "explorer": "https://creditcoin-testnet.blockscout.com",
+  "sourceChain": {
+    "name": "Ethereum Mainnet",
+    "attestcoinChainKey": 3,
+    "evmChainId": 1
+  },
+  "contracts": {
+    "EthereumMirror": "0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB",
+    "AbsenceRegistry": "0x6CD4398974c464F0D782D0640DADb70d7910682d"
+  },
+  "precompiles": {
+    "BlockProver": "0x0000000000000000000000000000000000000FD2",
+    "ChainInfo": "0x0000000000000000000000000000000000000FD3"
+  },
+  "liveTransactions": {
+    "notarise99Blocks": "0xec14f91ab8ff517fd221aa383d0dde2eec19d2c05ca5b55e7a5cc150568a39e7",
+    "notarise27Blocks": "0x321635dc82c8246d9a6542c48ae6bca433d8023e3500349d8e7bc9bc8398c43d",
+    "refuteReveal": "0x39870a3e6ff0ff1a67b68ff5ae6f37bafb004749b2aaaf06e56c6cedf422a769"
+  },
+  "evidence": {
+    "aaveV3Pool": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+    "liquidationTx": "0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61",
+    "liquidatedBorrower": "0xa63f5B1AcE5Ef4BcE91d3f12f31B8F2eA110B980",
+    "ethereumBlock": 25954574
+  },
+  "measured": {
+    "blocksRetainedPerProof_max_onChain": 99,
+    "gasPerBlockRetained_onChain": 24799,
+    "gasNotarise99Blocks_onChain": 2455145,
+    "gasRevealRefutation_onChain": 338156,
+    "gasMerkleHashingOnly": 6228,
+    "gasVerifyOnChainCall_7_6KB_tx": 217664,
+    "creditcoinBlockGasLimit": 75000000,
+    "differentialChecks": 34,
+    "differentialDivergences": 0
+  },
+  "contracts_note": "span bounds snapshotted at assertion; verifyOrRevert/tryVerify split; commit-reveal refutation",
+  "verified": {
+    "blockscout": true
+  },
+  "deployBlock": 5476398
+}
