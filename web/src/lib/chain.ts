@@ -22,7 +22,10 @@ export const CHAIN_KEY_ETH_MAINNET = 3;
 export const DEPLOY_BLOCK: number = (deployments as any).deployBlock ?? 0;
 
 export const MIRROR_ADDRESS: string = deployments.contracts.EthereumMirror;
-export const REGISTRY_ADDRESS: string = deployments.contracts.AbsenceRegistry;
+// V2 binds a *list* of adjacent spans, so a claim can cover more than one 5,000-block seal.
+// The mirror is unchanged and still holds the whole archive; only the registry was redeployed.
+export const REGISTRY_ADDRESS: string =
+  (deployments as any).contracts.AbsenceRegistryV2 ?? deployments.contracts.AbsenceRegistry;
 export const BLOCK_PROVER = '0x0000000000000000000000000000000000000FD2';
 
 /** Real Ethereum mainnet venues. Nothing here is deployed or controlled by this project. */
@@ -59,12 +62,12 @@ export const MIRROR_ABI = [
 export const REGISTRY_ABI = [
   'function claimCount() view returns (uint256)',
   'function assurance(uint256) view returns (uint8 status, uint256 bond, uint64 openUntil, uint64 spanFrom, uint64 spanTo)',
-  'function claimOf(uint256) view returns ((address claimant, address refuter, uint256 spanId, uint64 chainKey, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint256 bond, uint256 bondStaked, uint64 openUntil, uint8 status))',
+  'function claimOf(uint256) view returns ((address claimant, address refuter, uint64 chainKey, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 spanFrom, uint64 spanTo, bytes32 spansHash, uint256 bond, uint256 bondStaked, uint64 openUntil, uint8 status))',
   'function holds(uint256) view returns (bool)',
   'function holdsWithBond(uint256, uint256) view returns (bool)',
   'function MIN_BOND() view returns (uint256)',
   'function MIN_WINDOW() view returns (uint64)',
-  'function assertAbsence(uint256, address, bytes32, bytes32, uint8, uint64) payable returns (uint256)',
+  'function assertAbsence(uint256[], address, bytes32, bytes32, uint8, uint64) payable returns (uint256)',
   'function commitmentFor(uint256, uint64, bytes, (bytes32 hash, bool isLeft)[], bytes32, address) pure returns (bytes32)',
   'function commitRefutation(bytes32)',
   'function revealRefutation(uint256, uint64, bytes, (bytes32 hash, bool isLeft)[], bytes32)',
