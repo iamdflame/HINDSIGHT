@@ -90,12 +90,31 @@ nobody hunts them, and the economic argument collapses. The commitment binds `ms
 copied commitment is worthless. The unsafe single-call path was **removed**, not kept as a
 convenience.
 
-## 6. Real data
+## 6. The table
+
+Every number here is written by `worker/src/measure.ts` from live chain state, and CI fails if the
+file drifts from the chain. The full grading is in [CLAIMS.md](./CLAIMS.md).
+
+| | |
+|---|---|
+| Ethereum heights whose root lives on Creditcoin | **100,777** answerable, contiguous `25,863,300 – 25,964,100` |
+| Gas per block retained | **24,245 – 24,799** |
+| Roots retained by one `mirror()` call | **901** (711-root call simulated at 17.2M gas) |
+| Cost of the whole archive | 112 transactions, 28.8 minutes, ~**1.2 tCTC** |
+| Verifying a second transaction in a held block | `view` call — no continuity, no prover, no `0x0FD2` |
+| Differential vs the live precompile | **2,684 checks over 122 real mainnet transactions, 0 divergences** |
+| Contract tests | **66**, of which 16 are fuzz tests at 256 runs (~4,100 generated cases) |
+| Absence claims staked | **32** across 3 venues, **6 deliberately false** |
+
+`mirroredBlocks(3)` reports 100,801. The honest figure is 100,777: **24** of those heights are empty
+Ethereum blocks whose transaction root genuinely is zero, which the contract cannot distinguish from
+"not stored". We use the smaller number everywhere. See CLAIMS.md.
 
 Nothing here is staged. The venues are real, the borrowers are real, and we deploy nothing on
 Ethereum:
 
-- Aave V3 Pool `0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2`
+- Aave V3 Pool `0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2`, Morpho Blue `0xBBBB…FFCb`,
+  Compound V3 `0xc3d6…cdc3`
 - A real liquidation: [`0x3a4b8bcf…`](https://etherscan.io/tx/0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61) (block 25,954,574, index 263)
 - A real repayment: [`0xcb9cd732…`](https://etherscan.io/tx/0xcb9cd732d95ea9632c02add1afa7d66b5fd94f0ae48a4fdee6f88b2142149c00) (block 25,961,802)
 
@@ -105,7 +124,7 @@ Ethereum:
 git clone --recurse-submodules https://github.com/iamdflame/HINDSIGHT && cd HINDSIGHT
 (cd contracts && npm install) && (cd worker && npm install)
 
-# contracts — 31 tests, including every forgery class
+# contracts — 66 tests, including 16 fuzz properties and every forgery class
 cd contracts && forge test -vv
 
 # the mirror agrees with the precompile, and fails the same way (live chain)
@@ -119,6 +138,12 @@ node src/verify-offline.ts
 
 # the full negative-fact lifecycle: seal, stake, commit, reveal, collect
 node src/demo-absence.ts
+
+# the archive campaign, costed against the live prover but not sent
+node src/campaign.ts --dry-run
+
+# one transaction, no key, no gas, no prover
+node ../packages/mirror/src/cli.ts verify 0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61
 ```
 
 ## 8. The interface
