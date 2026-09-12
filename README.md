@@ -8,6 +8,9 @@ Hindsight makes Ethereum's past answerable on Creditcoin — *positively* by cry
 Built for BUIDL CTC 2026 Fall. Track: DeFi. Source chain: **Ethereum mainnet** (Attestcoin
 `chainKey 3`). Everything below runs on Creditcoin testnet against real mainnet transactions.
 
+**Live: [hindsight-archive.vercel.app](https://hindsight-archive.vercel.app)** — ask it a question
+with no wallet. What is not claimed: [/judge](https://hindsight-archive.vercel.app/judge).
+
 | | |
 |---|---|
 | `EthereumMirror` | [`0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB`](https://creditcoin-testnet.blockscout.com/address/0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB) |
@@ -127,9 +130,10 @@ cd web && npm install && npm run dev
 Three workflows, matching the three real roles:
 
 - **A question** — paste any Ethereum mainnet transaction. Needs **no wallet, no gas, no setup**,
-  because verification is a `view` call. A toggle lets you choose whether the proof comes from
-  Gluwa's prover or is **rebuilt in your browser** from a public Ethereum node — the independence
-  claim as a control you can flip, not a footnote.
+  because verification is a `view` call. Under the answer sits one caption — *using Attestcoin
+  prover · rebuilt in this browser* — and pressing the other half re-checks the same hash with the
+  proof **rebuilt in your browser** from a public Ethereum node. The independence claim as a control
+  you can flip, not a footnote.
 - **The record** — coverage of notarised history, with gaps shown as the subject they are.
 - **The watch** — open claims of absence, a counterexample scanner, and the commit→reveal flow.
   There is a live false claim with a **2 tCTC bounty** on it.
