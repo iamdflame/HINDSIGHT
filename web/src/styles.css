@@ -610,3 +610,26 @@ ol.hunt-steps .step-text { font-family: var(--serif); font-size: var(--t-body); 
 .doc table { border-collapse: collapse; min-width: 40rem; max-width: 64rem; }
 .doc th { font-family: var(--mono); font-size: var(--t-ui); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; color: var(--ink-soft); text-align: left; padding: 0 1.2rem 0.5rem 0; border-bottom: 1px solid var(--ink); }
 .doc td { font-family: var(--serif); font-size: 0.95rem; line-height: 1.5; padding: 0.65rem 1.2rem 0.65rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+
+/* ── /independence ─────────────────────────────────────────────────────────────────────────────
+   The demonstration page. Shares the document type of /judge; adds only the result rows and the
+   reserved stamp column. */
+.indep .lede { font-size: 1.15rem; color: var(--ink-soft); max-width: 34em; }
+.indep-target { margin-block: 1.5rem 0; }
+.indep-target .t-caption { display: block; margin-top: 0.35rem; max-width: 42em; }
+
+.indep-split { display: grid; gap: 2rem; margin-block: 2rem 2.5rem; align-items: start; }
+@media (min-width: 900px) { .indep-split { grid-template-columns: 1.4fr 0.9fr; } }
+
+.indep-rows { list-style: none; margin: 1.75rem 0 0; padding: 0; border-top: 1px solid var(--rule); }
+.indep-rows li { display: grid; grid-template-columns: 1.5rem 1fr; gap: 0.6rem;
+  padding: 0.85rem 0; border-bottom: 1px solid var(--rule); align-items: start; }
+.indep-rows .mark { font: 500 0.95rem/1.4 var(--mono); color: var(--ink); }
+/* A row that did not do what it was supposed to is the one thing on this page that must shout. */
+.indep-rows .is-surprise .mark, .indep-rows li.is-surprise .outcome { color: var(--wax); }
+.indep-rows li > div { display: flex; flex-direction: column; gap: 0.2rem; }
+.indep-rows .outcome { color: var(--ink-faint); word-break: break-word; }
+
+.indep-stamp { display: flex; flex-direction: column; gap: 0.9rem; align-items: flex-start; }
+.indep-stamp .t-caption { max-width: 26em; }
+.indep-error { color: var(--wax); margin-top: 1rem; }

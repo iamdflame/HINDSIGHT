@@ -17,7 +17,11 @@ export default defineConfig({
     sourcemap: false,
     chunkSizeWarningLimit: 1600,
     // /judge ships as its own document so any static host serves it without rewrites.
-    rollupOptions: { input: { main: here('./index.html'), judge: here('./judge/index.html') } },
+    rollupOptions: { input: {
+          main: here('./index.html'),
+          judge: here('./judge/index.html'),
+          independence: here('./independence/index.html'),
+        } },
   },
   // deployments.json and CLAIMS.md live at the repo root and are the single source of truth,
   // shared by contracts, worker and this app. Allow reading them rather than duplicating them.
