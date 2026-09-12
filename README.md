@@ -9,13 +9,31 @@ Built for BUIDL CTC 2026 Fall. Track: DeFi. Source chain: **Ethereum mainnet** (
 `chainKey 3`). Everything below runs on Creditcoin testnet against real mainnet transactions.
 
 **Live: [hindsight-archive.vercel.app](https://hindsight-archive.vercel.app)** — ask it a question
-with no wallet. What is not claimed: [/judge](https://hindsight-archive.vercel.app/judge).
+with no wallet.
+
+**Three beats, each one you can run yourself:**
+
+1. **Mirror a window.** 100,777 Ethereum heights notarised on Creditcoin, in 112 transactions for
+   ~1.2 tCTC. The roots the precompile already hashed and threw away.
+2. **Kill the prover, verify a *second* transaction.**
+   [/independence](https://hindsight-archive.vercel.app/independence) deletes the block-prover
+   precompile inside the live `eth_call` and verifies anyway — with a control that blanks the
+   archive instead, to prove the deletion was real.
+3. **Bond a lie and watch it die.** 36 staked absence claims, 10 of them deliberately false, and a
+   hunter that refutes them with no human in the loop.
 
 | | |
 |---|---|
-| `EthereumMirror` | [`0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB`](https://creditcoin-testnet.blockscout.com/address/0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB) |
-| `AbsenceRegistry` | [`0x6CD4398974c464F0D782D0640DADb70d7910682d`](https://creditcoin-testnet.blockscout.com/address/0x6CD4398974c464F0D782D0640DADb70d7910682d) |
-| Honesty ledger | [CLAIMS.md](./CLAIMS.md) — every claim graded by evidence |
+| `EthereumMirror` | [`0x4Bc1…e2AB`](https://creditcoin-testnet.blockscout.com/address/0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB) — the archive |
+| `AbsenceRegistryV2` | [`0x32d5…E7b6`](https://creditcoin-testnet.blockscout.com/address/0x32d507DCC049A228831b7C23E4fe22A62db4E7b6) — claims over a list of spans |
+| `UnderwritingDesk` | [`0x5C5D…Cc28`](https://creditcoin-testnet.blockscout.com/address/0x5C5D121C6A4c5bfC7C09eAdD1Fcc04F97F26Cc28) — pays, or reverts |
+| `MissingHeightBounty` | [`0x39c1…0042`](https://creditcoin-testnet.blockscout.com/address/0x39c1527866a07E18BbBa889D849515d8E7e30042) — anyone can extend the archive |
+| Honesty ledger | [CLAIMS.md](./CLAIMS.md) — every claim graded by evidence, including the ones that limit us |
+| For Gluwa | [docs/ENSHRINE.md](./docs/ENSHRINE.md) — the roots you already hash |
+
+All four contracts are verified on Blockscout. `AbsenceRegistry` v1
+[`0x6CD4…682d`](https://creditcoin-testnet.blockscout.com/address/0x6CD4398974c464F0D782D0640DADb70d7910682d)
+is still live; v2 was deployed against the *same* mirror so the archive carried over untouched.
 
 ---
 
@@ -144,6 +162,12 @@ node src/campaign.ts --dry-run
 
 # one transaction, no key, no gas, no prover
 node ../packages/mirror/src/cli.ts verify 0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61
+
+# every published number, re-derived from the chain
+node src/measure.ts --check
+
+# the searcher that makes "nobody refuted it" mean something
+node src/hunter.ts --once --dry-run
 ```
 
 ## 8. The interface

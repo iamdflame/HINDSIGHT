@@ -37,23 +37,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: no mock data outside tests
-        # A mock in src/ or worker/ would make every number on the site unfalsifiable.
+      - name: no fabricated data outside tests
+        # Real numbers or none. A stub in src/ or worker/ would make every figure on the site
+        # unfalsifiable. Narrow on purpose: an HTML `placeholder=` attribute is not fabricated
+        # data, and a gate that cries wolf is a gate somebody switches off.
         run: |
-          if grep -rniE "mock|faker|lorem ipsum|placeholder|TODO: replace" \
+          if grep -rniE "\\bmock[A-Z_]|\\bfakeData\\b|\\bdummyData\\b|faker\\.|lorem ipsum|placeholder data|TODO: replace|hardcoded for now" \
                --include="*.ts" --include="*.tsx" --include="*.sol" \
                web/src worker/src packages contracts/src; then
-            echo "::error::mock or placeholder data outside tests"; exit 1
+            echo "::error::fabricated or stubbed data outside tests"; exit 1
           fi
           echo "clean"
-      - name: claims that must never appear
-        # Each of these is a claim the evidence does not support. See CLAIMS.md.
+      - name: claims stronger than the evidence
+        # Only *assertions* are banned, never discussion. `AbsenceRegistry` explains at length why
+        # proof of absence is impossible, and must stay able to say so.
         run: |
-          if grep -rniE "proof of absence|prove[sd]? (that )?(it )?never happened|trustless|100% secure|audited by" \
+          if grep -rniE "we prove[sd]? (that )?(it )?never|proves absence|absence is proven|proven absence|provably never (happened|occurred)|trustless|100% secure|fully audited|audited by" \
                --include="*.ts" --include="*.tsx" --include="*.sol" --include="*.md" \
                web/src worker/src packages contracts/src README.md CLAIMS.md docs 2>/dev/null \
-               | grep -viE "never proven|not a proof|cannot prove|never claim|is not audited|NOT claimed"; then
-            echo "::error::a claim stronger than the evidence"; exit 1
+               | grep -viE "never proves|never prove|not prove|cannot prove|does not prove|is not audited|not claimed|never claim"; then
+            echo "::error::a claim stronger than the evidence — see CLAIMS.md"; exit 1
           fi
           echo "clean"
 
