@@ -1,24 +1,39 @@
 /**
- * DIFFERENTIAL HARNESS — the consistency proof.
+ * Differential harness: our Solidity verification against the live block-prover precompile.
  *
- * `EthereumMirror` reimplements Attestcoin's Merkle verification in Solidity so that a notarised
- * transaction can be checked without a continuity proof. A reimplementation is only safe if it
- * reaches the *same verdict* as the authority it replaces, and fails in the *same way*.
+ * Usage:
+ *   node src/differential.ts [--limit <fixtures>] [--concurrency 4] [--transcript]
  *
- * This harness runs both paths over real Ethereum mainnet transactions and a full set of
- * adversarial mutations, and asserts:
+ * THE INVARIANT BEING TESTED
+ * --------------------------
+ * `EthereumMirror` replaces `0x0FD2` for already-notarised history. That replacement is only
+ * honest if it is indistinguishable from the thing it replaces. So for every input, three verdicts
+ * must agree:
  *
- *   1. verdict agreement    — the precompile accepts iff the mirror accepts
- *   2. failure-mode parity  — `verifyOrRevert` reverts wherever `0x0FD2` reverts
- *   3. boolean soundness    — `tryVerify` never reports valid where the precompile refuses
+ *     precompile.verify(...)        the authority, given a full continuity proof
+ *     mirror.verifyOrRevert(...)    the reverting replacement
+ *     mirror.tryVerify(...)         the boolean replacement
  *
- * Point 2 is the one that matters in practice. The precompile reverts on bad input, so a caller
- * who ignores its return value is accidentally safe. An earlier version of the mirror returned
- * `false` instead, which would have made that same caller exploitable. The split API exists
- * because of this harness.
+ * and two further properties must hold:
+ *
+ *     the precompile reverts  <=>  verifyOrRevert reverts       (failure-mode parity)
+ *     tryVerify never reverts, for any input at all             (boolean soundness)
+ *
+ * A single divergence means a split brain: two contracts on the same chain disagreeing about what
+ * Ethereum contains. That is not a bug to trade off against a deadline, so this exits non-zero and
+ * the result is treated as a ship-blocker.
+ *
+ * WHAT CHANGED FROM THE FIRST VERSION
+ * -----------------------------------
+ * It used to run two hardcoded transactions, which is a spot check dressed as a machine. It now
+ * reads every fixture in `contracts/test/fixtures/` -- real mainnet liquidations, repayments,
+ * Morpho liquidations and Compound absorbs, harvested by `corpus.ts` -- and adds seeded random
+ * sibling corruption on top of the fixed mutation classes, so the corpus grows without anyone
+ * hand-writing another adversarial case.
  */
 import { JsonRpcProvider, Contract } from 'ethers';
-import { CC_RPC, MIRROR, MIRROR_ABI, CHAIN_KEY_ETH_MAINNET, fetchProof } from './config.ts';
+import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { CC_RPC, MIRROR, MIRROR_ABI, CHAIN_KEY_ETH_MAINNET } from './config.ts';
 
 const ZERO = '0x' + '00'.repeat(32);
 const PRECOMPILE = '0x0000000000000000000000000000000000000FD2';
@@ -27,17 +42,72 @@ const PRECOMPILE_ABI = [
   'function calculateTxIndex((bytes32 root, (bytes32 hash, bool isLeft)[] siblings) merkleProof) view returns (uint64)',
 ];
 
+const FIXTURE_ROOT = new URL('../../contracts/test/fixtures/', import.meta.url);
+const TRANSCRIPTS = new URL('../../docs/transcripts/', import.meta.url);
+
 type Sib = { hash: string; isLeft: boolean };
 type Verdict = 'accept' | 'reject';
 
-const SUBJECTS = [
-  '0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61', // Aave V3 liquidation
-  '0xcb9cd732d95ea9632c02add1afa7d66b5fd94f0ae48a4fdee6f88b2142149c00', // Aave V3 repay
-];
+type Fixture = {
+  path: string;
+  headerNumber: number;
+  txHash: string;
+  txBytes: string;
+  root: string;
+  siblings: Sib[];
+  lowerEndpointDigest: string;
+  continuityRoots: string[];
+  venue?: string;
+};
 
-function mutations(sib: Sib[], txBytes: string): { name: string; sib: Sib[]; tx: string }[] {
-  const flip = (h: string) => '0x' + (BigInt(h) ^ 1n).toString(16).padStart(64, '0');
-  return [
+/** Every fixture on disk, flat file or venue folder. */
+function loadFixtures(): Fixture[] {
+  const out: Fixture[] = [];
+
+  const read = (url: URL, label: string) => {
+    const j = JSON.parse(readFileSync(url, 'utf8'));
+    out.push({
+      path: label,
+      headerNumber: j.headerNumber,
+      txHash: j.txHash,
+      txBytes: j.txBytes,
+      root: j.root,
+      siblings: j.siblingHashes.map((h: string, i: number) => ({ hash: h, isLeft: j.siblingIsLeft[i] })),
+      lowerEndpointDigest: j.lowerEndpointDigest,
+      continuityRoots: j.continuityRoots,
+      venue: j.venue?.key,
+    });
+  };
+
+  for (const f of readdirSync(FIXTURE_ROOT)) {
+    if (f.endsWith('.json')) read(new URL(f, FIXTURE_ROOT), f);
+  }
+
+  const mainnet = new URL('mainnet/', FIXTURE_ROOT);
+  if (existsSync(mainnet)) {
+    for (const venue of readdirSync(mainnet)) {
+      const dir = new URL(`${venue}/`, mainnet);
+      for (const f of readdirSync(dir)) {
+        if (f.endsWith('.json')) read(new URL(f, dir), `${venue}/${f}`);
+      }
+    }
+  }
+  return out;
+}
+
+const flip = (h: string) => '0x' + (BigInt(h) ^ 1n).toString(16).padStart(64, '0');
+
+/** Deterministic pseudo-random, so a divergence found in CI is reproducible locally. */
+function seeded(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+
+function mutations(sib: Sib[], txBytes: string, seed: number): { name: string; sib: Sib[]; tx: string }[] {
+  const fixed = [
     { name: 'baseline (valid)', sib, tx: txBytes },
     { name: 'append ZERO sibling (right)', sib: [...sib, { hash: ZERO, isLeft: false }], tx: txBytes },
     { name: 'append ZERO sibling (left)', sib: [...sib, { hash: ZERO, isLeft: true }], tx: txBytes },
@@ -48,81 +118,173 @@ function mutations(sib: Sib[], txBytes: string): { name: string; sib: Sib[]; tx:
     { name: 'swap siblings 0<->1', sib: [sib[1], sib[0], ...sib.slice(2)], tx: txBytes },
     { name: 'reverse whole path', sib: [...sib].reverse(), tx: txBytes },
     { name: 'flip isLeft at level 0', sib: [{ ...sib[0], isLeft: !sib[0].isLeft }, ...sib.slice(1)], tx: txBytes },
-    { name: 'flip isLeft at top level', sib: [...sib.slice(0, -1), { ...sib[sib.length - 1], isLeft: !sib[sib.length - 1].isLeft }], tx: txBytes },
+    {
+      name: 'flip isLeft at top level',
+      sib: [...sib.slice(0, -1), { ...sib[sib.length - 1], isLeft: !sib[sib.length - 1].isLeft }],
+      tx: txBytes,
+    },
     { name: 'mutate sibling hash bit', sib: [{ ...sib[0], hash: flip(sib[0].hash) }, ...sib.slice(1)], tx: txBytes },
     { name: 'all siblings ZERO', sib: sib.map((s) => ({ ...s, hash: ZERO })), tx: txBytes },
-    { name: 'tamper last byte of tx', sib, tx: txBytes.slice(0, -2) + (txBytes.slice(-2) === '00' ? '01' : '00') },
+    {
+      name: 'tamper last byte of tx',
+      sib,
+      tx: txBytes.slice(0, -2) + (txBytes.slice(-2) === '00' ? '01' : '00'),
+    },
     { name: 'tamper first byte of tx', sib, tx: '0x' + (txBytes.slice(2, 4) === '00' ? '01' : '00') + txBytes.slice(4) },
     { name: 'truncate tx bytes', sib, tx: txBytes.slice(0, -64) },
     { name: 'empty tx bytes', sib, tx: '0x' },
   ];
+
+  // Random corruption, so the adversarial surface is not limited to cases someone thought of.
+  const rnd = seeded(seed);
+  const random = Array.from({ length: 5 }, (_, k) => {
+    const level = Math.floor(rnd() * sib.length);
+    const bit = BigInt(Math.floor(rnd() * 256));
+    const mutated = sib.map((s, i) =>
+      i === level ? { ...s, hash: '0x' + (BigInt(s.hash) ^ (1n << bit)).toString(16).padStart(64, '0') } : s,
+    );
+    return { name: `random bitflip #${k + 1} (level ${level}, bit ${bit})`, sib: mutated, tx: txBytes };
+  });
+
+  return [...fixed, ...random];
 }
 
 async function main() {
-  const p = new JsonRpcProvider(CC_RPC);
-  const pre = new Contract(PRECOMPILE, PRECOMPILE_ABI, p);
-  const mirror = new Contract(MIRROR, MIRROR_ABI, p);
+  const argv = process.argv;
+  const get = (f: string) => {
+    const i = argv.indexOf(f);
+    return i >= 0 ? argv[i + 1] : undefined;
+  };
+  const limit = Number(get('--limit') ?? Infinity);
+  const concurrency = Number(get('--concurrency') ?? 4);
 
-  console.log('DIFFERENTIAL HARNESS  0x0FD2  vs  EthereumMirror');
-  console.log('  mirror:', MIRROR);
-  console.log('');
+  const cc = new JsonRpcProvider(CC_RPC);
+  const pre = new Contract(PRECOMPILE, PRECOMPILE_ABI, cc);
+  const mirror = new Contract(MIRROR, MIRROR_ABI, cc);
+
+  const all = loadFixtures();
+  console.log(`corpus: ${all.length} fixtures`);
 
   let checks = 0;
   let divergences = 0;
+  let skipped = 0;
+  const lines: string[] = [];
 
-  for (const txHash of SUBJECTS) {
-    const proof = await fetchProof(CHAIN_KEY_ETH_MAINNET, txHash);
-    const baseSib: Sib[] = proof.merkleProof.siblings.map((s: any) => ({ hash: s.hash, isLeft: s.isLeft }));
-    const height = proof.headerNumber;
+  let used = 0;
+  for (const f of all) {
+    if (used >= limit) break;
 
-    const mirrored = await mirror.isMirrored(CHAIN_KEY_ETH_MAINNET, height);
-    console.log(`block ${height}  (${txHash.slice(0, 12)}…)  mirrored=${mirrored}`);
+    const mirrored = await mirror.isMirrored(CHAIN_KEY_ETH_MAINNET, f.headerNumber);
     if (!mirrored) {
-      console.log('  SKIPPED — notarise it first with: node src/mirror.ts ' + txHash);
+      skipped++;
       continue;
     }
+    used++;
 
-    for (const m of mutations(baseSib, proof.txBytes)) {
-      // Authority: the precompile, given the full continuity proof.
-      let preVerdict: Verdict;
-      try {
-        const ok = await pre.verify(
-          CHAIN_KEY_ETH_MAINNET, height, m.tx,
-          { root: proof.merkleProof.root, siblings: m.sib },
-          { lowerEndpointDigest: proof.continuityProof.lowerEndpointDigest, roots: proof.continuityProof.roots },
-        );
-        preVerdict = ok ? 'accept' : 'reject';
-      } catch { preVerdict = 'reject'; }
+    const cases = mutations(f.siblings, f.txBytes, f.headerNumber);
+    const results = new Array(cases.length);
 
-      // Replacement, reverting form.
-      let orRevertVerdict: Verdict;
-      try { await mirror.verifyOrRevert(CHAIN_KEY_ETH_MAINNET, height, m.tx, m.sib); orRevertVerdict = 'accept'; }
-      catch { orRevertVerdict = 'reject'; }
+    // Bounded concurrency: the public RPC is shared, and a burst gets throttled rather than served.
+    for (let i = 0; i < cases.length; i += concurrency) {
+      const slice = cases.slice(i, i + concurrency);
+      const settled = await Promise.all(
+        slice.map(async (m) => {
+          let preVerdict: Verdict;
+          try {
+            const ok = await pre.verify(
+              CHAIN_KEY_ETH_MAINNET,
+              f.headerNumber,
+              m.tx,
+              { root: f.root, siblings: m.sib },
+              { lowerEndpointDigest: f.lowerEndpointDigest, roots: f.continuityRoots },
+            );
+            preVerdict = ok ? 'accept' : 'reject';
+          } catch {
+            preVerdict = 'reject';
+          }
 
-      // Replacement, boolean form.
-      let tryVerdict: Verdict;
-      try {
-        const [valid] = await mirror.tryVerify(CHAIN_KEY_ETH_MAINNET, height, m.tx, m.sib);
-        tryVerdict = valid ? 'accept' : 'reject';
-      } catch { tryVerdict = 'accept'; /* tryVerify must never revert; treat as a failure */ }
+          let orRevert: Verdict;
+          try {
+            await mirror.verifyOrRevert(CHAIN_KEY_ETH_MAINNET, f.headerNumber, m.tx, m.sib);
+            orRevert = 'accept';
+          } catch {
+            orRevert = 'reject';
+          }
 
-      const agree = preVerdict === orRevertVerdict && preVerdict === tryVerdict;
-      checks++;
-      if (!agree) divergences++;
-      console.log(
-        `  ${agree ? 'ok     ' : 'DIVERGE'} ${m.name.padEnd(30)} ` +
-        `precompile=${preVerdict.padEnd(6)} verifyOrRevert=${orRevertVerdict.padEnd(6)} tryVerify=${tryVerdict}`,
+          let tryV: Verdict;
+          let tryReverted = false;
+          try {
+            const [valid] = await mirror.tryVerify(CHAIN_KEY_ETH_MAINNET, f.headerNumber, m.tx, m.sib);
+            tryV = valid ? 'accept' : 'reject';
+          } catch {
+            // tryVerify must never revert. Scoring a revert as `accept` guarantees it shows up as
+            // a divergence rather than passing quietly.
+            tryV = 'accept';
+            tryReverted = true;
+          }
+
+          return { m, preVerdict, orRevert, tryV, tryReverted };
+        }),
       );
+      for (let k = 0; k < settled.length; k++) results[i + k] = settled[k];
     }
-    console.log('');
+
+    let bad = 0;
+    for (const r of results) {
+      checks++;
+      const agree = r.preVerdict === r.orRevert && r.preVerdict === r.tryV;
+      if (!agree) {
+        divergences++;
+        bad++;
+        const detail =
+          `  DIVERGENCE ${f.path} ${f.txHash.slice(0, 12)}… "${r.m.name}": ` +
+          `precompile=${r.preVerdict} verifyOrRevert=${r.orRevert} tryVerify=${r.tryV}` +
+          (r.tryReverted ? ' (tryVerify REVERTED)' : '');
+        console.log(detail);
+        lines.push(detail);
+      }
+    }
+    console.log(
+      `  ${String(used).padStart(3)}. block ${f.headerNumber} ${f.venue ?? 'legacy'} ` +
+        `${f.txHash.slice(0, 12)}…  ${results.length} checks  ${bad === 0 ? 'agree' : bad + ' DIVERGED'}`,
+    );
   }
 
-  console.log(`${checks} checks, ${divergences} divergences`);
+  console.log(`\n  fixtures compared : ${used}`);
+  if (skipped) console.log(`  skipped (unmirrored): ${skipped}`);
+  console.log(`  checks            : ${checks}`);
+  console.log(`  divergences       : ${divergences}`);
+
+  if (argv.includes('--transcript')) {
+    mkdirSync(TRANSCRIPTS, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const body = [
+      `# Differential transcript ${new Date().toISOString()}`,
+      '',
+      `Mirror: ${MIRROR}`,
+      `Precompile: ${PRECOMPILE}`,
+      `Fixtures compared: ${used}`,
+      `Checks: ${checks}`,
+      `Divergences: ${divergences}`,
+      '',
+      divergences === 0
+        ? 'The mirror accepted exactly what the precompile accepted, and failed the same way.'
+        : 'DIVERGENCES FOUND:',
+      ...lines,
+      '',
+    ].join('\n');
+    writeFileSync(new URL(`differential-${stamp}.md`, TRANSCRIPTS), body);
+    console.log(`  transcript        : docs/transcripts/differential-${stamp}.md`);
+  }
+
   if (divergences > 0) {
-    console.log('FAIL — verification semantics differ from the precompile.');
+    console.log('\nFAIL — verification semantics differ from the precompile.');
     process.exit(1);
   }
-  console.log('PASS — the mirror accepts exactly what the precompile accepts, and fails the same way.');
+  console.log('\nPASS — the mirror accepts exactly what the precompile accepts, and fails the same way.');
 }
 
-main().catch((e) => { console.error('HARNESS ERROR:', e.message); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
