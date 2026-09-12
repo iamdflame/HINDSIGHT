@@ -1,0 +1,115 @@
+{
+ "registry": "0x32d507DCC049A228831b7C23E4fe22A62db4E7b6",
+ "planted": [
+  {
+   "claimId": 0,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xa534c8dbe71f871f9f3530e97a74601fea17b426cae02e1c5aee42c96c784051",
+   "subject": "0x440888714a6afed60ff44e9975a96e6a36f7fac4",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x02c24dc618990cf0b6845fe5ef1f768258f36af28188ca6b8a394f44afa5ad2e",
+   "counterexampleBlock": 25911408,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 1,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xa534c8dbe71f871f9f3530e97a74601fea17b426cae02e1c5aee42c96c784051",
+   "subject": "0x76f30e3f75437fb862b8d2c4d80a671bceba5b1a",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x07911b27c06a75a686ac6c2c80546b3a362c37c9a997099cfd769ff8cc01fbc9",
+   "counterexampleBlock": 25911701,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 2,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xa534c8dbe71f871f9f3530e97a74601fea17b426cae02e1c5aee42c96c784051",
+   "subject": "0x16b58403d2768988c82eada42330785e1c1aa4e2",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x0d119ef7650c4e15125aa91642584085df17dac53ff040291c4fe64108ee3cbb",
+   "counterexampleBlock": 25911448,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 3,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xa534c8dbe71f871f9f3530e97a74601fea17b426cae02e1c5aee42c96c784051",
+   "subject": "0x97105cf9fe2a44295c000f2f6e1ca9ce1a3036af",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x0d322ec22cd339b694f2d22df5edab59351685a5b93477a619f8a06d19e2aec4",
+   "counterexampleBlock": 25911865,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 4,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xa534c8dbe71f871f9f3530e97a74601fea17b426cae02e1c5aee42c96c784051",
+   "subject": "0x5d99551ce4a2c1467adf632474424e7e22c72c66",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x10d9be5c244c16e78599a733ebe77fd4b9234781ed46f1ce7ed53b3197ab3342",
+   "counterexampleBlock": 25911605,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 5,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xa534c8dbe71f871f9f3530e97a74601fea17b426cae02e1c5aee42c96c784051",
+   "subject": "0xd480bb579f61edf044d0e86e33cb72310c816d6a",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x1acc90337544b734014c83fcc94739c18acf146fa77d11e32a568d9663f5f508",
+   "counterexampleBlock": 25911542,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 32,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subject": "0x180c0bd66467218add0190eacbad0aa62f39397b",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0xa5a2e5f0181fe39bf26a656e85e93a4ddb3b80f875ad2bfd20ad3f811ba913cd",
+   "counterexampleBlock": 25903971,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 33,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subject": "0x1b1d98c142bb572303a0076aeee2818176b4e2b1",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x5dffa9eb5397f273d234f535222e9401f8fe3300d5f523c3e9b84cd794670e69",
+   "counterexampleBlock": 25903972,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 34,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subject": "0x8327e20a05516c9be8dd305e517cd742b629e00f",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x7d183914b502ad684a5e556838ef587389957b8b811aac94ed4d731fdb5e2ccd",
+   "counterexampleBlock": 25903977,
+   "bond": "500000000000000000"
+  },
+  {
+   "claimId": 35,
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subject": "0xa031993edff6a81ed07018dcb68136fc0bc996ed",
+   "spanFrom": 25903243,
+   "spanTo": 25921685,
+   "counterexample": "0x5b558d3cdddc772b96d7c05ca695f4ca9ac535e7a975509ada1429231abef57b",
+   "counterexampleBlock": 25903983,
+   "bond": "500000000000000000"
+  }
+ ]
+}
