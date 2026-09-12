@@ -1,0 +1,20 @@
+{
+  "name": "hindsight-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "local-proof": "node src/local-proof.ts",
+    "mirror": "node src/mirror.ts",
+    "scan": "node src/scan.ts"
+  },
+  "dependencies": {
+    "@gluwa/usc-sdk": "^0.18.0",
+    "ethers": "^6.15.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.2"
+  }
+}
