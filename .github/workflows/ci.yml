@@ -1,0 +1,91 @@
+name: ci
+
+# Every gate this project claims to hold itself to, run on every push.
+#
+# The jobs that need no key run on every PR. The ones that read live chain state are separate, so a
+# testnet outage never looks like a code failure -- and so that a green tick can never be mistaken
+# for "the archive is fine" when it only means "the contracts compile".
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  contracts:
+    name: contracts — build, test, fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: npm ci --prefix contracts || npm install --prefix contracts
+      - name: forge build
+        run: forge build --sizes
+        working-directory: contracts
+      - name: forge test
+        run: forge test -vv
+        working-directory: contracts
+      - name: forge coverage (MirrorLib and the fail-closed paths)
+        run: forge coverage --report summary --no-match-coverage "script|test"
+        working-directory: contracts
+        continue-on-error: true
+
+  honesty:
+    name: honesty — no mocks, no banned claims
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: no mock data outside tests
+        # A mock in src/ or worker/ would make every number on the site unfalsifiable.
+        run: |
+          if grep -rniE "mock|faker|lorem ipsum|placeholder|TODO: replace" \
+               --include="*.ts" --include="*.tsx" --include="*.sol" \
+               web/src worker/src packages contracts/src; then
+            echo "::error::mock or placeholder data outside tests"; exit 1
+          fi
+          echo "clean"
+      - name: claims that must never appear
+        # Each of these is a claim the evidence does not support. See CLAIMS.md.
+        run: |
+          if grep -rniE "proof of absence|prove[sd]? (that )?(it )?never happened|trustless|100% secure|audited by" \
+               --include="*.ts" --include="*.tsx" --include="*.sol" --include="*.md" \
+               web/src worker/src packages contracts/src README.md CLAIMS.md docs 2>/dev/null \
+               | grep -viE "never proven|not a proof|cannot prove|never claim|is not audited|NOT claimed"; then
+            echo "::error::a claim stronger than the evidence"; exit 1
+          fi
+          echo "clean"
+
+  web:
+    name: web — typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci || npm install
+        working-directory: web
+      - run: npx tsc --noEmit
+        working-directory: web
+        env: { NODE_ENV: '' }
+      - run: npx vite build
+        working-directory: web
+        env: { NODE_ENV: '' }
+
+  live:
+    name: live chain — differential vs 0x0FD2, and the published numbers
+    runs-on: ubuntu-latest
+    # Reads public RPCs only; no secrets, so a fork can run it too.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci || npm install
+        working-directory: worker
+      - name: differential against the live precompile
+        run: node src/differential.ts --limit 12
+        working-directory: worker
+      - name: every published number still matches the chain
+        run: node src/measure.ts --check
+        working-directory: worker
