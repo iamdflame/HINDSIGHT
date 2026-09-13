@@ -26,3 +26,5 @@ research/
 
 # Local convenience symlink so packages/ can resolve the worker's deps without a second install
 packages/*/node_modules
+templates/foundry-consumer/out/
+templates/foundry-consumer/cache/

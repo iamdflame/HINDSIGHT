@@ -1,0 +1,21 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.28"
+optimizer = true
+optimizer_runs = 200
+# The registry compiles via IR, as it does in the main repository.
+via_ir = true
+# Point `hindsight/` at the interfaces. In this repository that is a relative path; in yours, after
+# `forge install iamdflame/HINDSIGHT`, it is `lib/HINDSIGHT/contracts/src/`.
+remappings = [
+  "hindsight/=../../contracts/src/",
+  "@gluwa/asc-contracts/=../../contracts/node_modules/@gluwa/asc-contracts/",
+  "forge-std/=../../contracts/lib/forge-std/src/",
+]
+# Sources outside this directory must be allowed explicitly. Your copy will not need this once the
+# remappings point into lib/.
+allow_paths = ["../../contracts"]
+fs_permissions = [{ access = "read", path = "../../contracts/test/fixtures" }]
