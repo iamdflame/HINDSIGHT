@@ -1,0 +1,67 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hindsight / Mandate",
+    "version": "1.0.0",
+    "summary": "Read-only views on contracts deployed on Creditcoin: an archive of Ethereum block roots, a bonded claim board, and a lending desk that refuses.",
+    "description": "Every endpoint is a view on deployed contracts and moves no money. Nothing returned is a score; the desk pays or refuses and names the fact, as an enum name beside a sentence. Re-run any verdict on chain with UnderwritingDesk.assess(subject, policy, principal, spanIds). Nothing is minted, nothing is transferable, and there is no number.",
+    "license": { "name": "MIT" }
+  },
+  "servers": [{ "url": "https://hindsight.run" }, { "url": "https://mandate.hindsight.run" }],
+  "paths": {
+    "/api/assess": {
+      "get": {
+        "operationId": "assess",
+        "summary": "Would the desk lend to this Ethereum address?",
+        "parameters": [
+          { "name": "subject", "in": "query", "required": true, "schema": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" }, "description": "Ethereum address" },
+          { "name": "principal", "in": "query", "schema": { "type": "string", "default": "1" }, "description": "Amount asked for, in tCTC. 0 asks only what the file says." }
+        ],
+        "responses": {
+          "200": { "description": "Every instrument's verdict, what is on file, the sealed window each was priced against, and the archive's shape.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Assessment" } } } },
+          "400": { "description": "Not an address, or not an amount." }
+        }
+      }
+    },
+    "/api/certificate": {
+      "get": {
+        "operationId": "certificate",
+        "summary": "The same assessment as a one-page PDF, deterministic at a block, with the exact call to re-run it.",
+        "parameters": [
+          { "name": "subject", "in": "query", "required": true, "schema": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" } },
+          { "name": "principal", "in": "query", "schema": { "type": "string", "default": "1" } }
+        ],
+        "responses": { "200": { "description": "PDF", "content": { "application/pdf": {} } }, "400": { "description": "Not an address." } }
+      }
+    },
+    "/api/gates": {
+      "get": {
+        "operationId": "gates",
+        "summary": "The public gates: every promise the repository makes, re-run against live chain state.",
+        "description": "200 when every gate passes, 503 when any fails, so a scheduler that only reads status codes still raises the alarm. Expectations come from the repository through worker/src/gates-manifest.ts, never from the function.",
+        "responses": { "200": { "description": "All gates pass.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Gates" } } } }, "503": { "description": "At least one gate fails; the body says which and why." } }
+      }
+    },
+    "/api/dump": {
+      "get": {
+        "operationId": "dump",
+        "summary": "The whole public state at one block: policies, spans, claims, archive shape, and the desk's verdict on every address the board has named. Cached an hour.",
+        "responses": { "200": { "description": "JSON", "content": { "application/json": {} } } }
+      }
+    },
+    "/api/telegram": {
+      "get": { "operationId": "telegramStatus", "summary": "Whether the bot is configured, and its commands.", "responses": { "200": { "description": "JSON" } } },
+      "post": { "operationId": "telegramWebhook", "summary": "Telegram's webhook. Requires the X-Telegram-Bot-Api-Secret-Token header.", "responses": { "200": { "description": "Always, once authenticated." }, "401": { "description": "Wrong or missing secret." }, "503": { "description": "Bot not configured." } } }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Refusal": { "type": "string", "enum": ["None", "NoSuchPolicy", "ArchiveTooShallow", "ClaimUnderHunt", "ProvenLiar", "NoBondedCleanliness", "DeskOutOfFunds", "EventOnRecord", "AlreadyLent", "NeedsBondedCover", "PoolCapReached", "UnprovenSubject"], "description": "UnderwritingDesk.Refusal, in declaration order. Appended to, never reordered." },
+      "Window": { "type": "object", "nullable": true, "properties": { "spanIds": { "type": "array", "items": { "type": "integer" } }, "from": { "type": "integer" }, "to": { "type": "integer" } }, "description": "The sealed spans the verdict was priced against. Pass spanIds to assess() on chain to reproduce it." },
+      "Verdict": { "type": "object", "properties": { "policy": { "type": "integer" }, "kind": { "type": "string", "enum": ["BlankFile", "BondedClean"] }, "requiresBinding": { "type": "boolean" }, "venue": { "type": "string" }, "topic0": { "type": "string" }, "window": { "type": "integer", "description": "blocks looked back" }, "pays": { "type": "boolean" }, "reason": { "$ref": "#/components/schemas/Refusal" }, "why": { "type": "string" }, "provenBy": { "$ref": "#/components/schemas/Window" } } },
+      "Claim": { "type": "object", "properties": { "id": { "type": "integer" }, "status": { "type": "string", "enum": ["None", "Open", "Refuted", "Standing"] }, "kind": { "type": "string", "enum": ["EmptySet", "CompleteSet"] }, "chainKey": { "type": "integer" }, "venue": { "type": "string" }, "topic0": { "type": "string" }, "spanFrom": { "type": "integer" }, "spanTo": { "type": "integer" }, "bondStaked": { "type": "string", "description": "wei" }, "enforceableLoss": { "type": "string", "description": "wei a liar could not recover; size reliance against this, not bondStaked" }, "openUntil": { "type": "integer" }, "claimant": { "type": "string" }, "refuter": { "type": "string" } } },
+      "Assessment": { "type": "object", "properties": { "subject": { "type": "string" }, "principal": { "type": "string", "description": "wei" }, "creditcoinBlock": { "type": "integer" }, "at": { "type": "string", "format": "date-time" }, "desk": { "type": "string" }, "verdict": { "type": "object", "nullable": true, "properties": { "pays": { "type": "boolean" }, "reason": { "$ref": "#/components/schemas/Refusal" }, "why": { "type": "string" }, "policy": { "type": "integer" } } }, "verdicts": { "type": "array", "items": { "$ref": "#/components/schemas/Verdict" } }, "files": { "type": "array", "items": { "$ref": "#/components/schemas/Claim" } }, "archive": { "type": "object" }, "certificate": { "type": "string", "format": "uri" } } },
+      "Gates": { "type": "object", "properties": { "pass": { "type": "boolean" }, "ranAt": { "type": "string" }, "creditcoinBlock": { "type": "integer" }, "gates": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "pass": { "type": "boolean" }, "detail": { "type": "string" }, "ms": { "type": "integer" } } } } } }
+    }
+  }
+}
