@@ -188,8 +188,10 @@ contract UnderwritingDesk {
                 // Somebody is hunting this address right now. Do not lend into a fight.
                 return Refusal.ClaimUnderHunt;
             }
-            if (c.status == IAbsence.Status.Standing && c.bondStaked >= p.minBond) {
-                // Covers the policy window, and survived a challenge while a bond was at risk.
+            // `holdsWithBond` is the registry's own statement of "stood, at at least this price".
+            // The desk asks it rather than re-deriving it, so a consumer written against IAbsence
+            // alone reaches the same verdict this one does. The window check is the desk's own.
+            if (REGISTRY.holdsWithBond(i, p.minBond)) {
                 if (c.spanTo >= head - p.window && c.spanFrom <= head) bondedClean = true;
             }
         }

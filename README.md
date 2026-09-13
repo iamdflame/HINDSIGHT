@@ -27,7 +27,7 @@ with no wallet.
 |---|---|
 | `EthereumMirror` | [`0x4Bc1…e2AB`](https://creditcoin-testnet.blockscout.com/address/0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB) — the archive |
 | `AbsenceRegistryV2` | [`0x32d5…E7b6`](https://creditcoin-testnet.blockscout.com/address/0x32d507DCC049A228831b7C23E4fe22A62db4E7b6) — claims over a list of spans |
-| `UnderwritingDesk` | [`0x5C5D…Cc28`](https://creditcoin-testnet.blockscout.com/address/0x5C5D121C6A4c5bfC7C09eAdD1Fcc04F97F26Cc28) — pays, or reverts |
+| `UnderwritingDesk` | [`0xb1D2…95AF`](https://creditcoin-testnet.blockscout.com/address/0xb1D213c24ECd39475eC337D29Fb5eB60AF2195AF) — pays, or reverts |
 | `MissingHeightBounty` | [`0x39c1…0042`](https://creditcoin-testnet.blockscout.com/address/0x39c1527866a07E18BbBa889D849515d8E7e30042) — anyone can extend the archive |
 | Honesty ledger | [CLAIMS.md](./CLAIMS.md) — every claim graded by evidence, including the ones that limit us |
 | For Gluwa | [docs/ENSHRINE.md](./docs/ENSHRINE.md) — the roots you already hash |
