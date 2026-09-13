@@ -39,6 +39,10 @@ export default defineConfig({
         integrate: here('./integrate/index.html'),
         independence: here('./independence/index.html'),
         status: here('./status/index.html'),
+        // Mandate: the product face of the same runtime, its own masthead and its own vocabulary.
+        mandate: here('./mandate/index.html'),
+        versus: here('./versus/index.html'),
+        files: here('./files/index.html'),
       },
     },
   },

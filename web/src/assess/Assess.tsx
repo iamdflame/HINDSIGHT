@@ -32,7 +32,7 @@ type ClaimAbout = {
   bond: bigint;
 };
 
-type Verdict = { policy: Policy; ok: boolean; reason: string };
+type Verdict = { policy: Policy; ok: boolean; reason: string; window: { ids: number[]; from: number; to: number } | null };
 
 type State =
   | { k: 'idle' }
@@ -59,6 +59,8 @@ const REASON_TEXT: Record<string, string> = {
   NoBondedCleanliness: 'Refuses: this policy needs a standing no-event claim over the whole window, ending near the head, whose unrecoverable half covers the principal. There is none.',
   DeskOutOfFunds: 'Refuses: the desk does not hold enough to lend this much.',
   AlreadyLent: 'Refuses: this desk already lent to this address under this policy. One loan each — there is no repayment path.',
+  NeedsBondedCover: 'Answers, and will not lend. Nothing on the board disqualifies this address — but nothing on the board stands behind it either, and silence is not collateral. A policy that lends needs somebody to have staked a bond on this address and survived a challenge window.',
+  PoolCapReached: 'Refuses: the desk has already lent as much as the attestors behind this source chain have bonded. Every fact underwritten here rests on them, so the money at risk does not exceed what they have at stake.',
 };
 
 function initialSubject(): string {
@@ -85,7 +87,7 @@ export function Assess() {
     url.searchParams.set('q', subject);
     window.history.replaceState(null, '', url);
     try {
-      const { deskContract, registryContract, mirrorContract, REFUSAL, parseEther, CHAIN_KEY_ETH_MAINNET } = await import('../lib/chain').then(async (m) => ({
+      const { deskContract, registryContract, mirrorContract, sealedSpans, spanOffer, REFUSAL, parseEther, CHAIN_KEY_ETH_MAINNET } = await import('../lib/chain').then(async (m) => ({
         ...m,
         parseEther: (await import('ethers')).parseEther,
       }));
@@ -111,11 +113,23 @@ export function Assess() {
         throw new Error('Principal must be a number of tCTC.');
       }
 
+      // The window each policy is priced against, proven once and offered rather than walked. A policy
+      // whose window no adjacent sealed run covers gets no offer, and the desk says ArchiveTooShallow —
+      // which is exactly what it would say, so the page does not have to guess.
+      setS({ k: 'loading', note: 'finding the sealed window the desk can price…' });
+      const mirrorForSpans = mirrorContract();
+      const spansByChain = new Map<number, Awaited<ReturnType<typeof sealedSpans>>>();
+      for (const chainKey of new Set(policies.map((p) => p.chainKey))) {
+        spansByChain.set(chainKey, await sealedSpans(mirrorForSpans, chainKey));
+      }
+      const offerFor = (p: Policy) => spanOffer(spansByChain.get(p.chainKey) ?? [], p.window);
+
       setS({ k: 'loading', note: `asking the desk about ${subject.slice(0, 10)}… under ${n} ${n === 1 ? 'policy' : 'policies'}` });
       const verdicts: Verdict[] = await Promise.all(
         policies.map(async (p) => {
-          const [ok, reason] = await desk.assess(subject, p.id, amount);
-          return { policy: p, ok: Boolean(ok), reason: REFUSAL[Number(reason)] ?? String(reason) };
+          const offer = offerFor(p);
+          const [ok, reason] = await desk.assess(subject, p.id, amount, offer?.ids ?? []);
+          return { policy: p, ok: Boolean(ok), reason: REFUSAL[Number(reason)] ?? String(reason), window: offer };
         }),
       );
 

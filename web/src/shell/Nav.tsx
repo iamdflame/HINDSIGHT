@@ -10,6 +10,7 @@ export const ROUTES = [
 ] as const;
 
 export const MORE = [
+  { path: '/mandate/', label: 'Mandate', id: 'mandate' },
   { path: '/independence/', label: 'Independence', id: 'independence' },
   { path: '/integrate/', label: 'Integrate', id: 'integrate' },
   { path: '/enshrine/', label: 'Enshrine', id: 'enshrine' },

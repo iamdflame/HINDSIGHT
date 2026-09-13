@@ -5,6 +5,13 @@ import { continuityAt } from '../lib/record';
 /**
  * The eight-second landing. One sentence a non-engineer can read, the experiment already running
  * underneath it, and three things to do next. Nothing to paste, nothing to connect.
+ *
+ * On tone: the roots this project keeps are proved by Attestcoin's attestors, and the earlier draft of
+ * this page read as though that were a flaw somebody had failed to notice. It is not. The attestation
+ * layer binds a run of roots for every query and discards them because it is a *verifier*, and holding
+ * history is not a verifier's job. Hindsight's whole claim is that the discarding is the only part
+ * worth changing, and that is what the page should say -- to the people who built the layer it rests on
+ * as much as to anyone else.
  */
 export function Home() {
   const indep = useIndependence(true);
@@ -13,14 +20,15 @@ export function Home() {
       <div className="home-first">
         <section className="hero-home">
           <h1 className="t-display">
-            Ask Ethereum.<br />
-            Creditcoin answers.<br />
-            <em>The second ask is free.</em>
+            Attestcoin already<br />
+            proves the roots.<br />
+            <em>This is where they live.</em>
           </h1>
           <p className="lede">
-            Every Attestcoin query already proves a run of Ethereum block roots — {continuityAt(1_296_000)?.toLocaleString() ?? 'hundreds'} of
-            them for a block half a year old, measured — then throws them away. Hindsight is the first contract that keeps them. After that, proving a second transaction in the same block is a{' '}
-            <code>view</code> call — no prover, no <code>0x0FD2</code>, no wallet.
+            Answering one query binds a run of Ethereum block roots — {continuityAt(1_296_000)?.toLocaleString() ?? 'hundreds'} of them for a
+            block half a year old, measured — and then lets them go, because verifying is not the same job as remembering.
+            Hindsight keeps them. Once a height is held, proving anything else in that block is a <code>view</code> call
+            against stored state: no prover, no <code>0x0FD2</code>, no wallet, nothing in the loop that anyone can switch off.
           </p>
           <div className="ctas">
             <button
@@ -51,12 +59,12 @@ export function Home() {
         <h2>Why this is a cost-structure change, not a feature</h2>
         <div className="why-grid">
           <div>
-            <h3 className="t-ui">Everyone else</h3>
-            <p>Calls <code>0x0FD2</code> per question, with a continuity proof whose length grows with the age of the fact — measured {continuityAt(1_296_000)?.toLocaleString() ?? 'hundreds of'} roots at 180 days. Discards the proof. Pays again next time.</p>
+            <h3 className="t-ui">Per question</h3>
+            <p>One call to <code>0x0FD2</code>, carrying a continuity proof whose length grows with the age of the fact — measured {continuityAt(1_296_000)?.toLocaleString() ?? 'hundreds of'} roots at 180 days. The proof is checked, and then it is gone. The next question about the same block pays for it again.</p>
           </div>
           <div>
-            <h3 className="t-ui">Hindsight</h3>
-            <p>Calls <code>0x0FD2</code> once per <em>height</em>, keeps every root the precompile bound, and never calls it for that height again. The second question is a Merkle path against stored state.</p>
+            <h3 className="t-ui">Per height</h3>
+            <p>The same call, once, and every root it bound is written down. That height is never proved again — by anyone, for anything. The second question is a Merkle path against stored state, and the tenth thousandth is too.</p>
           </div>
         </div>
         <p className="t-caption">

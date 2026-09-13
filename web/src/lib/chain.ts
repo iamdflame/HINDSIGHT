@@ -138,10 +138,14 @@ export const REGISTRY_ABI = [
 export const DESK_ABI = [
   'function policyCount() view returns (uint256)',
   'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
-  'function assess(address subject, uint256 policyId, uint256 principal) view returns (bool ok, uint8 reason)',
-  'function borrow(uint256 policyId, uint256 principal)',
+  'function assess(address subject, uint256 policyId, uint256 principal, uint256[] spanIds) view returns (bool ok, uint8 reason)',
+  'function borrow(uint256 policyId, uint256 principal, uint256[] spanIds)',
   'function lent(address, uint256) view returns (bool)',
+  'function totalOutstanding() view returns (uint256)',
+  'function securityBudget(uint64 chainKey) view returns (uint32 attestors, uint128 minBond, uint256 cap)',
   'function MAX_CLAIM_SCAN() view returns (uint256)',
+  'function MAX_SPANS() view returns (uint256)',
+  'function LEVERAGE_ON_ENFORCEABLE_LOSS() view returns (uint256)',
 ];
 
 /** `UnderwritingDesk.Refusal`, in declaration order. Appended to, never reordered. */
@@ -155,7 +159,44 @@ export const REFUSAL = [
   'DeskOutOfFunds',
   'EventOnRecord',
   'AlreadyLent',
+  'NeedsBondedCover',
+  'PoolCapReached',
 ] as const;
+
+export type Span = { id: number; from: number; to: number };
+
+/**
+ * The sealed ranges a caller hands the desk to prove a policy's window.
+ *
+ * Proving that a stretch of history has no gap costs one storage read per 256 heights; `sealSpan`
+ * paid that once and recorded the answer, so the desk reads the receipt instead of redoing the walk.
+ * Offering spans is not a permission -- anyone can seal, anyone can pass them, and the desk checks
+ * for itself that they are adjacent, on the policy's chain, long enough, and still reaching the head.
+ */
+export async function sealedSpans(mirror: Contract, chainKey: number): Promise<Span[]> {
+  const n = Number(await mirror.spanCount());
+  const all = await Promise.all(Array.from({ length: n }, (_, i) => mirror.spanOf(i)));
+  return all
+    .map((s: any, id: number) => ({ id, chainKey: Number(s.chainKey), from: Number(s.fromBlock), to: Number(s.toBlock) }))
+    .filter((s) => s.chainKey === chainKey)
+    .map(({ id, from, to }) => ({ id, from, to }));
+}
+
+/** The shortest adjacent run of sealed spans covering `window` heights and reaching highest. */
+export function spanOffer(spans: Span[], window: number, maxSpans = 8): { ids: number[]; from: number; to: number } | null {
+  let top: Span | undefined;
+  for (const s of spans) if (!top || s.to > top.to || (s.to === top.to && s.from < top.from)) top = s;
+  if (!top) return null;
+  const ids = [top.id];
+  let from = top.from;
+  while (top.to - from < window && ids.length < maxSpans) {
+    const below = spans.find((s) => s.to + 1 === from && s.id !== top!.id);
+    if (!below) break;
+    from = below.from;
+    ids.unshift(below.id);
+  }
+  return top.to - from < window ? null : { ids, from, to: top.to };
+}
 
 // The precompile's real selector is snake_case; the SDK's camelCase is a wrapper.
 const CHAIN_INFO_ABI = ['function get_latest_attestation_height_and_hash(uint64) view returns ((uint64 height, bytes32 hash, bool isAttestation, bool exists))'];

@@ -1,4 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [{ "path": "/api/gates", "schedule": "17 6 * * *" }]
+  "crons": [{ "path": "/api/gates", "schedule": "17 6 * * *" }],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "mandate.hindsight.run" }],
+      "destination": "/mandate/",
+      "permanent": false
+    }
+  ]
 }

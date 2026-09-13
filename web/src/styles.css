@@ -751,3 +751,60 @@ blockquote { margin: 1.2rem 0; padding-left: 1rem; border-left: 2px solid var(--
 .status-summary { margin-block: 1.6rem 0.4rem; letter-spacing: 0.06em; }
 .status-summary.is-broken { color: var(--wax); }
 .status-rows { max-width: 64rem; }
+
+/* ── Mandate ───────────────────────────────────────────────────────────────────────────────────
+   The product face of the same runtime: the same paper, wax and type, a different masthead and a
+   different vocabulary. Nothing here is a new palette -- a restyle would be the dishonest half of
+   a rebrand, and §13 forbids it. */
+.mandate-masthead .lockup { align-items: baseline; gap: 0.7rem; }
+.mandate-wordmark { display: inline-flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.mandate-wordmark .t-title { font-size: clamp(1.5rem, 3.4vw, 2.1rem); letter-spacing: 0.02em; }
+.mandate-sub { color: var(--ink-faint); }
+
+.mandate-rows { list-style: none; padding: 0; margin: 2rem 0 2.5rem; display: grid; gap: 0; counter-reset: mrow; }
+.mandate-rows > li { border-top: 1px solid var(--rule); padding-block: 1.1rem; display: grid; gap: 0.35rem; grid-template-columns: 11rem 1fr; align-items: baseline; }
+.mandate-rows > li:last-child { border-bottom: 2px solid var(--ink); }
+.mandate-rows .row-label { color: var(--ink-faint); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.72rem; }
+.mandate-rows p { margin: 0; max-width: 46em; }
+.mandate-rows .about { grid-column: 2; margin-top: 0.5rem; }
+@media (max-width: 639px) { .mandate-rows > li { grid-template-columns: 1fr; } .mandate-rows .about { grid-column: 1; } }
+
+.mandate-foot { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--rule); max-width: 46em; }
+
+/* /versus — two columns, both live, differing only in the address asked about. */
+.versus { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 2rem; border-top: 2px solid var(--ink); }
+.versus-col { padding: 1.4rem 1.4rem 1.6rem; border-bottom: 1px solid var(--rule); }
+.versus-col + .versus-col { border-left: 1px solid var(--rule); }
+.versus-col.is-refuse { background: color-mix(in srgb, var(--wax) 4%, transparent); }
+.versus-addr { margin: 0 0 0.4rem; color: var(--ink-soft); }
+.versus-word { font-size: 1.6rem; letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 0.2rem; }
+.versus-col.is-refuse .versus-word { color: var(--wax); }
+.versus-col p { max-width: 34em; }
+.versus-facts { margin: 1.1rem 0; display: grid; gap: 0.3rem; }
+.versus-facts > div { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dotted var(--rule); padding-bottom: 0.25rem; }
+.versus-facts dt, .versus-facts dd { margin: 0; }
+.versus-facts dt { color: var(--ink-faint); }
+.versus-verdicts { margin-top: 0.8rem; }
+.versus-form { margin-bottom: 0; }
+@media (max-width: 767px) { .versus { grid-template-columns: 1fr; } .versus-col + .versus-col { border-left: 0; } }
+
+/* /files — one instrument per disclosure, terms sheet rather than catalogue. */
+.instruments { margin-top: 2rem; border-top: 2px solid var(--ink); }
+.instrument { border-bottom: 1px solid var(--rule); }
+.instrument > summary { display: grid; grid-template-columns: 12rem 1fr auto; gap: 1rem; align-items: baseline; padding-block: 1rem; cursor: pointer; }
+.instrument > summary::-webkit-details-marker { display: none; }
+.instrument > summary::marker { content: ''; }
+.instrument > summary:hover { background: var(--paper-2); }
+.instrument[open] > summary { border-bottom: 1px solid var(--rule); }
+.instrument-state { letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.72rem; }
+.instrument-state.is-live { color: var(--ink-soft); }
+.instrument-state.is-shut { color: var(--wax); }
+.instrument > p, .instrument > .terms { padding-inline: 0.2rem; max-width: 46em; }
+.terms { display: grid; gap: 0.4rem; margin-block: 1rem 1.2rem; }
+.terms > div { display: grid; grid-template-columns: 20rem 1fr; gap: 1rem; border-bottom: 1px dotted var(--rule); padding-bottom: 0.3rem; }
+.terms dt, .terms dd { margin: 0; }
+.terms dt { color: var(--ink-faint); }
+@media (max-width: 639px) {
+  .instrument > summary { grid-template-columns: 1fr; gap: 0.2rem; }
+  .terms > div { grid-template-columns: 1fr; gap: 0.1rem; }
+}
