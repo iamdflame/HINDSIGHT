@@ -1,14 +1,21 @@
 {
   "name": "@hindsight/mirror",
-  "version": "0.1.0",
-  "description": "Verify Ethereum mainnet transactions on Creditcoin without the prover or the block-prover precompile.",
+  "version": "0.2.0",
+  "description": "Verify Ethereum transactions on Creditcoin against notarised history — no prover, no precompile, no wallet.",
   "type": "module",
-  "main": "src/index.ts",
-  "bin": { "hindsight": "src/cli.ts" },
+  "main": "src/index.js",
+  "exports": { ".": "./src/index.js" },
+  "bin": { "hindsight": "src/cli.js" },
   "files": ["src", "README.md"],
-  "keywords": ["creditcoin", "attestcoin", "ethereum", "merkle", "cross-chain"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "prepublishOnly": "node src/cli.js coverage"
+  },
+  "keywords": ["creditcoin", "attestcoin", "ethereum", "merkle", "cross-chain", "light-client"],
+  "repository": { "type": "git", "url": "https://github.com/iamdflame/HINDSIGHT", "directory": "packages/mirror" },
+  "homepage": "https://github.com/iamdflame/HINDSIGHT/tree/master/packages/mirror",
   "license": "MIT",
-  "peerDependencies": {
+  "dependencies": {
     "ethers": "^6.15.0",
     "@gluwa/usc-sdk": "^0.18.0"
   }

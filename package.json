@@ -1,0 +1,14 @@
+{
+  "name": "hindsight",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Hindsight — the cache Attestcoin forgot to keep. `npx github:iamdflame/HINDSIGHT verify <tx>`",
+  "type": "module",
+  "bin": { "hindsight": "packages/mirror/src/cli.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "ethers": "^6.15.0",
+    "@gluwa/usc-sdk": "^0.18.0"
+  },
+  "workspaces": ["packages/mirror"]
+}
