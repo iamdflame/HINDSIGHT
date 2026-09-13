@@ -241,6 +241,21 @@ export function deskContract(runner: any = creditcoin()) {
   return new Contract(DESK_ADDRESS, DESK_ABI, runner);
 }
 
+export const COVER_ADDRESS: string = (deployments as any).contracts.Cover;
+export const COVER_ABI = [
+  'function offer(uint256 claimId, uint256 premium) payable returns (uint256)',
+  'function buy(uint256 offerId) payable',
+  'function settle(uint256 offerId)',
+  'function withdrawOffer(uint256 offerId)',
+  'function withdraw()',
+  'function owed(address) view returns (uint256)',
+  'function offerCount() view returns (uint256)',
+  'function offerOf(uint256) view returns ((uint256 claimId, address underwriter, address buyer, uint256 payout, uint256 premium, uint8 state))',
+];
+export function coverContract(runner: any = creditcoin()) {
+  return new Contract(COVER_ADDRESS, COVER_ABI, runner);
+}
+
 export function mirrorContract(runner: any = creditcoin()) {
   return new Contract(MIRROR_ADDRESS, MIRROR_ABI, runner);
 }

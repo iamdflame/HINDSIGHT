@@ -1,0 +1,45 @@
+{
+ "cover": "0xCb0054B41705c8b2050893158523C26BA3f5b922",
+ "entries": [
+  {
+   "at": "2026-09-13T18:11:01.956Z",
+   "kind": "buy",
+   "offerId": 0,
+   "claimId": 6,
+   "buyer": "0x30E60eb0300B869d1323CDD75910c6105aDA0C97",
+   "premium": "50000000000000000",
+   "payout": "1000000000000000000",
+   "tx": "0x9934222bf41ce3a52d53f20d2291271eff53b92dc2c64f0dd69024667e1d6dc5",
+   "gasUsed": 259672
+  },
+  {
+   "at": "2026-09-13T18:13:31.285Z",
+   "kind": "refute",
+   "claimId": 6,
+   "by": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+   "tx": "0x17e4fb8154336dea24e1c3a74ab07cbaf35b4de05266c5623df1c029d493d741",
+   "note": "the house hunter, run early on purpose for this transcript; the replenisher refills the board within the hour"
+  },
+  {
+   "at": "2026-09-13T18:13:47.765Z",
+   "kind": "settle",
+   "offerId": 0,
+   "tx": "0xadfb0b66e8201fe6e39f9e92865244ceb714572603e47372a043fa836388fde6",
+   "gasUsed": 258048
+  },
+  {
+   "at": "2026-09-13T18:14:03.953Z",
+   "kind": "withdraw",
+   "to": "0x30E60eb0300B869d1323CDD75910c6105aDA0C97",
+   "amount": "1000000000000000000",
+   "tx": "0xdb865a12e35c2ce5303f5935f8e053390fe2af2171214626e21f991f178e737e",
+   "gasUsed": 53900
+  }
+ ],
+ "summary": {
+  "premiumPaid": "50000000000000000",
+  "payoutCollected": "1000000000000000000",
+  "state": 3,
+  "claimStatusAtSettle": "Refuted"
+ }
+}

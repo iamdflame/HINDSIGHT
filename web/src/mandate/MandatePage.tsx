@@ -15,6 +15,7 @@ import { SkipLink } from '../shell/SkipLink';
 export const MANDATE_ROUTES = [
   { path: '/mandate/', label: 'Assess', id: 'assess' },
   { path: '/files/', label: 'Files', id: 'files' },
+  { path: '/cover/', label: 'Cover', id: 'cover' },
   { path: '/versus/', label: 'Versus', id: 'versus' },
   { path: '/hunt/', label: 'Hunt', id: 'hunt' },
   { path: '/claims/', label: 'Docs', id: 'docs' },

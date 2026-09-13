@@ -71,6 +71,7 @@ function build() {
       UnderwritingDesk: { address: d.contracts.UnderwritingDesk, ...runtime('UnderwritingDesk.sol', 'UnderwritingDesk') },
       MissingHeightBounty: { address: d.contracts.MissingHeightBounty, ...runtime('MissingHeightBounty.sol', 'MissingHeightBounty') },
       SubjectBinding: { address: d.contracts.SubjectBinding, ...runtime('SubjectBinding.sol', 'SubjectBinding') },
+      Cover: { address: d.contracts.Cover, ...runtime('Cover.sol', 'Cover') },
     },
     gate: d.external.hindsightGate.address,
     paidOnEthereum: { address: d.external.paidOnEthereum.address, proven: d.external.paidOnEthereum.proofs[0] },

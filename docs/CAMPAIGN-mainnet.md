@@ -956,3 +956,4 @@ a transaction on Creditcoin; the "newly added" column is the count that call's o
 | 2026-09-13 17:14:03 | 25969600 | 25969700 | 101 | 100 | 2432600 | 788601 | [`0x33c609ed…`](https://creditcoin-testnet.blockscout.com/tx/0x33c609edc9ef8019eed5a5a412847b5d3084f8177f276de068fe430a147135a2) |
 | 2026-09-13 17:34:02 | 25969700 | 25969800 | 101 | 100 | 2411723 | 789701 | [`0x41a5e787…`](https://creditcoin-testnet.blockscout.com/tx/0x41a5e78761bc53ca6c34ed2c4086ab81c101d3fb45de71fba4bba0eb9fbb6916) |
 | 2026-09-13 17:54:05 | 25969800 | 25969900 | 101 | 100 | 2443284 | 789801 | [`0x87377d28…`](https://creditcoin-testnet.blockscout.com/tx/0x87377d28a9abdde6e045b2222228b65dc7607736f244b0b7bf37590db5b6d6fa) |
+| 2026-09-13 18:13:49 | 25969900 | 25970000 | 101 | 100 | 2454510 | 790901 | [`0x1d60edb8…`](https://creditcoin-testnet.blockscout.com/tx/0x1d60edb88a8f928fba1c717474f3f9e23c58c829edbe2101eb6da808653874ba) |

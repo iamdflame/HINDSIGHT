@@ -68,7 +68,7 @@ Measured on CC3 testnet (every figure read from chain state by `worker/src/measu
 |---|---|
 | Gas per newly held height | **23,596** median (23,492–27,232) |
 | Roots kept by one `mirror()` call | up to **901** |
-| Mainnet heights held | **788,501**; the unbroken run ending at the top is 787,600 blocks ≈ 109.4 days |
+| Mainnet heights held | **790,901**; the unbroken run ending at the top is 790,000 blocks ≈ 109.7 days |
 | Sepolia heights held | **303,301**, one unbroken run |
 | Empty blocks held among them | 243 mainnet, 32 Sepolia |
 | Verifying a transaction against a held root | `view` call, no continuity, no prover, no `0x0FD2` |

@@ -105,6 +105,28 @@ export const manifest = {
      32
     ]
    ]
+  },
+  "Cover": {
+   "address": "0xCb0054B41705c8b2050893158523C26BA3f5b922",
+   "codeHash": "0x1f17738d98f4108c6fd416ce3a9d051a93fc4ebffc9948a4f608cd19ab92187a",
+   "immutables": [
+    [
+     282,
+     32
+    ],
+    [
+     922,
+     32
+    ],
+    [
+     1459,
+     32
+    ],
+    [
+     2284,
+     32
+    ]
+   ]
   }
  },
  "gate": "0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254",
@@ -124,7 +146,7 @@ export const manifest = {
   }
  },
  "held": {
-  "mainnet": 788501,
+  "mainnet": 790901,
   "sepolia": 303301
  },
  "emptyBlock": {
@@ -664,6 +686,10 @@ export const manifest = {
     "role": "borrower"
    },
    {
+    "claimId": 23,
+    "role": "bounty"
+   },
+   {
     "claimId": 20,
     "role": "lie"
    },
@@ -683,6 +709,7 @@ export const manifest = {
    "3": "Refuted",
    "4": "Refuted",
    "5": "Refuted",
+   "6": "Refuted",
    "10": "Refuted",
    "11": "Refuted",
    "12": "Standing",
@@ -724,9 +751,9 @@ export const manifest = {
   "freshWallet": "0x30e60eb0300b869d1323cdd75910c6105ada0c97"
  },
  "run": {
-  "from": 25182001,
-  "length": 787600,
-  "unheldInRange": 10000
+  "from": 25180001,
+  "length": 790000,
+  "unheldInRange": 8000
  },
  "attested": {
   "maxLag": 400

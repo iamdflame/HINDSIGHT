@@ -409,23 +409,51 @@
    "assertTx": "0x737b5b29e6822f52f0ed389a97c030687b2999ac660c3e6e49d1daee3bc1c418",
    "gasUsed": 362454,
    "matchingLogsInRange": 0
+  },
+  {
+   "claimId": 23,
+   "role": "bounty",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0xfc578733054bbbf69f894f30cca1fe400c61bff2",
+   "bond": "3000000000000000000",
+   "windowSeconds": 604800,
+   "openUntil": 1789928625,
+   "assertTx": "0xdf466ceeb89463ccf55d72d6f20fc2c76f3c05c6f7fc919c3ff2e221ddeab783",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 1,
+   "spanIds": [
+    10,
+    11,
+    12,
+    13,
+    14
+   ],
+   "spanFrom": 25314641,
+   "spanTo": 25970000,
+   "counterexample": {
+    "txHash": "0xfcdbe42aab031f78bbd55ab554d994139b34196a26eda941bfebb086153cf34b",
+    "block": 25318249
+   }
   }
  ],
  "registry": "0x05844C991993F3d80fAf196e10355B12BE648e40",
  "chainKey": 3,
  "spanIds": [
-  0,
-  1,
-  2,
-  3,
-  4
+  10,
+  11,
+  12,
+  13,
+  14
  ],
- "spanFrom": 25309541,
- "spanTo": 25964900,
+ "spanFrom": 25314641,
+ "spanTo": 25970000,
  "scannedWith": [
   "gateway.tenderly.co",
   "rpc.mevblocker.io",
-  "rpc.flashbots.net",
-  "ethereum-rpc.publicnode.com"
+  "ethereum-public.nodies.app"
  ]
 }

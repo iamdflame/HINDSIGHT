@@ -38,3 +38,5 @@ console.log('pending  :', info.pending_update_count);
 console.log('\nnow set the same two variables on Vercel:');
 console.log('  vercel env add TELEGRAM_BOT_TOKEN production');
 console.log('  vercel env add TELEGRAM_WEBHOOK_SECRET production');
+
+export {};

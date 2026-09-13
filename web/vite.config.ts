@@ -44,6 +44,7 @@ export default defineConfig({
         versus: here('./versus/index.html'),
         files: here('./files/index.html'),
         hunt: here('./hunt/index.html'),
+        cover: here('./cover/index.html'),
         // The same Mandate page, served as a Telegram Mini App (the bridge script is the only difference).
         tg: here('./tg/index.html'),
       },

@@ -3,6 +3,7 @@
  *
  * Usage:
  *   node src/deploy-v3.ts [--desk-only] [--with-binding] [--dry-run]
+ *   node src/deploy-v3.ts --cover-only                 deploy Cover against the registry, nothing else
  *
  * `--desk-only` redeploys `UnderwritingDesk` against the registry already on chain. Claims, bonds
  * and spans live in the registry and the mirror; the desk holds nothing but its policies and a
@@ -35,6 +36,7 @@ function artifact(file: string, name: string) {
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const deskOnly = process.argv.includes('--desk-only');
+  const coverOnly = process.argv.includes('--cover-only');
   const reasonArg = process.argv.indexOf('--reason');
   const reason = reasonArg >= 0 ? process.argv[reasonArg + 1] : '';
   const provider = new JsonRpcProvider(CC_RPC);
@@ -47,7 +49,8 @@ async function main() {
   console.log('  deployer:', wallet.address);
   console.log('  balance :', (await provider.getBalance(wallet.address)) / 10n ** 18n, 'tCTC');
   if (deskOnly && !d.contracts.AbsenceRegistryV3) throw new Error('--desk-only needs contracts.AbsenceRegistryV3 in deployments.json');
-  if (d.contracts.UnderwritingDesk && !reason) throw new Error('this replaces live contracts: pass --reason "<why>" so the record explains itself');
+  if (!coverOnly && d.contracts.UnderwritingDesk && !reason) throw new Error('this replaces live contracts: pass --reason "<why>" so the record explains itself');
+  if (coverOnly && d.contracts.Cover && !reason) throw new Error('this replaces the live Cover: pass --reason "<why>"');
   if (dryRun) {
     console.log('  DRY RUN — nothing will be deployed');
     return;
@@ -66,10 +69,14 @@ async function main() {
     return addr;
   };
 
+  if (coverOnly) {
+    await deploy('Cover.sol', 'Cover', [d.contracts.AbsenceRegistryV3]);
+  } else {
   const registry = deskOnly ? d.contracts.AbsenceRegistryV3 : await deploy('AbsenceRegistryV3.sol', 'AbsenceRegistryV3', [MIRROR]);
   const withBinding = process.argv.includes('--with-binding') || !d.contracts.SubjectBinding;
   const binding = withBinding ? await deploy('SubjectBinding.sol', 'SubjectBinding', [MIRROR]) : d.contracts.SubjectBinding;
   await deploy('UnderwritingDesk.sol', 'UnderwritingDesk', [MIRROR, registry, binding]);
+  }
 
   d.contracts.superseded = d.contracts.superseded ?? {};
   for (const [name, addr] of Object.entries(deployed)) {

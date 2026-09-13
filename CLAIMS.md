@@ -15,21 +15,21 @@ Re-derive every number: `node worker/src/measure.ts --check` (the chain), `forge
 | Claim | Evidence |
 |---|---|
 | One Attestcoin proof carries the roots of many consecutive blocks, and one `mirror()` call keeps all of them | the widest call retained **901** roots — [`0xa9bb…5d70`](https://creditcoin-testnet.blockscout.com/tx/0xa9bb644f31b88e5a71c296b323a799d03ed7083b23b8b81d02cd1b37a3555d70) |
-| Ninety days of Ethereum mainnet are held, with no gap | **787,600** consecutive heights, 25,182,001 – 25,969,600 (≈ 109.4 days), read bit by bit from the mirror's bitmap. 788,501 heights held in all, added by 899 `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
+| Ninety days of Ethereum mainnet are held, with no gap | **790,000** consecutive heights, 25,180,001 – 25,970,000 (≈ 109.7 days), read bit by bit from the mirror's bitmap. 790,901 heights held in all, added by 899 `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
 | Thirty days of Sepolia are held, with no gap | **303,301** consecutive heights (≈ 42.1 days) ending at 11,696,900 |
 | Keeping a root is cheap and flat | **23,596 gas** per newly held height (median; 23,492–27,232 over 834 calls that each added ≥ 800), from every campaign receipt |
 | An empty Ethereum block is held, and a sealed span crosses it | block **25,300,128** has a transaction root of zero (`rootIsZero: true`), `isMirrored` = **true**, and sealed span 7 (25,288,100 – 25,943,459, 655,360 blocks) covers it: `true`. 243 empty blocks are held on mainnet, 32 on Sepolia |
-| Proving a span gap-free is one read per 256 blocks | sealing **131,072** blocks cost **1,280,230 gas** — [`0x90d9…11a8`](https://creditcoin-testnet.blockscout.com/tx/0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8); 10 spans sealed |
+| Proving a span gap-free is one read per 256 blocks | sealing **131,072** blocks cost **1,280,230 gas** — [`0x90d9…11a8`](https://creditcoin-testnet.blockscout.com/tx/0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8); 15 spans sealed |
 | A **second** transaction in a notarised block verifies with the precompile gone, and the control fails | transaction index 131 of block 25,954,574 (the block was notarised through index 263): `verifyOrRevert` as a plain `eth_call` → **131**; with `0x0FD2` blanked by a state override → **131**; with the mirror blanked instead → `ok: false`. The home page runs the same three calls live on a block picked as it loads |
 | The mirror reaches the same verdict as the precompile, and fails the same way | **2,684 checks over 122 real mainnet transactions × 22 adversarial mutations, 0 divergences**, against the live precompile — [transcript](./docs/transcripts/differential-2026-09-13T03-50-16.md) |
 | A contract in another repository uses the frozen interfaces and never calls `0x0FD2` | `Gate` at [`0xeeFa…a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254): `happened()` returns **263** for a real Aave liquidation plainly and **263** with the precompile blanked; with the mirror blanked it fails (`ok: false`). **Same GitHub owner as Hindsight** — it proves the interfaces are sufficient, not that a stranger chose to integrate |
 | A different product runs on the interface alone | [`PaidOnEthereum`](https://github.com/davidpraise288-coder/int_hind) at [`0xF2c2…C85B`](https://creditcoin-testnet.blockscout.com/address/0xF2c2e220c34a9048E08A222F7Da546E0d201C85B) proves ERC-20 transfers on Ethereum against held roots: 44,663.20 of the 18-decimal token `0x7deF…56bE` in [`0x803a…bfa8`](https://creditcoin-testnet.blockscout.com/tx/0x803a8294c887e09a49fc0d5cba8c33c8dd21b85e85bfab768d0a3c374f99bfa8) (212,212 gas) and WETH from Morpho Blue in [`0xbc11…8547`](https://creditcoin-testnet.blockscout.com/tx/0xbc1161ff45cbfa17897ef68d20bab284cac3090fbf6841b992e5736e10958547) — neither Ethereum transaction ever submitted to Attestcoin. **A second GitHub account of the same person, and its deployer was funded from Hindsight's.** It shows a product can be built on `IMirror` alone; it does not show a stranger chose to |
-| False negative claims die on-chain, and half of every bond burns | 10 refutations on the v3 board, **10.00 tCTC** paid to the hunter and **10.00 tCTC** burned to `0x…dEaD`. Listed below |
+| False negative claims die on-chain, and half of every bond burns | 11 refutations on the v3 board, **11.50 tCTC** paid to the hunter and **11.50 tCTC** burned to `0x…dEaD`. Listed below |
 | A completeness claim is refuted by the member it left out | the `omission` rows below: each listed every liquidation of its borrower but one; each was refuted by exactly that one, with the burn |
 | The desk's ninety-day policy answers — the archive is not too shallow | BlankFile policy 0 (window 648,000 blocks) returns `None` for an address with nothing on file. It reads `contiguousFrom` over every height of the window, not two endpoints |
 | The desk lends and refuses on facts nobody in this system authored | the transactions below, and `docs/transcripts/desk-v3.json` |
 
-### The mainnet board (25,309,541 – 25,964,900, five sealed spans)
+### The mainnet board (25,314,641 – 25,970,000, five sealed spans)
 
 | # | Role | Kind | Venue | Status | Refutation |
 |---|---|---|---|---|---|
@@ -41,10 +41,11 @@ Re-derive every number: `node worker/src/measure.ts --check` (the chain), `forge
 | 5 | lie | EmptySet | Compound V3 · AbsorbDebt | **Refuted** | [`0xbb3c…f8da`](https://creditcoin-testnet.blockscout.com/tx/0xbb3cd9447f4de56f68942d2122b38d2c4e812705c0a44da39e870763548ef8da) · paid 1.00 · burned 1.00 |
 | 10 | omission | CompleteSet | Aave V3 · LiquidationCall | **Refuted** | [`0x1c8f…e85c`](https://creditcoin-testnet.blockscout.com/tx/0x1c8fffdcb6f2a72b316c588f791d37732bcd514c70c8cf55aefe6a6cb8b0e85c) · paid 1.00 · burned 1.00 |
 | 11 | omission | CompleteSet | Morpho Blue · Liquidate | **Refuted** | [`0x77ea…bd38`](https://creditcoin-testnet.blockscout.com/tx/0x77eae26ffd592d63314dc0c360fd1f6b7f31c382b721207dddabe754e6febd38) · paid 1.00 · burned 1.00 |
-| 6 | bounty | EmptySet | Aave V3 · LiquidationCall | Open | left open for anyone; the house hunter waits six days |
+| 6 | bounty | EmptySet | Aave V3 · LiquidationCall | Refuted | left open for anyone; the house hunter waits six days |
 | 7 | bounty | EmptySet | Aave V3 · LiquidationCall | Open | left open for anyone; the house hunter waits six days |
 | 8 | bounty | EmptySet | Morpho Blue · Liquidate | Open | left open for anyone; the house hunter waits six days |
 | 9 | bounty | EmptySet | Compound V3 · AbsorbDebt | Open | left open for anyone; the house hunter waits six days |
+| 23 | bounty | EmptySet | Aave V3 · LiquidationCall | Open | left open for anyone; the house hunter waits six days |
 | 12 | complete | CompleteSet | Aave V3 · LiquidationCall | Standing | — |
 | 13 | clean | EmptySet | Aave V3 · LiquidationCall | Standing | — |
 | 14 | clean | EmptySet | Aave V3 · LiquidationCall | Standing | — |
@@ -85,7 +86,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 
 | Claim | Evidence |
 |---|---|
-| The code does what this file says | **166** `forge test` cases, **27** of them fuzz properties at 256 runs each |
+| The code does what this file says | **176** `forge test` cases, **27** of them fuzz properties at 256 runs each |
 | The hosted prover is replaceable for Merkle paths | `worker/src/local-proof.ts` rebuilds a block from a public Ethereum node; root and every sibling with its direction bit are byte-identical to the prover's. The home page does the same in the browser and sends the prover nothing |
 | Empty blocks were the product limit, and are not now | `test_emptyBlockIsMirroredAndSealCrossesIt`, `test_zeroRootHeldDoesNotLookUnheld`, and a fuzz of the word-wise contiguity check against a per-height reference |
 | A listed member must be real, and the omitted one refutes | `testFuzz_completeSetRefutedByOmittedMember` over six real clustered Aave liquidations; fabricated, out-of-order, duplicated and out-of-span members are refused at assertion |
@@ -94,6 +95,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 | The depth check is cheap enough to sit inside `borrow` | `test_gas_ninetyDayDepthCheckUnder80k` fails the build above 80,000 gas cold; it measures **43,325**. On Creditcoin the whole question costs **407,960 gas** ([receipt](https://creditcoin-testnet.blockscout.com/tx/0x28aca01263d2221f4c135319179bfaa9d1c044f31012b22fd928132c7232b67f)) where the superseded desk spent **7,041,373** ([receipt](https://creditcoin-testnet.blockscout.com/tx/0x76434cd20d08f7b9dd8d99ba334a46b82342642a2352946d40f857ac5f6e8958)) — same address, same question, same block |
 | Money is capped twice, by rules that are not ours | a loan may not exceed ten times `enforceableLoss` (`test_bondedCleanAcceptsASufficientBond`, and live at `/api/gates` → `desk-sizing`, where 2.5 tCTC is paid and 2.5 tCTC + 1 wei is refused on a real Aave borrower); total lending may not exceed what the attestor quorum for the source chain has bonded, read live from `0x0FD4` (`desk-cap`) |
 | Silence is answered, and never lent against | `test_blankFileAnswersButNeverLends`; `BlankFile` returns `None` to a question and `NeedsBondedCover` to a request for money |
+| Cover on a claim settles the way the claim settles | `Cover.sol`: an underwriter locks a payout, a buyer pays a premium, and the registry's status is the only input — refuted pays the buyer, standing returns the payout to the underwriter, and nothing settles while the hunt is running. `test/Cover.t.sol` (10), the refuted path driven by the fixture's real liquidation. Run once on chain with real money: [bought](https://creditcoin-testnet.blockscout.com/tx/0x9934222bf41ce3a52d53f20d2291271eff53b92dc2c64f0dd69024667e1d6dc5) for 0.05 tCTC, the claim [refuted](https://creditcoin-testnet.blockscout.com/tx/0x17e4fb8154336dea24e1c3a74ab07cbaf35b4de05266c5623df1c029d493d741), [settled](https://creditcoin-testnet.blockscout.com/tx/0xadfb0b66e8201fe6e39f9e92865244ceb714572603e47372a043fa836388fde6), 1.0 tCTC [withdrawn](https://creditcoin-testnet.blockscout.com/tx/0xdb865a12e35c2ce5303f5935f8e053390fe2af2171214626e21f991f178e737e) — `docs/transcripts/cover-v0.json` |
 | An Ethereum address can be underwritten through a Creditcoin key it has signed for | `SubjectBinding`: an Ethereum transaction whose calldata names a Creditcoin address, proven against a held root through the frozen `IMirror`. `test/SubjectBinding.t.sol` (16): anyone may submit anyone's proof and cannot steal it, a reverted or forged or unheld transaction binds nothing, an old proof cannot drag a subject back, one key speaks for one subject, and one *record* gets one loan however many keys it rotates through. Live: `desk-binding` at `/api/gates` shows the desk's own demo wallet — a fresh key with a standing, trivially true claim about itself — refused `UnprovenSubject` under terms that require a proven owner, and paid under the same terms without that rule |
 | The desk cannot be handed a true statement about the wrong thing | `test_claimReadThroughAnotherTopicIsNotCleanliness`, `test_claimOnAnotherChainIsIgnored`, `test_listedLiquidationIsEventOnRecordNotCleanliness`, `test_subjectlessRefutationBrandsNobody` |
 | Nobody can switch the desk off with volume | `test_junkClaimsCannotSwitchOffTheDesk` files 576 claims; `test_buryingABondedClaimFailsClosed` buries one under 64 |
@@ -135,7 +137,7 @@ the `BondedClean` mechanism, not a vetted stranger.
   (190 logs against 0).
 - **The prover's archiver would not serve 25,186,001 – 25,187,000.** Every window touching it failed with
   `failed to get roots from archiver`, across strides of 900 and 500. The mainnet archive therefore has one hole,
-  below the unbroken run: 2 runs, 10,000 heights unheld inside the range. Nothing above it is affected.
+  below the unbroken run: 2 runs, 8,000 heights unheld inside the range. Nothing above it is affected.
 - **Unpaced campaign workers congest a shared testnet.** Four workers sending 21M-gas calls pushed CC3's base fee
   from 0.5 to 6.7 gwei. Every worker now pauses above 1.5 gwei.
 - **Counting concurrent writes by before/after totals is wrong.** It credited one call with every other worker's
@@ -168,6 +170,13 @@ the `BondedClean` mechanism, not a vetted stranger.
   precompile deleted. Vercel Cron runs it daily, and any visitor at most
   every five minutes. A broken gate answers `503`. Expectations come from the repository through
   `worker/src/gates-manifest.ts`, never from the function. `forge test` still runs only where there is a compiler.
+- **There is no cover on a standing claim, and there cannot be.** The plan called for a payout when a standing
+  claim is later refuted; the registry does not take a refutation against a standing claim, because "standing"
+  would mean nothing if it did. So cover is written while a claim is open and settles when the claim does. The
+  registry's rule won, as §13 says it must.
+- **The cover cycle above was run by the house against itself.** Buyer, underwriter and hunter are all this
+  project's wallets, and the hunter was told to take the claim early so the transcript could be made. What it shows
+  is that the contract settles the way the claim settles; it does not show that anyone wants to buy cover.
 - **Nobody has bound an Ethereum address yet.** The binding contract is deployed, its bytecode is checked on every
   gate run, and `worker/src/bind.ts` builds the proof from a public node and was run against a real mainnet
   transaction — the deployed mirror accepted the locally built leaf and path, the receipt passed, and the contract

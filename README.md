@@ -24,8 +24,8 @@ Every dApp pays that, every time.
 
 | | Ethereum mainnet (`chainKey 3`) | Sepolia (`chainKey 1`) |
 |---|---|---|
-| Heights held on Creditcoin | **788,501** | **303,301** |
-| Unbroken run ending at the top | **787,600** blocks ≈ **109.4 days** (25,182,001 – 25,969,600) | **303,301** blocks ≈ **42.1 days** |
+| Heights held on Creditcoin | **790,901** | **303,301** |
+| Unbroken run ending at the top | **790,000** blocks ≈ **109.7 days** (25,180,001 – 25,970,000) | **303,301** blocks ≈ **42.1 days** |
 | Empty Ethereum blocks inside, held like any other | 243 | 32 |
 | `mirror()` calls that added heights | 899 | 332 |
 | Gas per newly held height (median) | **23,596** | 23,594 |
@@ -54,7 +54,7 @@ Measured and recorded by `measure.ts`: transaction index **131** of block
 |---|---|---|
 | 30 s | open [https://hindsight.run](https://hindsight.run) | four rows settle — verified, verified with `0x0FD2` deleted, control refused, forged path refused — and the stamp |
 | 1 min | `npx github:iamdflame/HINDSIGHT verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9` | `verified` · `tx index  : 131` · `source : rebuilt locally (no prover)` · `precompile: not called` |
-| 2 min | `cd contracts && forge test` | **166** tests, **27** of them fuzz properties, including the precompile etched to empty |
+| 2 min | `cd contracts && forge test` | **176** tests, **27** of them fuzz properties, including the precompile etched to empty |
 | 5 min | `cd worker && node src/differential.ts --limit 12` | the mirror and the live precompile accept and reject exactly the same inputs |
 
 The full differential: **2,684 checks over 122 real mainnet transactions, 0 divergences** ([transcript](./docs/transcripts/differential-2026-09-13T03-50-16.md)).
@@ -73,10 +73,10 @@ Refutation is commit–reveal, bound to the refuter's address. **Half the bond g
 is burned**, so a liar who refutes themselves from a second wallet still loses half. Consumers size against
 `enforceableLoss` — that burned half — through `isUsable(claimId, exposure)`.
 
-The board on mainnet covers **25,309,541 – 25,964,900**, five sealed spans, ninety-one days.
-It holds 20 claims about real Aave V3, Morpho Blue and Compound V3 borrowers; the ones that are
+The board on mainnet covers **25,314,641 – 25,970,000**, five sealed spans, ninety-one days.
+It holds 21 claims about real Aave V3, Morpho Blue and Compound V3 borrowers; the ones that are
 false are recorded in [`board-v3-mainnet.json`](./contracts/test/fixtures/board-v3-mainnet.json) with the transaction that makes each false.
-10 refutations so far, **10.00 tCTC burned**. A standing claim means nobody refuted it in its window while
+11 refutations so far, **11.50 tCTC burned**. A standing claim means nobody refuted it in its window while
 that much was at risk — never that it is true.
 
 ## The desk — a refusal, not a score
