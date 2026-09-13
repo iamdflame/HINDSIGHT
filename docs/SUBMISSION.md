@@ -26,9 +26,9 @@ Creditcoin has recorded $100M+ of real-world loans (Aella, Credal) and cannot ye
 
 **Links**
 
-- Live: https://hindsight-cache.vercel.app — the proof runs as the page loads
-- The ninety-second court: https://hindsight-cache.vercel.app/judge/
-- Assess an address, no wallet: https://hindsight-cache.vercel.app/assess/
+- Live: https://hindsight.run — the proof runs as the page loads
+- The ninety-second court: https://hindsight.run/judge/
+- Assess an address, no wallet: https://hindsight.run/assess/
 - Repository: https://github.com/iamdflame/HINDSIGHT · grading: `CLAIMS.md`
 - A consumer in another repository: https://github.com/iamdflame/hindsight-gate (same owner, interfaces only)
 

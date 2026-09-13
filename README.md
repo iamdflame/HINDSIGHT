@@ -7,7 +7,7 @@ Every Attestcoin query already proves a run of Ethereum block roots — the cont
 throws them away. Hindsight keeps them. After that, proving any other transaction in those blocks is a
 `view` call on Creditcoin: no prover, no `0x0FD2`, no wallet.
 
-**Live: [https://hindsight-cache.vercel.app](https://hindsight-cache.vercel.app)** · the grading of every claim below: [CLAIMS.md](./CLAIMS.md)
+**Live: [https://hindsight.run](https://hindsight.run)** · the grading of every claim below: [CLAIMS.md](./CLAIMS.md)
 
 ---
 
@@ -52,7 +52,7 @@ Measured and recorded by `measure.ts`: transaction index **131** of block
 
 | Time | Do this | You should see |
 |---|---|---|
-| 30 s | open [https://hindsight-cache.vercel.app](https://hindsight-cache.vercel.app) | four rows settle — verified, verified with `0x0FD2` deleted, control refused, forged path refused — and the stamp |
+| 30 s | open [https://hindsight.run](https://hindsight.run) | four rows settle — verified, verified with `0x0FD2` deleted, control refused, forged path refused — and the stamp |
 | 1 min | `npx github:iamdflame/HINDSIGHT verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9` | `verified` · `tx index  : 131` · `source : rebuilt locally (no prover)` · `precompile: not called` |
 | 2 min | `cd contracts && forge test` | **147** tests, **27** of them fuzz properties, including the precompile etched to empty |
 | 5 min | `cd worker && node src/differential.ts --limit 12` | the mirror and the live precompile accept and reject exactly the same inputs |
@@ -87,7 +87,7 @@ back **648,000 blocks — ninety days — and refuse outright unless every one o
 the live desk that check passes today: BlankFile policy 0 answers `None` for an address nothing is on file about.
 
 Nothing is minted, nothing is transferable, and there is no number. Assess any address, no wallet:
-[https://hindsight-cache.vercel.app/assess/](https://hindsight-cache.vercel.app/assess/).
+[https://hindsight.run/assess/](https://hindsight.run/assess/).
 
 ## Enshrine it
 
@@ -99,7 +99,7 @@ it than be the reason it is not needed.
 
 [CLAIMS.md](./CLAIMS.md) grades every statement in this repository by the evidence behind it, including the
 ones that limit the product. It is generated from the same measured record as this file. The promises it makes
-about live state are re-checked on a schedule, in public: **[https://hindsight-cache.vercel.app/status/](https://hindsight-cache.vercel.app/status/)** — twelve gates
+about live state are re-checked on a schedule, in public: **[https://hindsight.run/status/](https://hindsight.run/status/)** — twelve gates
 against Creditcoin, the result at most five minutes old.
 
 ---

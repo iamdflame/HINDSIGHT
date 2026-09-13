@@ -152,8 +152,8 @@ the `BondedClean` mechanism, not a vetted stranger.
   lengthening — it never shrinks — when it lapses.
 - **The ninety-day check is not free inside a transaction:** 7.03M gas cold in `borrow`. `assess` is a `view`.
 - **GitHub will not run this project's CI** (every job is refused: "account is locked due to a billing issue").
-  The promises that do not need a compiler are re-checked instead by [`/api/gates`](https://hindsight-cache.vercel.app/api/gates), in public, at
-  [https://hindsight-cache.vercel.app/status/](https://hindsight-cache.vercel.app/status/): the runtime bytecode of every contract against what this repository compiles
+  The promises that do not need a compiler are re-checked instead by [`/api/gates`](https://hindsight.run/api/gates), in public, at
+  [https://hindsight.run/status/](https://hindsight.run/status/): the runtime bytecode of every contract against what this repository compiles
   to, ninety days of mainnet and thirty of Sepolia held with no gap, the empty block in its sealed span, the second
   transaction with `0x0FD2` deleted and both controls, the stranger consumer, a differential sample against the live
   precompile, the desk's depth and its refusal, the board, and `PaidOnEthereum` re-verifying its payment with the

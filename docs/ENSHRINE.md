@@ -89,7 +89,7 @@ curl -s $CC_RPC -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[
 
 It returns the transaction index. Blanking the *mirror* instead makes the same call return empty,
 which is how we know the override is applied rather than ignored. Both run on the home page of
-[https://hindsight-cache.vercel.app](https://hindsight-cache.vercel.app) as it loads, against a block no transaction of which was submitted to notarise it.
+[https://hindsight.run](https://hindsight.run) as it loads, against a block no transaction of which was submitted to notarise it.
 
 ## 5. What we think the protocol should do
 

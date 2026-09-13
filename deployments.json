@@ -3,7 +3,7 @@
   "chainId": 102031,
   "rpc": "https://rpc.cc3-testnet.creditcoin.network",
   "explorer": "https://creditcoin-testnet.blockscout.com",
-  "site": "https://hindsight-cache.vercel.app",
+  "site": "https://hindsight.run",
   "repository": "https://github.com/iamdflame/HINDSIGHT",
   "sourceChains": [
     {
