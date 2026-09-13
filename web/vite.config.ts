@@ -6,6 +6,8 @@ const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
+  // The Merkle rebuild runs in a module worker (lib/proof.worker.ts), which needs ES output to share chunks.
+  worker: { format: 'es' },
   resolve: {
     alias: [
       // See src/shared/usc-sdk-interop.ts — same SDK object in dev and build; lib/ is not modified.

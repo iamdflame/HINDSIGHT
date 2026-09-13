@@ -4,15 +4,11 @@ import { Steps } from '../shared/Steps';
 import { EthTx } from '../shared/EthTx';
 import { EthBlock } from '../shared/EthBlock';
 import { prefersReducedMotion } from '../shared/motion';
-import { proofFromEthereum, type ProofBundle } from '../lib/proof';
-import {
-  verifyPlain,
-  verifyWithoutPrecompile,
-  verifyWithMirrorBlanked,
-  tamperSibling,
-  type OverrideResult,
-} from '../lib/independence';
-import { BLOCK_PROVER, MIRROR_ADDRESS } from '../lib/chain';
+import type { ProofBundle } from '../lib/proof';
+import type { OverrideResult } from '../lib/independence';
+
+// Written out rather than imported, so the first paint does not wait for a chain client to load.
+const BLOCK_PROVER = '0x0000000000000000000000000000000000000FD2';
 
 /** `0x…0FD2` for the precompile, `0x2d8A…c118` for anything else: the part that identifies it. */
 const short = (a: string) => (/^0x0{30,}/i.test(a) ? `0x…${a.slice(-4)}` : `${a.slice(0, 6)}…${a.slice(-4)}`);
@@ -97,6 +93,8 @@ export function useIndependence(autoRun = true): IndependenceState {
 
       setPhase('rebuilding');
       setNote('rebuilding the path in this browser…');
+      const [{ proofFromEthereum }, { verifyPlain, verifyWithoutPrecompile, verifyWithMirrorBlanked, tamperSibling }, { MIRROR_ADDRESS }] =
+        await Promise.all([import('../lib/proof-client'), import('../lib/independence'), import('../lib/chain')]);
       const bundle = await proofFromEthereum(t.txHash, (m) => setNote(m));
       setProof(bundle);
 
@@ -134,8 +132,18 @@ export function useIndependence(autoRun = true): IndependenceState {
     }
   }, [pick]);
 
+  // Start once the page has painted and gone idle: the experiment is the point of the page, but the
+  // sentence above it should not wait for it.
   useEffect(() => {
-    if (autoRun) void run();
+    if (!autoRun) return;
+    const w = window as any;
+    const start = () => void run();
+    if (typeof w.requestIdleCallback === 'function') {
+      const id = w.requestIdleCallback(start, { timeout: 2500 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(start, 600);
+    return () => window.clearTimeout(id);
   }, [autoRun, run]);
 
   return { phase, note, proof, rows, error, target, proven: phase === 'done', run };

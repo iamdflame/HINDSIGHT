@@ -78,7 +78,7 @@ export function Order() {
         setHeld(isHeld ? 'held' : 'not-held');
         if (!isHeld) return;
 
-        const [{ proofFromEthereum }, { verifyWithoutPrecompile }] = await Promise.all([import('../lib/proof'), import('../lib/independence')]);
+        const [{ proofFromEthereum }, { verifyWithoutPrecompile }] = await Promise.all([import('../lib/proof-client'), import('../lib/independence')]);
         for (let i = 0; i < SANDWICH.legs.length; i++) {
           const set = (patch: Partial<Leg>) => setLegs((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l)));
           try {

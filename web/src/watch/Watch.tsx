@@ -193,7 +193,7 @@ export function Watch() {
       const [{ hexlify, randomBytes }, { registryContract }, { proofFromEthereum }] = await Promise.all([
         import('ethers'),
         import('../lib/chain'),
-        import('../lib/proof'),
+        import('../lib/proof-client'),
       ]);
       const proof = await proofFromEthereum(found.txHash, undefined, c.chainKey);
       const signer = await provider.current.getSigner();

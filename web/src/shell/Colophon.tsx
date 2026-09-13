@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import deployments from '../../../deployments.json';
+import { contracts } from '../../../deployments.json';
+
+// Only the addresses: the measured record is large, and the colophon is on every page.
+const deployments = { contracts };
 import { Seal } from '../brand/Seal';
 import { Wordmark } from '../brand/Wordmark';
 import { LampToggle } from './LampToggle';

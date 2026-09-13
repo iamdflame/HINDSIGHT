@@ -13,6 +13,9 @@
  */
 import sdk from '@gluwa/usc-sdk';
 import { ethereum, rotateEthereum, sepolia, PROVER, CHAIN_KEY_ETH_MAINNET, CHAIN_KEY_SEPOLIA } from './chain';
+import { proofFromEthereum } from './proof-client';
+
+export { proofFromEthereum };
 
 const anySdk = sdk as any;
 const { SimpleBlockProvider } = anySdk.proofProvider.raw.blockProvider;
@@ -72,7 +75,7 @@ export async function proofFromProver(txHash: string, onProgress?: Progress): Pr
  *
  * Slower by design — it is doing the prover's work in the browser. That it agrees is the point.
  */
-export async function proofFromEthereum(
+export async function rebuildInThisThread(
   txHash: string,
   onProgress?: Progress,
   chainKey: number = CHAIN_KEY_ETH_MAINNET,

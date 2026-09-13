@@ -117,6 +117,27 @@ function main() {
       console.log(`wrote ${out}`);
     }
   }
+  // The handful of measured facts the site prints without a chain client, extracted so the page shell
+  // does not ship the whole record. Same --check discipline as the documents.
+  {
+    const facts = {
+      continuityByAge: (record.measured?.continuityByAge?.rows ?? []).map((r: any) => ({ label: r.label, age: r.age, block: r.block, roots: r.roots })),
+      widestCallRoots: record.measured?.chains?.['3']?.widestCall?.roots ?? null,
+    };
+    const body = JSON.stringify(facts, null, 1) + '\n';
+    const url = new URL('web/src/lib/record.generated.json', ROOT);
+    const current = existsSync(url) ? readFileSync(url, 'utf8') : '';
+    if (check) {
+      if (current !== body) {
+        stale++;
+        console.log('STALE web/src/lib/record.generated.json');
+      } else console.log('ok    web/src/lib/record.generated.json matches deployments.json');
+    } else {
+      writeFileSync(url, body);
+      console.log('wrote web/src/lib/record.generated.json');
+    }
+  }
+
   if (stale) {
     console.log('\nA number was edited by hand, or the record changed without regenerating. Run: node worker/src/claims-doc.ts');
     process.exit(1);

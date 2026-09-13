@@ -1,0 +1,41 @@
+{
+ "continuityByAge": [
+  {
+   "label": "fresh (head − 50)",
+   "age": 50,
+   "block": 25967110,
+   "roots": 1
+  },
+  {
+   "label": "24 hours",
+   "age": 7200,
+   "block": 25959960,
+   "roots": 41
+  },
+  {
+   "label": "7 days",
+   "age": 50400,
+   "block": 25916760,
+   "roots": 41
+  },
+  {
+   "label": "30 days",
+   "age": 216000,
+   "block": 25751160,
+   "roots": 41
+  },
+  {
+   "label": "90 days",
+   "age": 648000,
+   "block": 25319160,
+   "roots": 41
+  },
+  {
+   "label": "180 days",
+   "age": 1296000,
+   "block": 24671160,
+   "roots": 841
+  }
+ ],
+ "widestCallRoots": 901
+}
