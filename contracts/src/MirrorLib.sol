@@ -87,10 +87,15 @@ library MirrorLib {
         return keccak256(abi.encodePacked(blockNumber, merkleRoot));
     }
 
-    /// @notice Independently re-walk a continuity proof's digest chain.
-    /// @dev The precompile already does this. We reproduce it so the mirror can assert, in its
-    ///      own code, that the root array it is about to persist is the array the chain
-    ///      certified -- rather than trusting argument ordering. Returns the terminal digest.
+    /// @notice Reference implementation of the continuity digest walk. Returns the terminal digest.
+    /// @dev This is what the precompile computes. `EthereumMirror.mirror()` does NOT call it, and
+    ///      cannot usefully: the terminal digest is only meaningful against the attested digest,
+    ///      which lives in the attestation layer and is not exposed to contracts. The mirror
+    ///      therefore delegates chain validation to the precompile and checks only that
+    ///      `continuityRoots[0]` is the root of the queried block. This function exists so the
+    ///      scheme is documented in code and so tests can show that altering any root diverges
+    ///      the digest -- which is *why* the precompile's acceptance binds the whole array.
+    ///      See `test/TrustBoundary.t.sol`.
     function walkDigests(uint64 firstBlock, bytes32[] memory roots, bytes32 lowerEndpointDigest)
         internal
         pure

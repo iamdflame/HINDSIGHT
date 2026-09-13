@@ -22,28 +22,23 @@ contract AlwaysAccepts {
 }
 
 /// @title Where the trust actually sits
-/// @notice These tests exist because a comment in `MirrorLib` claims something the code does not do.
+/// @notice These tests pin exactly how much of the mirror's correctness rests on the precompile.
 ///
-/// @dev `MirrorLib.walkDigests` carries this NatSpec:
-///
-///          "The precompile already does this. We reproduce it so the mirror can assert, in its
-///           own code, that the root array it is about to persist is the array the chain
-///           certified -- rather than trusting argument ordering."
-///
-///      `EthereumMirror.mirror()` never calls `walkDigests`. The only continuity check it makes in
-///      its own code is `continuityRoots[0] == merkleRoot`. Everything else about the array is
-///      taken on the precompile's authority.
+/// @dev `EthereumMirror.mirror()` never re-walks the continuity digest chain. The only check it
+///      makes in its own code is `continuityRoots[0] == merkleRoot`; everything else about the
+///      array is taken on the precompile's authority.
 ///
 ///      That delegation is sound -- altering any root diverges the terminal digest, so the
-///      precompile's acceptance really does bind the whole array, exactly as `EthereumMirror`'s own
-///      header says. It is also unavoidable: `walkDigests` returns a terminal digest, and only the
-///      attestation layer holds the value to compare it against. The mirror could not perform the
-///      described check even if it wanted to.
+///      precompile's acceptance really does bind the whole array. It is also unavoidable:
+///      `MirrorLib.walkDigests` returns a terminal digest, and only the attestation layer holds the
+///      value to compare it against. The mirror could not perform an independent check even if it
+///      wanted to.
 ///
-///      So the defect is the sentence, not the design. Since the deployed contract is fully
-///      verified on Blockscout and is deliberately never redeployed, the source is left untouched
-///      and the real boundary is pinned here instead, in code that runs. `CLAIMS.md` carries the
-///      same correction in prose.
+///      History: the v1 deployment's `walkDigests` NatSpec claimed the mirror *did* assert this
+///      "in its own code". It did not. v1 was fully verified on Blockscout and never redeployed, so
+///      the source was left byte-for-byte and the correction lived here and in `CLAIMS.md`. The v2
+///      redeploy corrected the comment itself; these tests remain as the executable statement of
+///      the boundary, which has not moved.
 contract TrustBoundaryTest is Test {
     EthereumMirror internal mirror;
 
@@ -111,11 +106,9 @@ contract TrustBoundaryTest is Test {
     }
 
     /// `walkDigests` is correct, and would in principle separate the honest array from the
-    /// corrupted one. It is simply never reached from `mirror()`.
-    ///
-    /// It also cannot be: the value it returns is only meaningful against the attested terminal
-    /// digest, which lives in the attestation layer and is not available to this contract. This is
-    /// the test that turns "unused helper" into "documented trust boundary".
+    /// corrupted one. It is simply never reached from `mirror()`, and cannot be usefully: the value
+    /// it returns is only meaningful against the attested terminal digest, which this contract
+    /// does not have. This is the test that turns "reference helper" into "documented trust boundary".
     function test_walkDigestsWouldSeparateThemButIsNeverReached() public view {
         bytes32[] memory corrupted = new bytes32[](continuityRoots.length);
         corrupted[0] = continuityRoots[0];
