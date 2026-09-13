@@ -21,6 +21,14 @@ export const CHAIN_KEY_ETH_MAINNET = 3;
  *  scanning millions of empty blocks makes the public RPC refuse the request outright. */
 export const DEPLOY_BLOCK: number = (deployments as any).deployBlock ?? 0;
 
+/**
+ * Heights inside the archive whose transaction root is genuinely zero: empty Ethereum blocks. The
+ * contract cannot tell a stored zero from an absent one, so these read as not-mirrored forever.
+ * Measured by `worker/src/measure.ts` against the chain and checked by CI; never typed by hand.
+ */
+export const EMPTY_BLOCK_HEIGHTS: number[] = (deployments as any).measured?.emptyBlockHeights ?? [];
+export const EMPTY_BLOCK_COUNT: number = (deployments as any).measured?.emptyBlocksInRange ?? EMPTY_BLOCK_HEIGHTS.length;
+
 export const MIRROR_ADDRESS: string = deployments.contracts.EthereumMirror;
 // V2 binds a *list* of adjacent spans, so a claim can cover more than one 5,000-block seal.
 // The mirror is unchanged and still holds the whole archive; only the registry was redeployed.

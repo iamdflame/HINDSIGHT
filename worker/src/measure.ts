@@ -55,6 +55,7 @@ async function main() {
   // Walk the archive to separate real coverage from the empty-block sentinel collision, and to
   // find the longest range an absence claim could actually bind.
   const runs: { start: number; len: number }[] = [];
+  const emptyHeights: number[] = [];
   let cur = low;
   let acc = 0;
   let start = low;
@@ -64,6 +65,7 @@ async function main() {
     if (run === 0) {
       if (acc) runs.push({ start, len: acc });
       acc = 0;
+      emptyHeights.push(cur);
       cur++;
       start = cur;
       continue;
@@ -73,6 +75,7 @@ async function main() {
     if (run < maxWindow && cur <= high) {
       runs.push({ start, len: acc });
       acc = 0;
+      emptyHeights.push(cur);
       cur++;
       start = cur;
     }
@@ -103,6 +106,9 @@ async function main() {
     heightsRetained: retained,
     heightsAnswerable: answerable,
     emptyBlocksInRange: emptyBlocks,
+    // The heights themselves, so the interface can draw them as what they are rather than
+    // rendering the archive as one unbroken run it is not.
+    emptyBlockHeights: emptyHeights,
     archiveFrom: low,
     archiveTo: high,
     contiguousRuns: runs.length,
@@ -126,10 +132,15 @@ async function main() {
   for (const [k, v] of report) console.log(`  ${k.padEnd(42)} ${v}`);
 
   if (check) {
-    const stale = Object.entries(measured).filter(([k, v]) => d.measured?.[k] !== undefined && d.measured[k] !== v);
+    // Arrays are compared by content; a reference comparison would flag them stale every run.
+    const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+    const stale = Object.entries(measured).filter(([k, v]) => d.measured?.[k] !== undefined && !same(d.measured[k], v));
     if (stale.length) {
       console.log('\nSTALE — deployments.json disagrees with the chain:');
-      for (const [k, v] of stale) console.log(`  ${k}: recorded ${d.measured[k]}, chain says ${v}`);
+      for (const [k, v] of stale) {
+        const show = (x: unknown) => (Array.isArray(x) ? `[${x.length} items]` : String(x));
+        console.log(`  ${k}: recorded ${show(d.measured[k])}, chain says ${show(v)}`);
+      }
       process.exit(1);
     }
     console.log('\nrecorded numbers agree with the chain.');

@@ -481,6 +481,10 @@ dl.facts dd .t-hash[title] { white-space: nowrap; word-break: normal; }
 .tick { flex: none; width: 2px; height: 16px; background: var(--rule); }
 .tick.is-inked { background: var(--ink); }
 .tick--gap { background: transparent; box-shadow: inset 1px 0 0 var(--wax); }
+/* An empty Ethereum block: a real height with nothing in it. Neither ink (nothing was retained
+   that can be asked about) nor wax (nothing can hide there). A hollow ink hairline says "there is
+   a block here" without claiming either of the other two things. */
+.tick--empty { background: transparent; box-shadow: inset 1px 0 0 var(--ink-faint); height: 8px; align-self: center; }
 @media (max-width: 639px) {
   .cov-row { grid-template-columns: minmax(0, 1fr); gap: 0.45rem; }
 }

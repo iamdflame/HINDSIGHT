@@ -35,12 +35,33 @@ export function Record({ onTab }: { onTab: (t: TabId) => void }) {
         if (last && iv.from <= last.to + 1) last.to = Math.max(last.to, iv.to);
         else merged.push({ ...iv });
       }
-      const runs: CoverageRun[] = merged.map((r, i) => ({
-        from: r.from,
-        to: r.to,
-        ticks: r.to - r.from + 1,
-        gapAfter: i < merged.length - 1 ? merged[i + 1].from - r.to - 1 : 0,
-      }));
+      // Events say what was retained. They cannot see that a retained root of zero -- an empty
+      // Ethereum block -- reads as absent to `isMirrored` and cannot be sealed across. Those
+      // heights are measured off-chain by `worker/src/measure.ts`, checked by CI, and split in here
+      // so the strip shows the archive as it can actually be used rather than as one unbroken run.
+      const { EMPTY_BLOCK_HEIGHTS } = await import('../lib/chain');
+      const empties = [...EMPTY_BLOCK_HEIGHTS].sort((a, b) => a - b);
+      const pieces: { from: number; to: number; breakKind?: 'gap' | 'empty' }[] = [];
+      for (const r of merged) {
+        let from = r.from;
+        for (const e of empties) {
+          if (e < from || e > r.to) continue;
+          if (e > from) pieces.push({ from, to: e - 1, breakKind: 'empty' });
+          from = e + 1;
+        }
+        if (from <= r.to) pieces.push({ from, to: r.to });
+      }
+      const runs: CoverageRun[] = pieces.map((r, i) => {
+        const next = pieces[i + 1];
+        const gapAfter = next ? next.from - r.to - 1 : 0;
+        return {
+          from: r.from,
+          to: r.to,
+          ticks: r.to - r.from + 1,
+          gapAfter,
+          breakKind: gapAfter > 0 ? (r.breakKind ?? 'gap') : undefined,
+        };
+      });
 
       const spanCount = Number(await m.spanCount());
       const spans: SealedSpan[] = [];
@@ -87,6 +108,7 @@ export function Record({ onTab }: { onTab: (t: TabId) => void }) {
           <p className="legend">
             <span><i className="tick is-inked" aria-hidden="true" /> notarised</span>
             <span><i className="tick tick--gap" aria-hidden="true" /> gap (a contradiction could hide here)</span>
+            <span><i className="tick tick--empty" aria-hidden="true" /> empty block (nothing to hide; nothing to seal across)</span>
           </p>
 
           <h2 className="t-ui section-head">Sealed spans</h2>

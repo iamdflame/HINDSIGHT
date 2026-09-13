@@ -24,14 +24,19 @@ export function useArchiveStats(refreshKey?: unknown): ArchiveStats {
     inFlight.current = true;
     last.current = now;
     try {
-      const { mirrorContract, registryContract, CHAIN_KEY_ETH_MAINNET } = await import('../lib/chain');
+      const { mirrorContract, registryContract, CHAIN_KEY_ETH_MAINNET, EMPTY_BLOCK_COUNT } = await import('../lib/chain');
       const [blocks, spans, claims] = await Promise.all([
         mirrorContract().mirroredBlocks(CHAIN_KEY_ETH_MAINNET),
         mirrorContract().spanCount(),
         registryContract().claimCount(),
       ]);
       everOk.current = true;
-      setStats({ status: 'ok', blocks: Number(blocks), spans: Number(spans), claims: Number(claims) });
+      // `mirroredBlocks` counts every retained root, including the empty Ethereum blocks whose
+      // root is genuinely zero and which the contract therefore cannot answer questions about.
+      // The dateline shows the answerable count, so the site says the same number as CLAIMS.md.
+      // The subtraction is the CI-checked figure from deployments.json, not a guess.
+      const answerable = Math.max(0, Number(blocks) - EMPTY_BLOCK_COUNT);
+      setStats({ status: 'ok', blocks: answerable, spans: Number(spans), claims: Number(claims) });
     } catch {
       // A failed refresh keeps the last honest reading; only a register never reached is offline.
       if (!everOk.current) setStats({ status: 'offline' });

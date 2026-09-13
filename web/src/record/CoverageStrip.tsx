@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { prefersReducedMotion } from '../shared/motion';
 
-export type CoverageRun = { from: number; to: number; ticks: number; gapAfter: number };
+/**
+ * What follows a run. A `gap` is a height the archive does not hold -- exactly where a contradicting
+ * transaction could sit unseen. An `empty` break is different in kind: an Ethereum block with no
+ * transactions, whose root genuinely is zero and therefore reads as absent to the contract. Nothing
+ * can hide in it, but nothing can be sealed across it either, and drawing it as a gap would be a lie
+ * in the other direction.
+ */
+export type BreakKind = 'gap' | 'empty';
+export type CoverageRun = { from: number; to: number; ticks: number; gapAfter: number; breakKind?: BreakKind };
 
 const PITCH = 3; // a 2px tick and a 1px gap (§11.1)
 
@@ -26,8 +34,12 @@ function Row({ run }: { run: CoverageRun }) {
     return () => ro.disconnect();
   }, []);
 
-  const inkShown = Math.min(run.ticks, capacity);
-  const gapShown = Math.max(0, Math.min(run.gapAfter, capacity - inkShown));
+  // The break after a run is the thing the strip exists to show, so it is never squeezed out by
+  // the ink before it. An empty block is exactly one tick; a real gap gets up to a tenth of the
+  // row so its size registers without the ink vanishing.
+  const breakWanted = run.gapAfter === 0 ? 0 : run.breakKind === 'empty' ? 1 : Math.min(run.gapAfter, Math.max(1, Math.floor(capacity / 10)));
+  const inkShown = Math.min(run.ticks, Math.max(1, capacity - breakWanted));
+  const gapShown = Math.max(0, Math.min(breakWanted, capacity - inkShown));
 
   useEffect(() => {
     const el = strip.current;
@@ -68,13 +80,24 @@ function Row({ run }: { run: CoverageRun }) {
         ref={strip}
         className="cov-strip"
         role="img"
-        aria-label={`blocks ${run.from} to ${run.to} notarised${run.gapAfter > 0 ? `, then ${run.gapAfter} blocks not notarised` : ''}`}
+        aria-label={
+          `blocks ${run.from} to ${run.to} notarised` +
+          (run.gapAfter > 0
+            ? run.breakKind === 'empty'
+              ? `, then block ${run.to + 1}, an empty Ethereum block`
+              : `, then ${run.gapAfter} blocks not notarised`
+            : '')
+        }
       >
         {Array.from({ length: inkShown }, (_, i) => (
           <i key={`r${i}`} className="tick tick--run" title={String(run.from + i)} />
         ))}
         {Array.from({ length: gapShown }, (_, i) => (
-          <i key={`g${i}`} className="tick tick--gap" title={String(run.to + 1 + i)} />
+          <i
+            key={`g${i}`}
+            className={run.breakKind === 'empty' ? 'tick tick--empty' : 'tick tick--gap'}
+            title={run.breakKind === 'empty' ? `${run.to + 1 + i} — empty block, no transactions` : String(run.to + 1 + i)}
+          />
         ))}
       </div>
     </div>
