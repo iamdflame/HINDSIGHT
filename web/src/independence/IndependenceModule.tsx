@@ -27,7 +27,7 @@ export type Row = {
   expect: 'pass' | 'fail';
 };
 
-export type Target = { block: number; txHash: string; index: number; txCount: number; notarisedIndex?: number };
+export type Target = { block: number; txHash: string; index: number; txCount: number };
 
 export type IndependenceState = {
   phase: Phase;
@@ -58,14 +58,23 @@ export function useIndependence(autoRun = true): IndependenceState {
 
   const pick = useCallback(async (): Promise<Target> => {
     setNote('finding a notarised block…');
-    const { creditcoin, mirrorContract, ethereum, CHAIN_KEY_ETH_MAINNET } = await import('../lib/chain');
-    const mirror = mirrorContract(creditcoin());
+    const { creditcoin, mirrorContract, ethereum, CHAIN_KEY_ETH_MAINNET, DEPLOY_BLOCK } = await import('../lib/chain');
+    const cc = creditcoin();
+    const mirror = mirrorContract(cc);
     const high = Number(await mirror.highestMirrored(CHAIN_KEY_ETH_MAINNET));
     const low = Number(await mirror.lowestMirrored(CHAIN_KEY_ETH_MAINNET));
     const eth = ethereum();
+    // Only the first block of each mirror() call had one of its own transactions submitted; every
+    // other height arrived as a continuity root. Read which heights those were, and never pick one,
+    // so "a different transaction from the one it was notarised with" is true by construction.
+    const head = await cc.getBlockNumber();
+    const submitted = new Set<number>();
+    const recent = await mirror.queryFilter(mirror.filters.BlocksMirrored(CHAIN_KEY_ETH_MAINNET), Math.max(DEPLOY_BLOCK, head - 20_000), head);
+    for (const ev of recent as any[]) submitted.add(Number(ev.args.fromBlock));
     // Walk back from the top of the archive for a block busy enough that a "second transaction"
     // is unambiguous, and take one from the middle so the Merkle path is full depth.
     for (let h = high - 3; h > low && h > high - 400; h -= 7) {
+      if (submitted.has(h)) continue;
       if (!(await mirror.isMirrored(CHAIN_KEY_ETH_MAINNET, h))) continue;
       const blk = await eth.getBlock(h);
       if (!blk || blk.transactions.length < 8) continue;
@@ -173,8 +182,9 @@ export function IndependenceModule({ state, compact = false }: { state: Independ
             <>
               <br />
               <span className="t-caption">
-                Not the transaction this block was notarised with. A different transaction, in the same block,
-                which is what shows a block was stored rather than a receipt cached.
+                No transaction from this block was ever submitted to notarise it — its root arrived as one of
+                the continuity roots of a neighbouring call. Verifying any transaction in it shows a block was
+                stored, not a receipt cached.
               </span>
             </>
           )}

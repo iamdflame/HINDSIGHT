@@ -12,6 +12,10 @@ import { Page } from '../shell/Page';
 
 const ORDER: Record<number, number> = { 1: 0, 3: 1, 2: 2, 0: 3 }; // open · standing · refuted · none
 
+/** The newest claims read on load. Anyone can file claims for a cent, so the page must not make
+ *  one RPC call per claim ever filed before it can show anything; older pages load on request. */
+const PAGE = 150;
+
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), ms))]);
 }
@@ -32,6 +36,8 @@ function initialSelection(): number | null {
  */
 export function Watch() {
   const [claims, setClaims] = useState<Claim[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(PAGE);
   const [venues, setVenues] = useState<any[]>([]);
   const [err, setErr] = useState('');
   const [hunts, setHunts] = useState<Record<number, Hunt>>({});
@@ -43,22 +49,28 @@ export function Watch() {
   const scanning = useRef(new Set<number>());
 
   useEffect(() => {
-    void load();
-  }, []);
+    void load(limit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit]);
 
-  async function load() {
+  async function load(want: number = limit) {
     setErr('');
     try {
       const { registryContract, VENUES } = await import('../lib/chain');
       setVenues(VENUES as any);
       const r = registryContract();
       const [n, shareBps] = await Promise.all([r.claimCount(), r.REFUTER_SHARE_BPS()]);
-      const ids = Array.from({ length: Number(n) }, (_, i) => i);
+      const count = Number(n);
+      setTotal(count);
+      // Newest first window; a deep link to an older claim widens it to include that claim.
+      const wanted = selected !== null && selected < count ? Math.max(want, count - selected) : want;
+      const lo = Math.max(0, count - wanted);
+      const ids = Array.from({ length: count - lo }, (_, i) => lo + i);
       const rows = await Promise.all(ids.map((i) => r.claimOf(i)));
-      const out: Claim[] = rows.map((c: any, i: number) => {
+      const out: Claim[] = rows.map((c: any, k: number) => {
         const staked = BigInt(c.bondStaked);
         return {
-          id: i,
+          id: ids[k],
           status: Number(c.status),
           kind: Number(c.kind) as 0 | 1,
           chainKey: Number(c.chainKey),
@@ -83,9 +95,9 @@ export function Watch() {
   }
 
   async function membersOf(claimId: number): Promise<Member[]> {
-    const { registryContract, DEPLOY_BLOCK } = await import('../lib/chain');
+    const { registryContract, REGISTRY_DEPLOY_BLOCK } = await import('../lib/chain');
     const r = registryContract();
-    const logs = await r.queryFilter(r.filters.MembersListed(claimId), DEPLOY_BLOCK, 'latest');
+    const logs = await r.queryFilter(r.filters.MembersListed(claimId), REGISTRY_DEPLOY_BLOCK, 'latest');
     if (logs.length !== 1) throw new Error(`the registry holds ${logs.length} member lists for claim ${claimId}`);
     const parsed = r.interface.parseLog(logs[0] as any)!;
     return (parsed.args.members as any[]).map((m) => ({ height: Number(m.height), txIndex: Number(m.txIndex), logIndex: Number(m.logIndex) }));
@@ -104,7 +116,7 @@ export function Watch() {
         for (let i = 1; i < c.subjectTopic; i++) topics.push(null);
         topics.push(c.subject);
       }
-      const { logs, corroboratedBy } = await scanLogs(c.chainKey, { address: c.venue, topics }, c.spanFrom, c.spanTo, note);
+      const { logs, corroboratedBy } = await scanLogs(c.chainKey, { address: c.venue, topics }, c.spanFrom, c.spanTo, note, 2, c.kind === 1);
 
       const members = c.kind === 1 ? await membersOf(c.id) : undefined;
       const listed = new Set((members ?? []).map((m) => `${m.height}:${m.txIndex}:${m.logIndex}`));
@@ -255,8 +267,16 @@ export function Watch() {
 
         {claims && claims.length > 0 && (
           <p className="t-ui board-summary">
-            {claims.length} claims · {counts.open} open · {counts.standing} standing · {counts.refuted} refuted ·{' '}
-            {counts.complete} completeness claims
+            {total > claims.length ? `newest ${claims.length} of ${total}` : claims.length} claims · {counts.open} open · {counts.standing} standing ·{' '}
+            {counts.refuted} refuted · {counts.complete} completeness claims
+            {total > claims.length && (
+              <>
+                {' '}·{' '}
+                <button type="button" className="linkish" onClick={() => setLimit((l) => l + PAGE)}>
+                  load {Math.min(PAGE, total - claims.length)} older
+                </button>
+              </>
+            )}
           </p>
         )}
 
@@ -264,7 +284,7 @@ export function Watch() {
           <div className="plain-state">
             <p className="t-body">{err}</p>
             <p className="t-caption">
-              <button type="button" className="linkish" onClick={() => void load()}>
+              <button type="button" className="linkish" onClick={() => void load(limit)}>
                 Try again
               </button>
             </p>

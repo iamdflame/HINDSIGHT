@@ -28,7 +28,8 @@ function inline(text: string, key = 'i'): ReactNode[] {
 const cells = (line: string) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
 
 export function ClaimsDocument({ source }: { source: string }) {
-  const lines = source.replace(/\r\n/g, '\n').split('\n');
+  // HTML comments (the generated-file notice) are for editors of the file, not readers of the page.
+  const lines = source.replace(/\r\n/g, '\n').replace(/<!--[\s\S]*?-->\n?/g, '').split('\n');
   const blocks: ReactNode[] = [];
   let i = 0, b = 0;
   while (i < lines.length) {

@@ -11,15 +11,16 @@
  */
 import { JsonRpcProvider } from 'ethers';
 
+/**
+ * Measured 2026-09-13: flashbots answered zero logs for ranges that hold them, publicnode's Sepolia node
+ * serves old blocks with no logs or receipts, so neither is here. Every endpoint is also canaried.
+ */
 export const LOG_RPCS: Record<number, string[]> = {
-  3: [
-    'https://gateway.tenderly.co/public/mainnet',
-    'https://rpc.mevblocker.io',
-    'https://rpc.flashbots.net',
-    'https://ethereum-rpc.publicnode.com',
-  ],
-  1: ['https://gateway.tenderly.co/public/sepolia', 'https://ethereum-sepolia-rpc.publicnode.com'],
+  3: ['https://gateway.tenderly.co/public/mainnet', 'https://rpc.mevblocker.io', 'https://ethereum-public.nodies.app'],
+  1: ['https://gateway.tenderly.co/public/sepolia', 'https://eth-sepolia.api.onfinality.io/public', 'https://ethereum-sepolia-public.nodies.app'],
 };
+
+const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 export type ScanResult = { logs: any[]; corroboratedBy: string[] };
 
@@ -30,6 +31,8 @@ export async function scanLogs(
   toBlock: number,
   onProgress?: (m: string) => void,
   corroboration = 2,
+  /** Every log is needed, not one: a completeness hunt. Needs `corroboration` full covers that agree. */
+  exhaustive = false,
 ): Promise<ScanResult> {
   const urls = LOG_RPCS[chainKey] ?? LOG_RPCS[3];
   const minChunk = 500;
@@ -62,16 +65,35 @@ export async function scanLogs(
   const seen = new Map<string, any>();
   const covered: string[] = [];
   const failures: string[] = [];
+  const counts: number[] = [];
   for (const url of urls) {
     try {
+      // Canary: a pruned node answers an old query with an empty list, not an error. It must show it
+      // serves logs at the bottom of the range before its silence can count.
+      const probe = new JsonRpcProvider(url, undefined, { staticNetwork: true, batchMaxCount: 1 });
+      const canary = await Promise.race([
+        probe.getLogs({ topics: [TRANSFER_TOPIC], fromBlock, toBlock: fromBlock + 4 }),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 15_000)),
+      ]);
+      if (canary.length === 0) throw new Error(`${new URL(url).host} serves no logs at ${fromBlock}; not counted`);
       onProgress?.(`scanning on ${new URL(url).host}…`);
       const logs = await cover(url);
       covered.push(new URL(url).host);
+      counts.push(new Set(logs.map((l) => `${l.transactionHash}:${l.index}`)).size);
       for (const l of logs) seen.set(`${l.transactionHash}:${l.index}`, l);
-      if (seen.size > 0 || covered.length >= corroboration) break;
+      if ((!exhaustive && seen.size > 0) || covered.length >= corroboration) break;
     } catch (e) {
       failures.push((e as Error).message);
     }
+  }
+  if (exhaustive && covered.length < corroboration) {
+    throw new Error(
+      `A completeness hunt needs ${corroboration} public endpoints to list every matching log in this range; ` +
+        `only ${covered.length} could. Anything less could miss the omitted one. (${failures.join('; ')})`,
+    );
+  }
+  if (exhaustive && counts.some((c) => c !== seen.size)) {
+    throw new Error(`Public endpoints disagree about this range (${counts.join(' vs ')} logs), so neither list is treated as complete.`);
   }
   if (seen.size === 0 && covered.length < corroboration) {
     throw new Error(

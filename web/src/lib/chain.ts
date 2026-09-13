@@ -32,6 +32,8 @@ export const CHAIN_INFO = '0x0000000000000000000000000000000000000FD3';
 /** Creditcoin block the archive was deployed at. Event queries start here rather than genesis:
  *  scanning millions of empty blocks makes the public RPC refuse the request outright. */
 export const DEPLOY_BLOCK: number = (deployments as any).deployBlock ?? 0;
+/** Creditcoin block the current registry was deployed at: where its event scans start. */
+export const REGISTRY_DEPLOY_BLOCK: number = (deployments as any).registryDeployBlock ?? DEPLOY_BLOCK;
 
 /**
  * Empty Ethereum blocks inside the archive, measured by `worker/src/measure.ts`. Mirror v2 holds
@@ -40,15 +42,11 @@ export const DEPLOY_BLOCK: number = (deployments as any).deployBlock ?? 0;
  */
 export const EMPTY_BLOCK_HEIGHTS: number[] = (deployments as any).measured?.emptyBlockHeights ?? [];
 export const MIRROR_VERSION: number = (deployments as any).mirrorVersion ?? 1;
+export { CONTINUITY_BY_AGE, continuityAt, WIDEST_CALL_ROOTS } from './record';
 export const V1_ADDRESSES: Record<string, string> = (deployments as any).contracts?.v1 ?? {};
 
 export const MIRROR_ADDRESS: string = deployments.contracts.EthereumMirror;
-// V2 binds a *list* of adjacent spans, so a claim can cover more than one 5,000-block seal.
-// The mirror is unchanged and still holds the whole archive; only the registry was redeployed.
-export const REGISTRY_ADDRESS: string =
-  (deployments as any).contracts.AbsenceRegistryV3 ??
-  (deployments as any).contracts.AbsenceRegistryV2 ??
-  deployments.contracts.AbsenceRegistry;
+export const REGISTRY_ADDRESS: string = (deployments as any).contracts.AbsenceRegistryV3;
 export const DESK_ADDRESS: string = (deployments as any).contracts.UnderwritingDesk ?? '';
 export const BOUNTY_ADDRESS: string = (deployments as any).contracts.MissingHeightBounty ?? '';
 export const BLOCK_PROVER = '0x0000000000000000000000000000000000000FD2';
@@ -76,6 +74,14 @@ export const VENUES = [
     address: '0xc3d688B66703497DAA19211EEdff47f25384cdc3',
     events: [
       { label: 'AbsorbDebt', topic0: '0x1547a878dc89ad3c367b6338b4be6a65a5dd74fb77ae044da1e8747ef1f4f62f', subjectTopic: 2, subjectName: 'borrower' },
+    ],
+  },
+  {
+    // Sepolia's own Aave V3 pool. A claim here is chainKey 1: a different file from any mainnet claim.
+    label: 'Aave V3 Pool (Sepolia)',
+    address: '0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951',
+    events: [
+      { label: 'LiquidationCall', topic0: '0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286', subjectTopic: 3, subjectName: 'borrower' },
     ],
   },
 ] as const;
@@ -120,19 +126,36 @@ export const REGISTRY_ABI = [
   'function revealRefutation(uint256, uint64, bytes, (bytes32 hash, bool isLeft)[], bytes32)',
   'function revealOmission(uint256, uint64, bytes, (bytes32 hash, bool isLeft)[], uint32, (uint64 height, uint64 txIndex, uint32 logIndex)[], bytes32)',
   'function finalize(uint256)',
+  'function keyOf(uint64 chainKey, address venue, bytes32 topic0, uint8 subjectTopic, bytes32 subject) pure returns (bytes32)',
+  'function recordOf(bytes32 key) view returns (uint32 open, uint32 refuted, uint64 lastEvidenceAt, uint64 lastMemberAt, uint32 total)',
+  'function claimUnderKey(bytes32 key, uint256 index) view returns (uint256)',
+  'function owed(address) view returns (uint256)',
+  'function withdraw()',
   'event MembersListed(uint256 indexed claimId, (uint64 height, uint64 txIndex, uint32 logIndex)[] members)',
   'event AbsenceRefuted(uint256 indexed claimId, address indexed refuter, uint64 blockNumber, uint64 txIndex, uint256 paidToRefuter, uint256 burned)',
 ];
 
 export const DESK_ABI = [
   'function policyCount() view returns (uint256)',
-  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
+  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
   'function assess(address subject, uint256 policyId, uint256 principal) view returns (bool ok, uint8 reason)',
   'function borrow(uint256 policyId, uint256 principal)',
+  'function lent(address, uint256) view returns (bool)',
   'function MAX_CLAIM_SCAN() view returns (uint256)',
 ];
 
-export const REFUSAL = ['None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness', 'DeskOutOfFunds'] as const;
+/** `UnderwritingDesk.Refusal`, in declaration order. Appended to, never reordered. */
+export const REFUSAL = [
+  'None',
+  'NoSuchPolicy',
+  'ArchiveTooShallow',
+  'ClaimUnderHunt',
+  'ProvenLiar',
+  'NoBondedCleanliness',
+  'DeskOutOfFunds',
+  'EventOnRecord',
+  'AlreadyLent',
+] as const;
 
 // The precompile's real selector is snake_case; the SDK's camelCase is a wrapper.
 const CHAIN_INFO_ABI = ['function get_latest_attestation_height_and_hash(uint64) view returns ((uint64 height, bytes32 hash, bool isAttestation, bool exists))'];

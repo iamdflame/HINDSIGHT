@@ -1,5 +1,6 @@
 import { Page } from '../shell/Page';
 import { IndependenceModule, useIndependence } from '../independence/IndependenceModule';
+import { continuityAt } from '../lib/record';
 
 /**
  * The eight-second landing. One sentence a non-engineer can read, the experiment already running
@@ -17,8 +18,8 @@ export function Home() {
             <em>The second ask is free.</em>
           </h1>
           <p className="lede">
-            Every Attestcoin query already hashes ~100–700 Ethereum block roots, then throws them away. Hindsight is
-            the first contract that keeps them. After that, proving a second transaction in the same block is a{' '}
+            Every Attestcoin query already proves a run of Ethereum block roots — {continuityAt(1_296_000)?.toLocaleString() ?? 'hundreds'} of
+            them for a block half a year old, measured — then throws them away. Hindsight is the first contract that keeps them. After that, proving a second transaction in the same block is a{' '}
             <code>view</code> call — no prover, no <code>0x0FD2</code>, no wallet.
           </p>
           <div className="ctas">
@@ -51,7 +52,7 @@ export function Home() {
         <div className="why-grid">
           <div>
             <h3 className="t-ui">Everyone else</h3>
-            <p>Calls <code>0x0FD2</code> per question, with a continuity proof whose length grows with the age of the fact — measured 711 roots at 180 days. Discards the proof. Pays again next time.</p>
+            <p>Calls <code>0x0FD2</code> per question, with a continuity proof whose length grows with the age of the fact — measured {continuityAt(1_296_000)?.toLocaleString() ?? 'hundreds of'} roots at 180 days. Discards the proof. Pays again next time.</p>
           </div>
           <div>
             <h3 className="t-ui">Hindsight</h3>

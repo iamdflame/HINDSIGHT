@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react';
 import { Page } from '../shell/Page';
 import { IndependenceModule, useIndependence } from '../independence/IndependenceModule';
 import { EXPLORER } from '../lib/chain';
+import { continuityAt, WIDEST_CALL_ROOTS } from '../lib/record';
 import { tctc } from '../watch/ClaimRow';
+
+/** Continuity length at an age, from the measured record; never a typed number. */
+const rootsAt = (age: number) => {
+  const n = continuityAt(age);
+  return n === undefined ? 'unmeasured' : `${n.toLocaleString()} ${n === 1 ? 'root' : 'roots'}`;
+};
 
 type Waste = { tx: string; roots: number; gas: number; from: number; to: number; added: number } | null;
 type BoardPick = { id: number; kind: number; bond: bigint; loss: bigint; from: number; to: number; chainKey: number; status: number } | null;
@@ -58,11 +65,13 @@ export function Court() {
       try {
         const r = chain.registryContract();
         const n = Number(await r.claimCount());
-        const all = await Promise.all(Array.from({ length: n }, (_, i) => r.claimOf(i)));
+        // The newest 150 only: the court must load in seconds however much has been filed.
+        const lo = Math.max(0, n - 150);
+        const all = await Promise.all(Array.from({ length: n - lo }, (_, i) => r.claimOf(lo + i)));
         const picks = all
-          .map((c: any, i: number) => {
+          .map((c: any, k: number) => {
             const staked = BigInt(c.bondStaked);
-            return { id: i, kind: Number(c.kind), bond: staked, loss: staked - staked / 2n, from: Number(c.spanFrom), to: Number(c.spanTo), chainKey: Number(c.chainKey), status: Number(c.status) };
+            return { id: lo + k, kind: Number(c.kind), bond: staked, loss: staked - staked / 2n, from: Number(c.spanFrom), to: Number(c.spanTo), chainKey: Number(c.chainKey), status: Number(c.status) };
           })
           .sort((a, b) => (b.bond > a.bond ? 1 : b.bond < a.bond ? -1 : 0));
         setLie(picks.find((p) => p.kind === 0 && p.status === 1) ?? picks.find((p) => p.kind === 0) ?? null);
@@ -99,8 +108,8 @@ export function Court() {
             </p>
           ) : (
             <p>
-              Every Attestcoin query carries a continuity proof — measured at 1 root for a fresh block, 11 at a day old, 711 at 180 days,
-              and 901 for a batch anchored at both ends of a window. The precompile binds every root in it. Everyone else keeps one.
+              Every Attestcoin query carries a continuity proof — measured at {rootsAt(50)} for a fresh block,{' '}
+              {rootsAt(7_200)} at a day old, {rootsAt(1_296_000)} at 180 days, and {WIDEST_CALL_ROOTS?.toLocaleString() ?? 'hundreds'} for a batch anchored at both ends of a window. The precompile binds every root in it. Everyone else keeps one.
             </p>
           )}
           {archive && (
@@ -173,7 +182,7 @@ export function Court() {
               </tr>
               <tr>
                 <td>asking about a 180-day-old block the ordinary way</td>
-                <td className="t-hash">711 roots</td>
+                <td className="t-hash">{rootsAt(1_296_000)}</td>
                 <td className="t-caption">measured — continuity returned by the live prover; paid again by every asker</td>
               </tr>
               <tr>
