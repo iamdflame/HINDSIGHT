@@ -16,7 +16,7 @@ Re-derive every number: `node worker/src/measure.ts --check` (the chain), `forge
 |---|---|
 | One Attestcoin proof carries the roots of many consecutive blocks, and one `mirror()` call keeps all of them | the widest call retained **901** roots — [`0xa9bb…5d70`](https://creditcoin-testnet.blockscout.com/tx/0xa9bb644f31b88e5a71c296b323a799d03ed7083b23b8b81d02cd1b37a3555d70) |
 | Ninety days of Ethereum mainnet are held, with no gap | **779,401** consecutive heights, 25,187,300 – 25,966,700 (≈ 108.3 days), read bit by bit from the mirror's bitmap. 780,302 heights held in all, added by 899 `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
-| Thirty days of Sepolia are held, with no gap | **298,801** consecutive heights (≈ 41.5 days) ending at 11,692,400 |
+| Thirty days of Sepolia are held, with no gap | **300,601** consecutive heights (≈ 41.8 days) ending at 11,694,200 |
 | Keeping a root is cheap and flat | **23,596 gas** per newly held height (median; 23,492–27,232 over 834 calls that each added ≥ 800), from every campaign receipt |
 | An empty Ethereum block is held, and a sealed span crosses it | block **25,354,534** has a transaction root of zero (`rootIsZero: true`), `isMirrored` = **true**, and sealed span 0 (25,309,541 – 25,440,612, 131,072 blocks) covers it: `true`. 243 empty blocks are held on mainnet, 32 on Sepolia |
 | Proving a span gap-free is one read per 256 blocks | sealing **131,072** blocks cost **1,280,230 gas** — [`0x90d9…11a8`](https://creditcoin-testnet.blockscout.com/tx/0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8); 7 spans sealed |
@@ -66,9 +66,9 @@ The same event at Sepolia's own Aave V3 pool: a different file from any mainnet 
 |---|---|---|---|---|
 | 20 | lie | EmptySet | **Refuted** | [`0x85cf…120c`](https://creditcoin-testnet.blockscout.com/tx/0x85cf5d96567370f099ac6864868d02edee5ef04df9644e657974ce2b748c120c) · paid 1.00 · burned 1.00 |
 | 21 | lie | EmptySet | **Refuted** | [`0x07bf…c419`](https://creditcoin-testnet.blockscout.com/tx/0x07bf40fd7c8351a44e9228366b3027e2492decb41367fea9bb180da5ec5bc419) · paid 1.00 · burned 1.00 |
-| 22 | complete | CompleteSet, 5 members | Open | — |
+| 22 | complete | CompleteSet, 5 members | Standing | — |
 
-The last audit (2026-09-13T08:02:41.259Z) re-scanned **20** claims, 16 of them settled: **0** inconsistent, 0 unscannable.
+The last audit (2026-09-13T09:39:35.796Z) re-scanned **23** claims, 19 of them settled: **0** inconsistent, 0 unscannable.
 
 ### The desk's transactions
 
@@ -150,6 +150,10 @@ the `BondedClean` mechanism, not a vetted stranger.
   jitter their tip so every attempt is distinct; funding them remains an operational duty, and the archive stops
   lengthening — it never shrinks — when it lapses.
 - **The ninety-day check is not free inside a transaction:** 7.03M gas cold in `borrow`. `assess` is a `view`.
+- **The CI gates are written, but GitHub is not running them.** Every job in `.github/workflows/ci.yml` is
+  refused before it starts ("account is locked due to a billing issue"). Until that is resolved, "CI fails on
+  drift" means the same commands run by hand — `forge test`, `claims-doc.ts --check`, `measure.ts --check`,
+  the honesty greps — and a green tick on the repository proves nothing either way.
 - **Bounties depend on somebody running a hunter.** The house hunter leaves claims younger than six days to humans.
   If nobody hunts and it is not running, a false claim will stand — which is exactly, and only, what `Standing` means.
 
@@ -171,4 +175,4 @@ contract stays on-chain; nothing was migrated in place.
 - That other projects' gas figures are ours. `docs/MIGRATION.md` quotes their READMEs, row by row, with links.
 - That writability (Creditcoin → Ethereum) is used. It is not released on testnet.
 - Any figure about Creditcoin's lending history. The $100M in `docs/SUBMISSION.md` is Creditcoin's own public statement ([creditcoin.org/Credal](https://creditcoin.org/Credal)), quoted, not measured here.
-- A score, rating or passport of any kind. The desk pays or refuses and says why.
+- No score, rating or passport of any kind: the desk pays or refuses and says why.

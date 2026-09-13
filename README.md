@@ -24,8 +24,8 @@ Every dApp pays that, every time.
 
 | | Ethereum mainnet (`chainKey 3`) | Sepolia (`chainKey 1`) |
 |---|---|---|
-| Heights held on Creditcoin | **780,302** | **298,801** |
-| Unbroken run ending at the top | **779,401** blocks ≈ **108.3 days** (25,187,300 – 25,966,700) | **298,801** blocks ≈ **41.5 days** |
+| Heights held on Creditcoin | **780,302** | **300,601** |
+| Unbroken run ending at the top | **779,401** blocks ≈ **108.3 days** (25,187,300 – 25,966,700) | **300,601** blocks ≈ **41.8 days** |
 | Empty Ethereum blocks inside, held like any other | 243 | 32 |
 | `mirror()` calls that added heights | 899 | 332 |
 | Gas per newly held height (median) | **23,596** | 23,594 |
@@ -98,8 +98,8 @@ it than be the reason it is not needed.
 ## Grading
 
 [CLAIMS.md](./CLAIMS.md) grades every statement in this repository by the evidence behind it, including the
-ones that limit the product. It is generated from the same measured record as this file, and CI fails if
-either drifts from the chain.
+ones that limit the product. It is generated from the same measured record as this file; the checks that
+fail on drift are in `.github/workflows/ci.yml` (see CLAIMS.md for why they currently run by hand).
 
 ---
 

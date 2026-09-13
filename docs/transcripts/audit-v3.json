@@ -1,6 +1,6 @@
 {
  "registry": "0x05844C991993F3d80fAf196e10355B12BE648e40",
- "at": "2026-09-13T08:02:41.259Z",
+ "at": "2026-09-13T09:39:35.796Z",
  "rows": [
   {
    "claimId": 0,
@@ -112,7 +112,8 @@
    "status": "Standing",
    "kind": "EmptySet",
    "counterexample": null,
-   "consistent": true
+   "consistent": true,
+   "scannedAt": "2026-09-13T09:39:35.793Z"
   },
   {
    "claimId": 16,
@@ -139,6 +140,27 @@
    "claimId": 19,
    "status": "Standing",
    "kind": "EmptySet",
+   "counterexample": null,
+   "consistent": true
+  },
+  {
+   "claimId": 20,
+   "status": "Refuted",
+   "kind": "EmptySet",
+   "counterexample": "0xf62ad3115eb3dd89e28813ac59a9d1cc850048a9c064e79b2d6ae8f83eae10cb",
+   "consistent": true
+  },
+  {
+   "claimId": 21,
+   "status": "Refuted",
+   "kind": "EmptySet",
+   "counterexample": "0xfb888d46ea01bda0e6eaf576f7f724bdb59051313d707e7f5f22328fa534584c",
+   "consistent": true
+  },
+  {
+   "claimId": 22,
+   "status": "Standing",
+   "kind": "CompleteSet",
    "counterexample": null,
    "consistent": true
   }

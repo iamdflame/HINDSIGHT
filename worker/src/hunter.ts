@@ -36,7 +36,7 @@
  * that an automated searcher closes every lie eventually. It is stated on the board, not hidden.
  */
 import { JsonRpcProvider, Wallet, Contract } from 'ethers';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { CC_RPC, MIRROR, MIRROR_ABI, EXPLORER, CHAINS, LOG_RPCS, VENUES, REGISTRY_DEPLOY_BLOCK, privateKey, getLogsAdaptive } from './config.ts';
 import { receiptLogIndex, verifiedPathFor, topicsFor, type Member } from './evidence.ts';
 
@@ -254,10 +254,11 @@ async function hunt(registry: Contract, mirror: Contract, dryRun: boolean, minAg
  * A Refuted claim should still have one; a Standing claim should not. Read-only -- nothing is sent --
  * and it is the evidence that "Standing" on this board was not merely "nobody was looking".
  */
-async function audit(registry: Contract) {
+async function audit(registry: Contract, only: Set<number> | null) {
   const n = Number(await registry.claimCount());
   const rows: any[] = [];
   for (let i = 0; i < n; i++) {
+    if (only && !only.has(i)) continue;
     const c = await registry.claimOf(i);
     const status = ['None', 'Open', 'Refuted', 'Standing'][Number(c.status)];
     const claim: Claim = {
@@ -268,14 +269,23 @@ async function audit(registry: Contract) {
     try {
       const found = await findCounterexample(registry, claim);
       const consistent = status === 'Open' || (status === 'Refuted') === Boolean(found);
-      rows.push({ claimId: i, status, kind: claim.kind === 0 ? 'EmptySet' : 'CompleteSet', counterexample: found ? found.log.transactionHash : null, consistent });
+      rows.push({ claimId: i, status, kind: claim.kind === 0 ? 'EmptySet' : 'CompleteSet', counterexample: found ? found.log.transactionHash : null, consistent, scannedAt: new Date().toISOString() });
       console.log(`  claim ${String(i).padStart(3)} ${status.padEnd(8)} ${found ? `counterexample ${found.log.transactionHash.slice(0, 12)}…` : 'no counterexample, corroborated'}${consistent ? '' : '  ← INCONSISTENT'}`);
     } catch (e) {
-      rows.push({ claimId: i, status, error: String((e as Error).message).slice(0, 160), consistent: null });
+      rows.push({ claimId: i, status, error: String((e as Error).message).slice(0, 160), consistent: null, scannedAt: new Date().toISOString() });
       console.log(`  claim ${String(i).padStart(3)} ${status.padEnd(8)} COULD NOT SCAN — ${(e as Error).message.slice(0, 100)}`);
     }
   }
   const out = new URL('../../docs/transcripts/audit-v3.json', import.meta.url);
+  // With --only, re-scanned rows replace their earlier results; every other row keeps its own.
+  if (only && existsSync(out)) {
+    const prior = JSON.parse(readFileSync(out, 'utf8'));
+    if (prior.registry.toLowerCase() === (await registry.getAddress()).toLowerCase()) {
+      const fresh = new Map(rows.map((r) => [r.claimId, r]));
+      rows.splice(0, rows.length, ...prior.rows.map((r: any) => fresh.get(r.claimId) ?? r), ...rows.filter((r) => !prior.rows.some((q: any) => q.claimId === r.claimId)));
+      rows.sort((a, b) => a.claimId - b.claimId);
+    }
+  }
   writeFileSync(out, JSON.stringify({ registry: await registry.getAddress(), at: new Date().toISOString(), rows }, null, 1) + '\n');
   const bad = rows.filter((r) => r.consistent === false).length;
   console.log(`\n  audited ${rows.length} claims · inconsistent ${bad} · unscannable ${rows.filter((r) => r.consistent === null).length}`);
@@ -308,7 +318,7 @@ async function main() {
   if (minAgeHours > 0) console.log(`  waits    : ${minAgeHours}h before touching a claim, so humans get the first shot`);
   if (only) console.log(`  only     : claims ${[...only].join(', ')}`);
   if (dryRun) console.log('  DRY RUN — no transactions will be sent');
-  if (argv.includes('--audit')) return audit(registry);
+  if (argv.includes('--audit')) return audit(registry, only);
 
   for (;;) {
     try {

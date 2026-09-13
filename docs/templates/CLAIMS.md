@@ -135,6 +135,10 @@ the `BondedClean` mechanism, not a vetted stranger.
   jitter their tip so every attempt is distinct; funding them remains an operational duty, and the archive stops
   lengthening — it never shrinks — when it lapses.
 - **The ninety-day check is not free inside a transaction:** 7.03M gas cold in `borrow`. `assess` is a `view`.
+- **The CI gates are written, but GitHub is not running them.** Every job in `.github/workflows/ci.yml` is
+  refused before it starts ("account is locked due to a billing issue"). Until that is resolved, "CI fails on
+  drift" means the same commands run by hand — `forge test`, `claims-doc.ts --check`, `measure.ts --check`,
+  the honesty greps — and a green tick on the repository proves nothing either way.
 - **Bounties depend on somebody running a hunter.** The house hunter leaves claims younger than six days to humans.
   If nobody hunts and it is not running, a false claim will stand — which is exactly, and only, what `Standing` means.
 
@@ -156,4 +160,4 @@ contract stays on-chain; nothing was migrated in place.
 - That other projects' gas figures are ours. `docs/MIGRATION.md` quotes their READMEs, row by row, with links.
 - That writability (Creditcoin → Ethereum) is used. It is not released on testnet.
 - Any figure about Creditcoin's lending history. The $100M in `docs/SUBMISSION.md` is Creditcoin's own public statement ([creditcoin.org/Credal](https://creditcoin.org/Credal)), quoted, not measured here.
-- A score, rating or passport of any kind. The desk pays or refuses and says why.
+- No score, rating or passport of any kind: the desk pays or refuses and says why.

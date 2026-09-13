@@ -98,8 +98,8 @@ it than be the reason it is not needed.
 ## Grading
 
 [CLAIMS.md](./CLAIMS.md) grades every statement in this repository by the evidence behind it, including the
-ones that limit the product. It is generated from the same measured record as this file, and CI fails if
-either drifts from the chain.
+ones that limit the product. It is generated from the same measured record as this file; the checks that
+fail on drift are in `.github/workflows/ci.yml` (see CLAIMS.md for why they currently run by hand).
 
 ---
 
