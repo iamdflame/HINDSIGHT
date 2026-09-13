@@ -19,8 +19,9 @@ with no wallet.
    [/independence](https://hindsight-archive.vercel.app/independence) deletes the block-prover
    precompile inside the live `eth_call` and verifies anyway — with a control that blanks the
    archive instead, to prove the deletion was real.
-3. **Bond a lie and watch it die.** 36 staked absence claims, 10 of them deliberately false, and a
-   hunter that refutes them with no human in the loop.
+3. **Bond a lie and watch it die.** 36 staked absence claims, 10 of them deliberately false. A
+   hunter running as a separate wallet **refuted all 10** with no human in the loop, and left all 26
+   true claims standing.
 
 | | |
 |---|---|
@@ -121,8 +122,9 @@ file drifts from the chain. The full grading is in [CLAIMS.md](./CLAIMS.md).
 | Cost of the whole archive | 112 transactions, 28.8 minutes, ~**1.2 tCTC** |
 | Verifying a second transaction in a held block | `view` call — no continuity, no prover, no `0x0FD2` |
 | Differential vs the live precompile | **2,684 checks over 122 real mainnet transactions, 0 divergences** |
-| Contract tests | **66**, of which 16 are fuzz tests at 256 runs (~4,100 generated cases) |
-| Absence claims staked | **32** across 3 venues, **6 deliberately false** |
+| Contract tests | **98**, of which 19 are fuzz tests at 256 runs (~4,900 generated cases); 91% line coverage, `MirrorLib` 100% |
+| Absence claims staked | **36** across 3 venues, **10 deliberately false — all 10 refuted by the hunter** |
+| The desk | paid 1.0 tCTC to a clean address; refuses two real liquidated Aave borrowers as `ProvenLiar` |
 
 `mirroredBlocks(3)` reports 100,801. The honest figure is 100,777: **24** of those heights are empty
 Ethereum blocks whose transaction root genuinely is zero, which the contract cannot distinguish from
@@ -142,7 +144,7 @@ Ethereum:
 git clone --recurse-submodules https://github.com/iamdflame/HINDSIGHT && cd HINDSIGHT
 (cd contracts && npm install) && (cd worker && npm install)
 
-# contracts — 66 tests, including 16 fuzz properties and every forgery class
+# contracts — 98 tests, including 19 fuzz properties and every forgery class
 cd contracts && forge test -vv
 
 # the mirror agrees with the precompile, and fails the same way (live chain)

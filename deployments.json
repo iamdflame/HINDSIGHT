@@ -48,9 +48,9 @@
     "contiguousRuns": 25,
     "longestRunBlocks": 18443,
     "longestRunFrom": 25903243,
-    "claimsTotal": 32,
-    "claimsOpen": 32,
-    "claimsRefuted": 0,
+    "claimsTotal": 36,
+    "claimsOpen": 26,
+    "claimsRefuted": 10,
     "claimsStanding": 0
   },
   "contracts_note": "span bounds snapshotted at assertion; verifyOrRevert/tryVerify split; commit-reveal refutation",
