@@ -1,5 +1,5 @@
 /**
- * @hindsight/mirror — ask whether an Ethereum transaction happened, from Creditcoin.
+ * hindsight-mirror — ask whether an Ethereum transaction happened, from Creditcoin.
  *
  * Attestcoin lets a Creditcoin contract verify a foreign transaction, but every query carries a
  * continuity proof whose length grows with the age of the fact, and every integration throws that
@@ -9,7 +9,7 @@
  *
  * This package is the one-call version of that.
  *
- *   import { verify } from '@hindsight/mirror';
+ *   import { verify } from 'hindsight-mirror';
  *   const r = await verify('0x3a4b8bcf…');
  *   //=> { mirrored: true, verified: true, txIndex: 263, source: 'local', blockNumber: 25954574 }
  *

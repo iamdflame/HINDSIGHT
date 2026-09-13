@@ -2,11 +2,11 @@
 /**
  * hindsight — ask whether an Ethereum transaction happened, from the command line.
  *
- *   npx @hindsight/mirror verify 0x3a4b8bcf…              no key, no gas: a view call
- *   npx @hindsight/mirror verify 0x… --prover              take the path from Gluwa's prover instead
- *   npx @hindsight/mirror verify 0x… --chain 1             Sepolia
- *   npx @hindsight/mirror coverage [--chain 1]             what the archive currently holds
- *   npx @hindsight/mirror notarise 0x…                     needs PRIVATE_KEY; the one step that costs gas
+ *   npx hindsight-mirror verify 0x3a4b8bcf…              no key, no gas: a view call
+ *   npx hindsight-mirror verify 0x… --prover              take the path from Gluwa's prover instead
+ *   npx hindsight-mirror verify 0x… --chain 1             Sepolia
+ *   npx hindsight-mirror coverage [--chain 1]             what the archive currently holds
+ *   npx hindsight-mirror notarise 0x…                     needs PRIVATE_KEY; the one step that costs gas
  *
  * Cold, with no npm registry involved:
  *   npx github:iamdflame/HINDSIGHT verify 0x3a4b8bcf…

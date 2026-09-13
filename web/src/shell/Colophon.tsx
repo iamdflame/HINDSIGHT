@@ -111,7 +111,7 @@ export function Colophon() {
             <a key={r.id} className="linkish t-ui" href={r.path}>{r.label}</a>
           ))}
           <a className="linkish t-ui" href="https://github.com/iamdflame/HINDSIGHT" target="_blank" rel="noreferrer">GitHub</a>
-          <a className="linkish t-ui" href="https://github.com/iamdflame/HINDSIGHT/tree/master/packages/mirror" target="_blank" rel="noreferrer">@hindsight/mirror</a>
+          <a className="linkish t-ui" href="https://github.com/iamdflame/HINDSIGHT/tree/master/packages/mirror" target="_blank" rel="noreferrer">hindsight-mirror</a>
         </div>
 
         <div className="band band-meta">

@@ -61,7 +61,7 @@ call.
 ## Switching
 
 ```ts
-import { verify } from '@hindsight/mirror';
+import { verify } from 'hindsight-mirror';
 const r = await verify(txHash);   // no key, no gas, no prover
 ```
 

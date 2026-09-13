@@ -1,10 +1,10 @@
-# @hindsight/mirror
+# hindsight-mirror
 
 Ask whether an Ethereum transaction happened — from Creditcoin, with no key, no gas, no `.env` and no
 proving service.
 
 ```bash
-npx @hindsight/mirror verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9
+npx hindsight-mirror verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9
 # or, straight from the repository:
 npx github:iamdflame/HINDSIGHT verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9
 ```
@@ -22,7 +22,7 @@ verified
 That transaction was never submitted to anyone: its block was notarised through a different transaction
 (index 263), and this one verifies against the root that notarisation stored. `--chain 1` asks about Sepolia.
 
-The unscoped npm name `hindsight` belongs to an unrelated project — `npx hindsight` will not run this.
+The npm names `hindsight` and `@hindsight/*` belong to other accounts — `npx hindsight` will not run this; `npx hindsight-mirror` will.
 
 ## Why this is not just an Attestcoin wrapper
 
@@ -43,7 +43,7 @@ Merkle path against stored state — a `view` call, at a fixed cost, however old
 ## API
 
 ```ts
-import { verify, isMirrored, coverage, notarise } from '@hindsight/mirror';
+import { verify, isMirrored, coverage, notarise } from 'hindsight-mirror';
 
 await verify('0x3a4b…');                    // { mirrored, verified, txIndex, path, source }
 await verify('0x3a4b…', { source: 'prover' }); // take the path from Gluwa's prover instead

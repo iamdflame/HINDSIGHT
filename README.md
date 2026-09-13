@@ -135,7 +135,7 @@ node worker/src/campaign.ts --chain 3 --follow  # keep the archive current (need
 ```
 contracts/   EthereumMirror · AbsenceRegistryV3 · UnderwritingDesk · MissingHeightBounty · frozen interfaces · tests
 worker/      campaign + follower · hunter · board seeder · desk demo · differential · measure · document renderer
-packages/    @hindsight/mirror — verify from Node, cold
+packages/    hindsight-mirror — verify from Node, cold
 web/         the site: / · /verify · /record · /watch · /assess · /order · /judge · /claims · /enshrine · /integrate · /independence
 docs/        ENSHRINE · INTEGRATING · MIGRATION · SUBMISSION · campaign logs · transcripts
 ```

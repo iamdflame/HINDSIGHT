@@ -100,7 +100,7 @@ No key, no gas, no `.env`. It rebuilds the Merkle path from a public Ethereum no
 the prover is not contacted.
 
 ```js
-import { verify } from '@hindsight/mirror';
+import { verify } from 'hindsight-mirror';
 const { mirrored, verified, txIndex } = await verify(txHash);
 ```
 

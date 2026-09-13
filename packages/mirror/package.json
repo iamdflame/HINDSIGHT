@@ -1,18 +1,39 @@
 {
-  "name": "@hindsight/mirror",
-  "version": "0.2.0",
-  "description": "Verify Ethereum transactions on Creditcoin against notarised history — no prover, no precompile, no wallet.",
+  "name": "hindsight-mirror",
+  "version": "0.3.0",
+  "description": "Verify Ethereum transactions on Creditcoin against notarised history \u2014 no prover, no precompile, no wallet.",
   "type": "module",
   "main": "src/index.js",
-  "exports": { ".": "./src/index.js" },
-  "bin": { "hindsight": "src/cli.js" },
-  "files": ["src", "README.md"],
-  "engines": { "node": ">=18" },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "hindsight-mirror": "src/cli.js",
+    "hindsight": "src/cli.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "prepublishOnly": "node src/cli.js coverage"
   },
-  "keywords": ["creditcoin", "attestcoin", "ethereum", "merkle", "cross-chain", "light-client"],
-  "repository": { "type": "git", "url": "https://github.com/iamdflame/HINDSIGHT", "directory": "packages/mirror" },
+  "keywords": [
+    "creditcoin",
+    "attestcoin",
+    "ethereum",
+    "merkle",
+    "cross-chain",
+    "light-client"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamdflame/HINDSIGHT.git",
+    "directory": "packages/mirror"
+  },
   "homepage": "https://github.com/iamdflame/HINDSIGHT/tree/master/packages/mirror",
   "license": "MIT",
   "dependencies": {
