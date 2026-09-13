@@ -814,3 +814,14 @@ blockquote { margin: 1.2rem 0; padding-left: 1rem; border-left: 2px solid var(--
 .hunt-board tr.is-job td:first-child { border-left: 2px solid var(--wax); padding-left: 0.5rem; }
 
 .linkish.is-active { text-decoration-thickness: 2px; text-decoration-color: var(--ink); }
+/* On a phone the job board is a stack of cards, not a table to scroll sideways. */
+@media (max-width: 639px) {
+  .hunt-board, .hunt-board tbody, .hunt-board tr, .hunt-board td { display: block; overflow: visible; }
+  .hunt-board thead { display: none; }
+  .hunt-board tr { border-top: 1px solid var(--rule); padding-block: 0.8rem; }
+  .hunt-board tr.is-job { border-left: 2px solid var(--wax); padding-left: 0.6rem; }
+  .hunt-board tr.is-job td:first-child { border-left: 0; padding-left: 0; }
+  .hunt-board td { border-bottom: 0; padding: 0.15rem 0; }
+  .hunt-board td:nth-child(4)::before { content: 'pays '; color: var(--ink-faint); }
+  .hunt-board td:nth-child(5)::before { content: 'expected '; color: var(--ink-faint); }
+}
