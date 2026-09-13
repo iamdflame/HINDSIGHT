@@ -64,6 +64,7 @@ import {
   fetchBatchProof,
   ProverError,
 } from './config.ts';
+import { roll } from './spans.ts';
 
 /** Measured: attestation checkpoints on CC3 sit one per 100 blocks. */
 const CHECKPOINT = 100;
@@ -350,15 +351,28 @@ async function follow(o: {
       // The window starts at the checkpoint at or below the run's top, so it overlaps held history
       // by less than a checkpoint and always covers `top + 1`.
       const windowLo = bucketOf(top);
-      const windowHi = windowLo + o.stride - 1;
+      // A full stride, unless that would reach past what is safely attested -- in which case take the
+      // short window that fits. Waiting for a whole stride to clear the margin left the archive up to
+      // `stride + HEAD_MARGIN` behind the attestation head for no reason: the proof is just as valid
+      // over 300 blocks as over 900, and a policy that tolerates no staleness wants the head.
+      const windowHi = Math.min(windowLo + o.stride - 1, safeTop - 1);
 
-      if (windowHi + 1 > safeTop) {
+      if (windowHi <= top) {
         const highest = Number(await o.mirror.highestMirrored(o.chain));
         const note = highest > top ? ` (someone holds an isolated window up to ${highest.toLocaleString()}; the gap closes when attested)` : '';
         console.log(`[${new Date().toISOString().slice(11, 19)}] contiguous to ${top.toLocaleString()}, attested ${head.toLocaleString()} — waiting${note}`);
       } else {
         await mirrorWindow({ ...o, windowLo, windowHi });
         continue; // there may be more than one window to catch up on
+      }
+      // Caught up. Drag the sealed span along behind the head, so the desk's callers have a window to
+      // offer: a `BlankFile` policy carries `maxStaleness 0` and refuses anything that stops short.
+      if (!o.dryRun) {
+        try {
+          await roll(o.mirror, o.chain, (l) => console.log(`[${new Date().toISOString().slice(11, 19)}]${l}`));
+        } catch (e) {
+          console.log('  ! span roll:', (e as Error).message.slice(0, 160));
+        }
       }
     } catch (e) {
       console.log('  ! follow:', (e as Error).message.slice(0, 160));

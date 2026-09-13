@@ -6,11 +6,31 @@ import {EthereumMirror} from "../src/EthereumMirror.sol";
 import {AbsenceRegistryV3} from "../src/AbsenceRegistryV3.sol";
 import {UnderwritingDesk} from "../src/UnderwritingDesk.sol";
 import {IMirror} from "../src/IMirror.sol";
+import {IMirrorSpans} from "../src/IMirrorSpans.sol";
 import {IAbsence} from "../src/IAbsence.sol";
 import {IAbsenceV3} from "../src/IAbsenceV3.sol";
 import {EvmV1Decoder} from "@gluwa/asc-contracts/contracts/common/EvmV1Decoder.sol";
 import {ThrowawayDesk} from "./ThrowawayDesk.sol";
 import {INativeQueryVerifier} from "@gluwa/asc-contracts/contracts/write-ability/common/INativeQueryVerifier.sol";
+
+/// The `0x0FD4` precompile, as it answered on CC3 when measured: four attestors, 100 CTC each.
+contract MockStash {
+    uint32 public count = 4;
+    uint128 public bond = 100 ether;
+
+    function getAttestorsCount(uint64) external view returns (uint32) {
+        return count;
+    }
+
+    function getMinBondRequirement(uint64) external view returns (uint128) {
+        return bond;
+    }
+
+    function set(uint32 c, uint128 b) external {
+        count = c;
+        bond = b;
+    }
+}
 
 contract MockVerifier {
     function verifyAndEmit(
@@ -31,6 +51,7 @@ contract MockVerifier {
 ///         being a real Aave liquidation on Ethereum mainnet that nobody involved controls.
 contract UnderwritingDeskTest is Test {
     EthereumMirror internal mirror;
+    MockStash internal stash;
     AbsenceRegistryV3 internal registry;
     UnderwritingDesk internal desk;
 
@@ -61,9 +82,14 @@ contract UnderwritingDeskTest is Test {
 
     function setUp() public {
         vm.etch(address(uint160(0x0FD2)), address(new MockVerifier()).code);
+        // `etch` copies runtime code, never storage, so the etched copy has to be told what the real
+        // precompile answered: four attestors, 100 CTC each, measured on CC3 on 2026-09-13.
+        vm.etch(address(uint160(0x0FD4)), address(new MockStash()).code);
+        stash = MockStash(address(uint160(0x0FD4)));
+        stash.set(4, 100 ether);
         mirror = new EthereumMirror();
         registry = new AbsenceRegistryV3(mirror);
-        desk = new UnderwritingDesk(IMirror(address(mirror)), registry);
+        desk = new UnderwritingDesk(IMirrorSpans(address(mirror)), registry);
 
         string memory json = vm.readFile("test/fixtures/liquidation.json");
         blockHeight = uint64(vm.parseJsonUint(json, ".headerNumber"));
@@ -123,6 +149,11 @@ contract UnderwritingDeskTest is Test {
         ids[0] = spanId;
     }
 
+    /// The window a caller offers the desk as proof. One seal covers this fixture's whole archive.
+    function _w() internal view returns (uint256[] memory ids) {
+        return _spans();
+    }
+
     function _claimClean(address who, uint256 bond, uint64 window) internal returns (uint256 claimId) {
         vm.prank(claimant);
         claimId = registry.assertAbsence{value: bond}(
@@ -145,12 +176,35 @@ contract UnderwritingDeskTest is Test {
     // ---------------------------------------------------------------------------------------
 
     /// Nothing is said about this address, and BlankFile does not pretend silence is innocence --
-    /// it simply has no reason to refuse.
-    function test_unmarkedAddressBorrows() public {
+    /// it answers the question. It does not hand over money: silence is not collateral.
+    function test_blankFileAnswersButNeverLends() public {
+        (bool ok, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, blankFile, 0, _w());
+        assertTrue(ok, "an unmarked address is not refused");
+        assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.None));
+
+        (bool okMoney, UnderwritingDesk.Refusal whyMoney) = desk.assess(cleanBorrower, blankFile, PRINCIPAL, _w());
+        assertFalse(okMoney);
+        assertEq(uint256(whyMoney), uint256(UnderwritingDesk.Refusal.NeedsBondedCover));
+
+        vm.prank(cleanBorrower);
+        vm.expectRevert(
+            abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.NeedsBondedCover)
+        );
+        desk.borrow(blankFile, PRINCIPAL, _w());
+    }
+
+    /// The loan the desk does make: against a standing claim, at no more than ten times what a liar
+    /// could not have recovered.
+    function test_bondedCleanBorrowerIsPaid() public {
+        uint256 claimId = _claimClean(cleanBorrower, 2 ether, 15 minutes);
+        vm.warp(block.timestamp + 16 minutes);
+        registry.finalize(claimId);
+
         uint256 before = cleanBorrower.balance;
         vm.prank(cleanBorrower);
-        desk.borrow(blankFile, PRINCIPAL);
-        assertEq(cleanBorrower.balance, before + PRINCIPAL, "a blank file should borrow");
+        desk.borrow(bondedClean, PRINCIPAL, _w());
+        assertEq(cleanBorrower.balance, before + PRINCIPAL, "a bonded clean file is lent to");
+        assertEq(desk.totalOutstanding(), PRINCIPAL);
     }
 
     /// The same desk, the same policy, after a real liquidation is revealed against the address.
@@ -164,7 +218,7 @@ contract UnderwritingDeskTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.ProvenLiar)
         );
-        desk.borrow(blankFile, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
         assertEq(LIQUIDATED_BORROWER.balance, 0, "a proven liar must not be paid");
     }
 
@@ -180,19 +234,17 @@ contract UnderwritingDeskTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.ClaimUnderHunt)
         );
-        desk.borrow(blankFile, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
     }
 
-    /// A standing claim is good news, and must not block the permissive policy.
+    /// A standing claim is good news, and must not turn the permissive policy into a refusal.
     function test_standingClaimDoesNotBlockBlankFile() public {
         uint256 claimId = _claimClean(cleanBorrower, 1 ether, 15 minutes);
         vm.warp(block.timestamp + 16 minutes);
         registry.finalize(claimId);
 
-        uint256 before = cleanBorrower.balance;
-        vm.prank(cleanBorrower);
-        desk.borrow(blankFile, PRINCIPAL);
-        assertEq(cleanBorrower.balance, before + PRINCIPAL);
+        (bool ok,) = desk.assess(cleanBorrower, blankFile, 0, _w());
+        assertTrue(ok);
     }
 
     /// BondedClean will not lend on silence, which is the whole difference between the policies.
@@ -201,7 +253,7 @@ contract UnderwritingDeskTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.NoBondedCleanliness)
         );
-        desk.borrow(bondedClean, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
     }
 
     function test_bondedCleanAcceptsASufficientBond() public {
@@ -213,7 +265,7 @@ contract UnderwritingDeskTest is Test {
 
         uint256 before = cleanBorrower.balance;
         vm.prank(cleanBorrower);
-        desk.borrow(bondedClean, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
         assertEq(cleanBorrower.balance, before + PRINCIPAL);
     }
 
@@ -229,7 +281,7 @@ contract UnderwritingDeskTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.NoBondedCleanliness)
         );
-        desk.borrow(bondedClean, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
     }
 
     /// An answer drawn from history the archive does not hold is not an answer.
@@ -252,7 +304,7 @@ contract UnderwritingDeskTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.ArchiveTooShallow)
         );
-        desk.borrow(deep, PRINCIPAL);
+        desk.borrow(deep, PRINCIPAL, _w());
     }
 
     /// The mandate's named test: a 90-day policy on a shallow archive refuses. On the live desk
@@ -271,7 +323,7 @@ contract UnderwritingDeskTest is Test {
                 maxPrincipal: 10 ether
             })
         );
-        (bool ok, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, ninety, PRINCIPAL);
+        (bool ok, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, ninety, PRINCIPAL, _w());
         assertFalse(ok);
         assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow));
     }
@@ -310,86 +362,203 @@ contract UnderwritingDeskTest is Test {
         );
     }
 
-    function _why(uint256 policyId) internal view returns (UnderwritingDesk.Refusal why) {
-        (, why) = desk.assess(cleanBorrower, policyId, PRINCIPAL);
+    /// The same policy, but the kind that actually parts with money. Every "and then it lends" test
+    /// needs one of these now: `BlankFile` answers and stops.
+    function _bonded(uint64 window) internal returns (uint256) {
+        return desk.createPolicy(
+            UnderwritingDesk.Policy({
+                kind: UnderwritingDesk.Kind.BondedClean,
+                chainKey: ETH_MAINNET,
+                window: window,
+                maxStaleness: 0,
+                venue: AAVE_V3_POOL,
+                topic0: LIQUIDATION_CALL,
+                subjectTopic: 3,
+                minBond: 0,
+                maxPrincipal: 10 ether
+            })
+        );
     }
 
-    /// Endpoints ninety blocks apart, a hole in the middle. The v3.0 desk compared `head - window`
-    /// with `lowestMirrored` and would have lent here; a liquidation in the hole is unprovable.
-    function test_holeInsideTheWindowIsTooShallow() public {
+    /// A finalised EmptySet over the whole fixture archive: the bond a `BondedClean` loan sizes against.
+    function _standing(address who) internal returns (uint256 claimId) {
+        claimId = _claimClean(who, 2 ether, 15 minutes);
+        _finalised(claimId);
+    }
+
+    /// A hole cannot be sealed across, so it cannot be offered as a window. This is the same fact the
+    /// old desk paid 7M gas to rediscover on every call: `sealSpan` walks the bitmap once, reverts on
+    /// the first missing height, and what it records is what the desk reads.
+    function test_aHoleCannotBeSealedAndSoCannotBeOffered() public {
         _mirrorRange(FAR, 101); // FAR .. FAR+100
         _mirrorRange(FAR + 150, 151); // FAR+150 .. FAR+300, hole at FAR+101 .. FAR+149
-        assertEq(mirror.highestMirrored(ETH_MAINNET), FAR + 300);
 
-        uint256 p = _policy(250); // head - window = FAR+50, above every endpoint check
-        assertEq(uint256(_why(p)), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow), "hole must refuse");
+        vm.expectRevert(abi.encodeWithSelector(EthereumMirror.GapInSpan.selector, ETH_MAINNET, FAR + 101));
+        mirror.sealSpan(ETH_MAINNET, FAR, FAR + 300);
 
-        vm.prank(cleanBorrower);
-        vm.expectRevert(
-            abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.ArchiveTooShallow)
-        );
-        desk.borrow(p, PRINCIPAL);
+        // The most that can be sealed below the hole is too short for a 250-block window.
+        uint256[] memory shortSpan = new uint256[](1);
+        shortSpan[0] = mirror.sealSpan(ETH_MAINNET, FAR, FAR + 100);
+        uint256 p = _policy(250);
+        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, p, 0, shortSpan);
+        assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow), "a short span is not a window");
 
-        _mirrorRange(FAR + 100, 51); // fill FAR+100 .. FAR+150
-        assertEq(uint256(_why(p)), uint256(UnderwritingDesk.Refusal.None), "filled window must answer");
+        // Fill the hole, seal across it, and the same policy answers.
+        _mirrorRange(FAR + 100, 51);
+        uint256[] memory whole = new uint256[](1);
+        whole[0] = mirror.sealSpan(ETH_MAINNET, FAR, FAR + 300);
+        (bool ok,) = desk.assess(cleanBorrower, p, 0, whole);
+        assertTrue(ok, "a sealed window answers");
     }
 
-    /// One empty-looking hole of a single height at the very bottom of the window is enough.
-    function test_singleMissingHeightAtTheWindowFloorRefuses() public {
-        _mirrorRange(FAR, 100); // FAR .. FAR+99
-        _mirrorRange(FAR + 101, 200); // FAR+101 .. FAR+300; FAR+100 missing
-        assertEq(uint256(_why(_policy(200))), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow)); // floor = FAR+100
-        assertEq(uint256(_why(_policy(199))), uint256(UnderwritingDesk.Refusal.None)); // floor = FAR+101
+    /// Spans must be adjacent, on the policy's chain, and belong to the caller's claim of coverage.
+    /// None of these is a privilege check: they are the arithmetic of "this range is held".
+    function test_offeredSpansMustActuallyProveTheWindow() public {
+        _mirrorRange(FAR, 600);
+        _mirrorRange(FAR + 700, 300); // gap at FAR+600..FAR+699
+        uint256 lower = mirror.sealSpan(ETH_MAINNET, FAR, FAR + 599);
+        uint256 upper = mirror.sealSpan(ETH_MAINNET, FAR + 700, FAR + 999);
+        uint256 p = _policy(800);
+
+        uint256[] memory notAdjacent = new uint256[](2);
+        notAdjacent[0] = lower;
+        notAdjacent[1] = upper;
+        (, UnderwritingDesk.Refusal gap) = desk.assess(cleanBorrower, p, 0, notAdjacent);
+        assertEq(uint256(gap), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow), "two spans with a gap between them");
+
+        uint256[] memory none = new uint256[](0);
+        (, UnderwritingDesk.Refusal empty) = desk.assess(cleanBorrower, p, 0, none);
+        assertEq(uint256(empty), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow), "no span is no proof");
+
+        // A span on another chain proves nothing about this one.
+        bytes32[] memory roots = new bytes32[](900);
+        for (uint256 i; i < roots.length; ++i) roots[i] = keccak256(abi.encode("sepolia", i));
+        INativeQueryVerifier.MerkleProofEntry[] memory noSiblings;
+        mirror.mirror(1, 11_000_000, hex"00", roots[0], noSiblings, bytes32(0), roots);
+        uint256[] memory wrongChain = new uint256[](1);
+        wrongChain[0] = mirror.sealSpan(1, 11_000_000, 11_000_899);
+        (, UnderwritingDesk.Refusal chain) = desk.assess(cleanBorrower, p, 0, wrongChain);
+        assertEq(uint256(chain), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow), "another chain is another file");
     }
 
-    /// Anyone can mirror an isolated window above the archive. The desk must refuse, not lend
-    /// across the gap -- and must answer again the moment the gap is filled.
-    function test_isolatedWindowAboveTheArchiveFailsClosed() public {
+    /// Two adjacent seals are one window. Ninety days is five of them.
+    function test_adjacentSpansCompose() public {
         _mirrorRange(FAR, 1_000);
+        uint256[] memory two = new uint256[](2);
+        two[0] = mirror.sealSpan(ETH_MAINNET, FAR, FAR + 499);
+        two[1] = mirror.sealSpan(ETH_MAINNET, FAR + 500, FAR + 999);
+        (bool ok,) = desk.assess(cleanBorrower, _policy(999), 0, two);
+        assertTrue(ok, "adjacent seals compose into one window");
+    }
+
+    /// Anyone can mirror an isolated window above the archive. A window that no longer reaches the head
+    /// stops being underwritten on, and starts again when the gap is filled and re-sealed.
+    function test_aWindowThatNoLongerReachesTheHeadIsRefused() public {
+        _mirrorRange(FAR, 1_000);
+        uint256[] memory span = new uint256[](1);
+        span[0] = mirror.sealSpan(ETH_MAINNET, FAR, FAR + 999);
         uint256 p = _policy(500);
-        assertEq(uint256(_why(p)), uint256(UnderwritingDesk.Refusal.None));
+        (bool ok,) = desk.assess(cleanBorrower, p, 0, span);
+        assertTrue(ok);
 
         _mirrorRange(FAR + 1_400, 50); // a stranger's window, 400 heights above the top
-        assertEq(uint256(_why(p)), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow));
+        (, UnderwritingDesk.Refusal stale) = desk.assess(cleanBorrower, p, 0, span);
+        assertEq(uint256(stale), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow), "stale window must refuse");
 
         _mirrorRange(FAR + 999, 402);
-        assertEq(uint256(_why(p)), uint256(UnderwritingDesk.Refusal.None));
+        uint256[] memory fresh = new uint256[](1);
+        fresh[0] = mirror.sealSpan(ETH_MAINNET, FAR, FAR + 1_449);
+        (bool okAgain,) = desk.assess(cleanBorrower, p, 0, fresh);
+        assertTrue(okAgain, "re-sealed to the head, it answers again");
     }
 
-    /// The window is inclusive at both ends: `window + 1` heights. Exactly enough answers; one
-    /// fewer does not.
+    /// A policy may tolerate a window that ends below the head, and says by how much.
+    function test_maxStalenessIsThePolicysOwnTolerance() public {
+        _mirrorRange(FAR, 1_000);
+        uint256[] memory span = new uint256[](1);
+        span[0] = mirror.sealSpan(ETH_MAINNET, FAR, FAR + 999);
+        _mirrorRange(FAR + 999, 101); // head is now 100 above the sealed window
+
+        uint256 strict = _policy(500); // maxStaleness 0
+        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, strict, 0, span);
+        assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow));
+
+        uint256 tolerant = desk.createPolicy(
+            UnderwritingDesk.Policy({
+                kind: UnderwritingDesk.Kind.BlankFile,
+                chainKey: ETH_MAINNET,
+                window: 500,
+                maxStaleness: 100,
+                venue: AAVE_V3_POOL,
+                topic0: LIQUIDATION_CALL,
+                subjectTopic: 3,
+                minBond: 0,
+                maxPrincipal: 10 ether
+            })
+        );
+        (bool ok,) = desk.assess(cleanBorrower, tolerant, 0, span);
+        assertTrue(ok, "within the policy's own staleness tolerance");
+    }
+
+    /// The window is inclusive at both ends: `window + 1` heights. Exactly enough answers; one fewer
+    /// does not, whatever the caller offers.
     function testFuzz_depthBoundaryIsExact(uint16 lenSeed, uint16 windowSeed) public {
         uint64 len = uint64(bound(lenSeed, 2, 2_000));
-        _mirrorRange(FAR, len); // FAR .. FAR+len-1, so head - low = len - 1
+        _mirrorRange(FAR, len); // FAR .. FAR+len-1
+        uint256[] memory span = new uint256[](1);
+        span[0] = mirror.sealSpan(ETH_MAINNET, FAR, FAR + len - 1);
         uint64 window = uint64(bound(windowSeed, 1, 2_500));
-        UnderwritingDesk.Refusal why = _why(_policy(window));
+        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, _policy(window), 0, span);
         if (window <= len - 1) assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.None));
         else assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow));
     }
 
-    /// Gas: the 90-day policy walks ~2,532 bitmap words. Measured, and bounded, so a borrower is
-    /// never priced out by the depth check itself.
-    function test_gas_ninetyDayBorrowReadsTheBitmapWordWise() public {
+    /// The budget that made this rewrite necessary. Ninety days used to cost 7.03M gas per `borrow`
+    /// because the desk walked 2,532 bitmap words itself. Reading five seals is a handful of slots,
+    /// and this test fails the build if that ever stops being true.
+    function test_gas_ninetyDayDepthCheckUnder80k() public {
+        // Seed 648,192 held heights, then seal them as five spans, exactly as the live archive is.
         uint64 w0 = FAR >> 8;
         bytes32 outer = keccak256(abi.encode(ETH_MAINNET, uint256(1)));
         for (uint256 i; i < 2_535; ++i) {
             vm.store(address(mirror), keccak256(abi.encode(w0 + uint64(i), outer)), bytes32(type(uint256).max));
         }
-        uint64 top = (w0 << 8) + 648_100;
+        uint64 base = w0 << 8;
+        uint64 top = base + 648_100;
         vm.store(address(mirror), keccak256(abi.encode(ETH_MAINNET, uint256(3))), bytes32(uint256(top)));
-        vm.store(address(mirror), keccak256(abi.encode(ETH_MAINNET, uint256(4))), bytes32(uint256(w0 << 8)));
+        vm.store(address(mirror), keccak256(abi.encode(ETH_MAINNET, uint256(4))), bytes32(uint256(base)));
 
-        uint256 ninety = _policy(648_000);
-        assertEq(uint256(_why(ninety)), uint256(UnderwritingDesk.Refusal.None));
+        uint256[] memory spans = new uint256[](5);
+        uint64 each = 129_621; // five adjacent seals covering 648,101 heights
+        for (uint256 i; i < 5; ++i) {
+            uint64 lo = base + uint64(i) * each;
+            uint64 hi = i == 4 ? top : lo + each - 1;
+            spans[i] = mirror.sealSpan(ETH_MAINNET, lo, hi);
+        }
 
-        // Cold storage, as a real borrow sees it: the assess above warmed every word it read.
+        uint256 ninety = desk.createPolicy(
+            UnderwritingDesk.Policy({
+                kind: UnderwritingDesk.Kind.BlankFile,
+                chainKey: ETH_MAINNET,
+                window: 648_000,
+                maxStaleness: 0,
+                venue: AAVE_V3_POOL,
+                topic0: LIQUIDATION_CALL,
+                subjectTopic: 3,
+                minBond: 0,
+                maxPrincipal: 10 ether
+            })
+        );
+
+        // Cold, as a first caller sees it: the seals above warmed the slots this reads.
         vm.cool(address(mirror));
-        vm.prank(cleanBorrower);
+        vm.cool(address(registry));
         uint256 g = gasleft();
-        desk.borrow(ninety, PRINCIPAL);
+        (bool ok,) = desk.assess(cleanBorrower, ninety, 0, spans);
         uint256 used = g - gasleft();
-        emit log_named_uint("borrow gas, 90-day policy", used);
-        assertLt(used, 8_000_000);
+        assertTrue(ok, "ninety days, sealed, answers");
+        emit log_named_uint("ninety-day depth check, cold", used);
+        assertLt(used, 80_000, "the depth check must stay cheap enough to sit inside borrow");
     }
 
     // ---------------------------------------------------------------------------------------
@@ -412,7 +581,7 @@ contract UnderwritingDeskTest is Test {
         _finalised(id);
         assertTrue(registry.isUsable(id, PRINCIPAL), "the claim itself is usable -- for what it says");
 
-        (bool ok, UnderwritingDesk.Refusal why) = desk.assess(LIQUIDATED_BORROWER, bondedClean, PRINCIPAL);
+        (bool ok, UnderwritingDesk.Refusal why) = desk.assess(LIQUIDATED_BORROWER, bondedClean, PRINCIPAL, _w());
         assertFalse(ok);
         assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.NoBondedCleanliness));
     }
@@ -433,7 +602,7 @@ contract UnderwritingDeskTest is Test {
         );
         _finalised(id);
 
-        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, bondedClean, PRINCIPAL);
+        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, bondedClean, PRINCIPAL, _w());
         assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.NoBondedCleanliness));
     }
 
@@ -448,7 +617,7 @@ contract UnderwritingDeskTest is Test {
         _refute(refuter, id);
         assertEq(uint256(registry.claimOf(id).status), uint256(IAbsence.Status.Refuted));
 
-        (bool ok,) = desk.assess(cleanBorrower, blankFile, PRINCIPAL);
+        (bool ok,) = desk.assess(cleanBorrower, blankFile, 0, _w());
         assertTrue(ok, "nobody was proven anything about cleanBorrower");
     }
 
@@ -478,8 +647,8 @@ contract UnderwritingDeskTest is Test {
         _finalised(id);
         assertTrue(registry.isUsable(id, PRINCIPAL), "a standing CompleteSet is usable for what it says");
 
-        (, UnderwritingDesk.Refusal a) = desk.assess(LIQUIDATED_BORROWER, blankFile, PRINCIPAL);
-        (, UnderwritingDesk.Refusal b) = desk.assess(LIQUIDATED_BORROWER, bondedClean, PRINCIPAL);
+        (, UnderwritingDesk.Refusal a) = desk.assess(LIQUIDATED_BORROWER, blankFile, PRINCIPAL, _w());
+        (, UnderwritingDesk.Refusal b) = desk.assess(LIQUIDATED_BORROWER, bondedClean, PRINCIPAL, _w());
         assertEq(uint256(a), uint256(UnderwritingDesk.Refusal.EventOnRecord));
         assertEq(uint256(b), uint256(UnderwritingDesk.Refusal.EventOnRecord));
     }
@@ -499,9 +668,10 @@ contract UnderwritingDeskTest is Test {
         }
         assertGt(registry.claimCount(), 512);
 
+        _standing(cleanBorrower);
         uint256 before = cleanBorrower.balance;
         vm.prank(cleanBorrower);
-        desk.borrow(blankFile, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
         assertEq(cleanBorrower.balance, before + PRINCIPAL);
     }
 
@@ -518,14 +688,14 @@ contract UnderwritingDeskTest is Test {
         registry.finalize(good);
         for (uint256 i = 1; i <= 64; ++i) registry.finalize(good + i);
 
-        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, bondedClean, PRINCIPAL);
+        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, bondedClean, PRINCIPAL, _w());
         assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.NoBondedCleanliness));
 
         // Re-filing on top makes the good claim newest again.
         uint256 again = _claimClean(cleanBorrower, 2 ether, 15 minutes);
         vm.warp(block.timestamp + 16 minutes);
         registry.finalize(again);
-        (bool ok,) = desk.assess(cleanBorrower, bondedClean, PRINCIPAL);
+        (bool ok,) = desk.assess(cleanBorrower, bondedClean, PRINCIPAL, _w());
         assertTrue(ok);
     }
 
@@ -533,11 +703,11 @@ contract UnderwritingDeskTest is Test {
     function test_refutationBelowTheWindowFloorDoesNotCount() public {
         uint256 id = _claimClean(LIQUIDATED_BORROWER, 1 ether, 1 hours);
         _refute(refuter, id);
-        (, UnderwritingDesk.Refusal inWindow) = desk.assess(LIQUIDATED_BORROWER, blankFile, PRINCIPAL);
+        (, UnderwritingDesk.Refusal inWindow) = desk.assess(LIQUIDATED_BORROWER, blankFile, 0, _w());
         assertEq(uint256(inWindow), uint256(UnderwritingDesk.Refusal.ProvenLiar));
 
         // The liquidation sits at the archive floor; a 25-block window starts one height above it.
-        (, UnderwritingDesk.Refusal shallow) = desk.assess(LIQUIDATED_BORROWER, _policy(25), PRINCIPAL);
+        (, UnderwritingDesk.Refusal shallow) = desk.assess(LIQUIDATED_BORROWER, _policy(25), 0, _w());
         assertEq(uint256(shallow), uint256(UnderwritingDesk.Refusal.None));
     }
 
@@ -558,18 +728,23 @@ contract UnderwritingDeskTest is Test {
                 maxPrincipal: 10 ether
             })
         );
-        (bool ok,) = desk.assess(cleanBorrower, wider, PRINCIPAL);
+        (bool ok,) = desk.assess(cleanBorrower, wider, PRINCIPAL, _w());
         assertTrue(ok, "a claim covering more than the window counts");
 
-        // Extend the archive upward: the same claim now ends 40 blocks below the head.
-        bytes32[] memory more = new bytes32[](41);
+        // Extend the archive upward: the same claim now ends ten blocks below the head. A claim
+        // covering 26 heights cannot serve a window that has slid further than 26 above it -- the
+        // window floor would rise past the claim entirely -- so ten is the interesting distance.
+        bytes32[] memory more = new bytes32[](11);
         uint64 top = blockHeight + 26;
         more[0] = mirror.rootOf(ETH_MAINNET, top);
         for (uint256 i = 1; i < more.length; ++i) more[i] = keccak256(abi.encode("above", i));
         INativeQueryVerifier.MerkleProofEntry[] memory none;
         mirror.mirror(ETH_MAINNET, top, hex"00", more[0], none, bytes32(0), more);
+        // Re-seal to the new head: the window is fresh again, and the *claim* is the only stale thing.
+        uint256[] memory grown = new uint256[](1);
+        grown[0] = mirror.sealSpan(ETH_MAINNET, blockHeight, top + 10);
 
-        (, UnderwritingDesk.Refusal stale) = desk.assess(cleanBorrower, wider, PRINCIPAL);
+        (, UnderwritingDesk.Refusal stale) = desk.assess(cleanBorrower, wider, PRINCIPAL, grown);
         assertEq(uint256(stale), uint256(UnderwritingDesk.Refusal.NoBondedCleanliness), "stale claim must not count");
 
         uint256 tolerant = desk.createPolicy(
@@ -577,7 +752,7 @@ contract UnderwritingDeskTest is Test {
                 kind: UnderwritingDesk.Kind.BondedClean,
                 chainKey: ETH_MAINNET,
                 window: 25,
-                maxStaleness: 40,
+                maxStaleness: 10,
                 venue: AAVE_V3_POOL,
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
@@ -585,15 +760,15 @@ contract UnderwritingDeskTest is Test {
                 maxPrincipal: 10 ether
             })
         );
-        (bool fresh,) = desk.assess(cleanBorrower, tolerant, PRINCIPAL);
+        (bool fresh,) = desk.assess(cleanBorrower, tolerant, PRINCIPAL, grown);
         assertTrue(fresh, "within the policy's staleness tolerance");
 
         uint256 ninetyish = desk.createPolicy(
             UnderwritingDesk.Policy({
                 kind: UnderwritingDesk.Kind.BondedClean,
                 chainKey: ETH_MAINNET,
-                window: 60,
-                maxStaleness: 40,
+                window: 30,
+                maxStaleness: 10,
                 venue: AAVE_V3_POOL,
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
@@ -601,18 +776,19 @@ contract UnderwritingDeskTest is Test {
                 maxPrincipal: 10 ether
             })
         );
-        (, UnderwritingDesk.Refusal narrow) = desk.assess(cleanBorrower, ninetyish, PRINCIPAL);
-        assertEq(uint256(narrow), uint256(UnderwritingDesk.Refusal.NoBondedCleanliness), "26 blocks do not cover 60");
+        (, UnderwritingDesk.Refusal narrow) = desk.assess(cleanBorrower, ninetyish, PRINCIPAL, grown);
+        assertEq(uint256(narrow), uint256(UnderwritingDesk.Refusal.NoBondedCleanliness), "26 blocks do not cover 30");
     }
 
     function test_oneLoanPerAddressPerPolicy() public {
+        _standing(cleanBorrower);
         vm.prank(cleanBorrower);
-        desk.borrow(blankFile, PRINCIPAL);
-        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, blankFile, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
+        (, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, bondedClean, PRINCIPAL, _w());
         assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.AlreadyLent));
         vm.prank(cleanBorrower);
         vm.expectRevert(abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.AlreadyLent));
-        desk.borrow(blankFile, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
     }
 
     function test_policyThatReadsNoSubjectIsRejected() public {
@@ -653,19 +829,19 @@ contract UnderwritingDeskTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.DeskOutOfFunds)
         );
-        desk.borrow(generous, 60 ether); // the desk holds 50
+        desk.borrow(generous, 60 ether, _w()); // the desk holds 50
     }
 
     function test_unknownPolicyIsRefused() public {
         vm.prank(cleanBorrower);
         vm.expectRevert(UnderwritingDesk.NoSuchPolicy.selector);
-        desk.borrow(999, PRINCIPAL);
+        desk.borrow(999, PRINCIPAL, _w());
     }
 
     function test_principalAboveThePolicyCapIsRefused() public {
         vm.prank(cleanBorrower);
         vm.expectRevert(UnderwritingDesk.PrincipalTooLarge.selector);
-        desk.borrow(blankFile, 11 ether);
+        desk.borrow(blankFile, 11 ether, _w());
     }
 
     // ---------------------------------------------------------------------------------------
@@ -676,49 +852,61 @@ contract UnderwritingDeskTest is Test {
     /// would not be the code holding the money.
     function test_assessAgreesWithBorrowForEveryState() public {
         // Each state on its own policy, because a loan already taken is itself a state.
-        uint256 second = _policy(WINDOW);
-        uint256 third = _policy(WINDOW);
+        uint256 second = _bonded(WINDOW);
+        uint256 third = _bonded(WINDOW);
 
-        // 1. nothing said
-        (bool ok,) = desk.assess(cleanBorrower, blankFile, PRINCIPAL);
-        assertTrue(ok, "assess said no while borrow says yes");
+        // 1. nothing said, under the permissive policy: it answers, and it does not lend.
+        (bool ok1, UnderwritingDesk.Refusal why1) = desk.assess(cleanBorrower, blankFile, PRINCIPAL, _w());
+        assertFalse(ok1);
+        assertEq(uint256(why1), uint256(UnderwritingDesk.Refusal.NeedsBondedCover));
         vm.prank(cleanBorrower);
-        desk.borrow(blankFile, PRINCIPAL);
+        vm.expectRevert(abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, why1));
+        desk.borrow(blankFile, PRINCIPAL, _w());
 
-        // 2. already lent
-        (bool okLent, UnderwritingDesk.Refusal whyLent) = desk.assess(cleanBorrower, blankFile, PRINCIPAL);
-        assertFalse(okLent);
-        assertEq(uint256(whyLent), uint256(UnderwritingDesk.Refusal.AlreadyLent));
-        vm.prank(cleanBorrower);
-        vm.expectRevert(abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, whyLent));
-        desk.borrow(blankFile, PRINCIPAL);
-
-        // 3. under hunt
+        // 2. under hunt
         uint256 claimId = _claimClean(cleanBorrower, 1 ether, 1 hours);
-        (bool ok2, UnderwritingDesk.Refusal why2) = desk.assess(cleanBorrower, second, PRINCIPAL);
+        (bool ok2, UnderwritingDesk.Refusal why2) = desk.assess(cleanBorrower, second, PRINCIPAL, _w());
         assertFalse(ok2);
         assertEq(uint256(why2), uint256(UnderwritingDesk.Refusal.ClaimUnderHunt));
         vm.prank(cleanBorrower);
         vm.expectRevert(abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, why2));
-        desk.borrow(second, PRINCIPAL);
+        desk.borrow(second, PRINCIPAL, _w());
 
-        // 4. standing
+        // 3. standing: the one state in which money moves
         vm.warp(block.timestamp + 2 hours);
         registry.finalize(claimId);
-        (bool ok3,) = desk.assess(cleanBorrower, second, PRINCIPAL);
-        assertTrue(ok3);
+        (bool ok3,) = desk.assess(cleanBorrower, second, PRINCIPAL, _w());
+        assertTrue(ok3, "assess said no while borrow says yes");
         vm.prank(cleanBorrower);
-        desk.borrow(second, PRINCIPAL);
+        desk.borrow(second, PRINCIPAL, _w());
+
+        // 4. already lent
+        (bool ok4, UnderwritingDesk.Refusal why4) = desk.assess(cleanBorrower, second, PRINCIPAL, _w());
+        assertFalse(ok4);
+        assertEq(uint256(why4), uint256(UnderwritingDesk.Refusal.AlreadyLent));
+        vm.prank(cleanBorrower);
+        vm.expectRevert(abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, why4));
+        desk.borrow(second, PRINCIPAL, _w());
 
         // 5. proven liar, on a policy never borrowed from
         uint256 lie = _claimClean(LIQUIDATED_BORROWER, 1 ether, 1 hours);
         _refute(refuter, lie);
-        (bool ok4, UnderwritingDesk.Refusal why4) = desk.assess(LIQUIDATED_BORROWER, third, PRINCIPAL);
-        assertFalse(ok4);
-        assertEq(uint256(why4), uint256(UnderwritingDesk.Refusal.ProvenLiar));
+        (bool ok5, UnderwritingDesk.Refusal why5) = desk.assess(LIQUIDATED_BORROWER, third, PRINCIPAL, _w());
+        assertFalse(ok5);
+        assertEq(uint256(why5), uint256(UnderwritingDesk.Refusal.ProvenLiar));
         vm.prank(LIQUIDATED_BORROWER);
-        vm.expectRevert(abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, why4));
-        desk.borrow(third, PRINCIPAL);
+        vm.expectRevert(abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, why5));
+        desk.borrow(third, PRINCIPAL, _w());
+
+        // 6. window no longer proven: the offered span stops describing the head
+        _mirrorRange(FAR, 2);
+        uint256[] memory stale = _w();
+        (bool ok6, UnderwritingDesk.Refusal why6) = desk.assess(cleanBorrower, third, PRINCIPAL, stale);
+        assertFalse(ok6);
+        assertEq(uint256(why6), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow));
+        vm.prank(cleanBorrower);
+        vm.expectRevert(abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, why6));
+        desk.borrow(third, PRINCIPAL, stale);
     }
 
     /// The refusal cannot be washed by pointing at somebody else's address: there is no parameter
@@ -726,9 +914,10 @@ contract UnderwritingDeskTest is Test {
     function test_aBorrowerCannotBorrowAgainstAnotherAddressesRecord() public {
         uint256 claimId = _claimClean(LIQUIDATED_BORROWER, 1 ether, 1 hours);
         _refute(refuter, claimId);
+        _standing(cleanBorrower);
 
-        // The liar can see that a clean address would be fine...
-        (bool otherOk,) = desk.assess(cleanBorrower, blankFile, PRINCIPAL);
+        // The liar can see that a clean address would be paid...
+        (bool otherOk,) = desk.assess(cleanBorrower, bondedClean, PRINCIPAL, _w());
         assertTrue(otherOk, "the clean address should itself be fine");
 
         // ...and it does them no good, because borrow underwrites msg.sender.
@@ -736,7 +925,7 @@ contract UnderwritingDeskTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(UnderwritingDesk.Rejected.selector, UnderwritingDesk.Refusal.ProvenLiar)
         );
-        desk.borrow(blankFile, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
     }
 
     /// A claim about a different venue or a different event says nothing about this policy.
@@ -745,10 +934,11 @@ contract UnderwritingDeskTest is Test {
         registry.assertAbsence{value: 1 ether}(
             _spans(), address(0xDEAD), LIQUIDATION_CALL, _subject(cleanBorrower), 3, 1 hours
         );
+        _standing(cleanBorrower);
 
         uint256 before = cleanBorrower.balance;
         vm.prank(cleanBorrower);
-        desk.borrow(blankFile, PRINCIPAL);
+        desk.borrow(bondedClean, PRINCIPAL, _w());
         assertEq(cleanBorrower.balance, before + PRINCIPAL, "an unrelated venue should not block");
     }
 

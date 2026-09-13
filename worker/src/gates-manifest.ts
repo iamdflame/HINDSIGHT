@@ -52,6 +52,14 @@ function build() {
   const liqDir = 'contracts/test/fixtures/mainnet/aave-liquidations/';
   const sample = readdirSync(new URL(liqDir, ROOT)).filter((f) => f.endsWith('.json')).sort().slice(0, 3);
   const proven = m.board.chains.mainnet.rows.find((r: any) => r.role === 'lie' && r.refutation && r.subject === '0x7562be2022d31a75f9887b7b932256c704f0c8e7');
+  // The policy whose bond floor is low enough that Utuh's rule -- ten times what a lie would cost --
+  // is what limits the loan. Its boundary is checked live, against a real Aave borrower's standing claim.
+  const sized = m.desk.ninetyDay.find((x: any) => x.kind === 'BondedClean' && x.policy !== m.desk.ninetyDay.find((y: any) => y.kind === 'BondedClean')?.policy);
+  const clean = m.board.chains.mainnet.rows.find((r: any) => r.role === 'clean' && r.status === 'Standing');
+  const priorDesk = Object.entries(d.contracts.superseded ?? {})
+    .filter(([k]) => k.startsWith('UnderwritingDesk@'))
+    .map(([, v]: any) => v.address)
+    .pop();
   return {
     generatedFrom: 'deployments.json, contracts/out, contracts/test/fixtures',
     rpc: d.rpc,
@@ -70,11 +78,25 @@ function build() {
     differential: sample.map((f) => fixture(liqDir + f)),
     board: { roles: board, settled },
     desk: {
+      address: d.contracts.UnderwritingDesk,
       blankFileAave: m.desk.ninetyDay.find((x: any) => x.kind === 'BlankFile')?.policy ?? 0,
+      bondedAave: m.desk.ninetyDay.find((x: any) => x.kind === 'BondedClean')?.policy ?? null,
+      sizedAave: sized?.policy ?? null,
       window: 648_000,
       nobody: '0x000000000000000000000000000000000000c1ea',
       provenLiar: proven ? { subject: proven.subject, evidenceBlock: proven.refutation.evidenceBlock, claimId: proven.claimId } : null,
+      // The v3.1 desk walked the held bitmap for every question. Both numbers below are real receipts
+      // on Creditcoin, mined in the same block, asking the same desk question of the same address.
+      priorDesk: priorDesk ?? null,
+      gas: { prior: 7_041_373, budget: 1_000_000 },
+      sizing: clean ? { subject: clean.subject, claimId: clean.claimId, leverage: 10 } : null,
     },
+    // The archive as it runs today: the advertised run must stay unbroken end to end, and the heights
+    // still missing below it may shrink but never grow.
+    run: { from: m.chains['3'].topRunFrom, length: m.chains['3'].topRun, unheldInRange: m.chains['3'].unheldInRange },
+    // The follower deliberately stays below the attestation head so a window never reaches for an
+    // unattested block: HEAD_MARGIN is 200 and a checkpoint is 100, so this is that plus slack.
+    attested: { maxLag: 400 },
   };
 }
 

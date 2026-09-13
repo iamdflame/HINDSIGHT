@@ -38,9 +38,16 @@ const REGISTRY_ABI = [
 const DESK_ABI = [
   'function policyCount() view returns (uint256)',
   'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
-  'function assess(address, uint256, uint256) view returns (bool, uint8)',
+  'function assess(address, uint256, uint256, uint256[]) view returns (bool, uint8)',
+  'function securityBudget(uint64) view returns (uint32 attestors, uint128 minBond, uint256 cap)',
+  'function totalOutstanding() view returns (uint256)',
 ];
-const REFUSAL = ['None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness', 'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent'];
+import { allSpans, offerFor, NINETY_DAYS } from './spans.ts';
+
+const REFUSAL = [
+  'None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness',
+  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached',
+];
 const popcount = (x: bigint) => {
   let n = 0;
   while (x) {
@@ -324,19 +331,36 @@ async function main() {
     const n = Number(await dk.policyCount());
     desk.policies = n;
     desk.balanceWei = (await cc.getBalance(d.contracts.UnderwritingDesk)).toString();
+
+    // The window the desk is handed, proven once by `sealSpan` rather than walked on every question.
+    const mir = new Contract(d.contracts.EthereumMirror, MIRROR_ABI, cc);
+    const offer = offerFor(await allSpans(mir, 3), NINETY_DAYS);
+    desk.window = offer ? { spanIds: offer.ids, from: offer.from, to: offer.to, heights: offer.to - offer.from + 1 } : null;
+    const [attestors, minBond, cap] = await dk.securityBudget(3);
+    desk.securityBudget = {
+      source: '0x0FD4 AttestorStash, read live on every decision',
+      attestors: Number(attestors),
+      minBondWei: minBond.toString(),
+      capWei: cap.toString(),
+      outstandingWei: (await dk.totalOutstanding()).toString(),
+    };
+
     desk.ninetyDay = [];
-    for (let i = 0; i < n; i++) {
-      const p = await dk.policyOf(i);
-      if (Number(p.window) < 648_000) continue;
-      // An address nothing has ever been said about: under BlankFile the only possible refusal is the
-      // archive itself, so this is the live form of "the desk is not ArchiveTooShallow".
-      const [ok, reason] = await dk.assess('0x000000000000000000000000000000000000c1ea', i, 10n ** 17n);
-      desk.ninetyDay.push({ policy: i, kind: Number(p.kind) === 0 ? 'BlankFile' : 'BondedClean', window: Number(p.window), subject: '0x…c1ea', ok: Boolean(ok), reason: REFUSAL[Number(reason)] });
+    if (offer) {
+      for (let i = 0; i < n; i++) {
+        const p = await dk.policyOf(i);
+        if (Number(p.window) < 648_000) continue;
+        // An address nothing has ever been said about, asking only what its file says. Under either
+        // policy the only possible refusal is the archive itself, so this is the live form of
+        // "the desk is not ArchiveTooShallow".
+        const [ok, reason] = await dk.assess('0x000000000000000000000000000000000000c1ea', i, 0, offer.ids);
+        desk.ninetyDay.push({ policy: i, kind: Number(p.kind) === 0 ? 'BlankFile' : 'BondedClean', window: Number(p.window), subject: '0x…c1ea', ok: Boolean(ok), reason: REFUSAL[Number(reason)] });
+      }
     }
   }
   // Transactions the desk demo sent, as recorded; their receipts are immutable, so they are re-read.
   {
-    const url = new URL('../../docs/transcripts/desk-v3.json', import.meta.url);
+    const url = new URL('../../docs/transcripts/desk-v4.json', import.meta.url);
     if (existsSync(url)) {
       const t = JSON.parse(readFileSync(url, 'utf8'));
       const txs = t.entries.filter((e: any) => e.tx);

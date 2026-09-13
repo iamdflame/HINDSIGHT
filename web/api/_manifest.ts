@@ -35,23 +35,23 @@ export const manifest = {
    ]
   },
   "UnderwritingDesk": {
-   "address": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
-   "codeHash": "0x4dc394f890a33417cd0c5604578957c8fb62c345ea417c18f523c20087b8f43a",
+   "address": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
+   "codeHash": "0x09bcb0540f69c4c31d34d32a66a2e2ec656beccc94590e7121fb083ef52e4e74",
    "immutables": [
     [
-     701,
+     1320,
      32
     ],
     [
-     2255,
+     4461,
      32
     ],
     [
-     1674,
+     2003,
      32
     ],
     [
-     2544,
+     2987,
      32
     ]
    ]
@@ -96,18 +96,18 @@ export const manifest = {
   }
  },
  "held": {
-  "mainnet": 780302,
-  "sepolia": 300601
+  "mainnet": 783401,
+  "sepolia": 302401
  },
  "emptyBlock": {
-  "height": 25354534,
-  "spanId": 0,
-  "spanFrom": 25309541,
-  "spanTo": 25440612,
+  "height": 25300128,
+  "spanId": 7,
+  "spanFrom": 25288100,
+  "spanTo": 25943459,
   "isMirrored": true,
   "rootIsZero": true,
   "spanCovers": true,
-  "spanBlocks": 131072
+  "spanBlocks": 655360
  },
  "secondTransaction": {
   "txHash": "0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9",
@@ -671,13 +671,34 @@ export const manifest = {
   }
  },
  "desk": {
+  "address": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
   "blankFileAave": 0,
+  "bondedAave": 1,
+  "sizedAave": 4,
   "window": 648000,
   "nobody": "0x000000000000000000000000000000000000c1ea",
   "provenLiar": {
    "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
    "evidenceBlock": 25797699,
    "claimId": 2
+  },
+  "priorDesk": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
+  "gas": {
+   "prior": 7041373,
+   "budget": 1000000
+  },
+  "sizing": {
+   "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+   "claimId": 13,
+   "leverage": 10
   }
+ },
+ "run": {
+  "from": 25186001,
+  "length": 782500,
+  "unheldInRange": 14000
+ },
+ "attested": {
+  "maxLag": 400
  }
 };

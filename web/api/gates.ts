@@ -21,19 +21,32 @@ export const config = { maxDuration: 60 };
 type Gate = { id: string; title: string; pass: boolean; detail: string; ms: number };
 
 const PRECOMPILE = '0x0000000000000000000000000000000000000FD2';
+const CHAIN_INFO = '0x0000000000000000000000000000000000000FD3';
 const MIRROR_ABI = [
   'function mirroredBlocks(uint64) view returns (uint64)',
   'function highestMirrored(uint64) view returns (uint64)',
   'function isMirrored(uint64, uint64) view returns (bool)',
   'function rootOf(uint64, uint64) view returns (bytes32)',
   'function contiguousFrom(uint64, uint64, uint64) view returns (uint64)',
+  'function lowestMirrored(uint64) view returns (uint64)',
   'function spanCovers(uint256, uint64, uint64) view returns (bool)',
+  'function spanCount() view returns (uint256)',
+  'function spanOf(uint256) view returns ((uint64 chainKey, uint64 fromBlock, uint64 toBlock))',
   'function verifyOrRevert(uint64, uint64, bytes, (bytes32 hash, bool isLeft)[]) view returns (uint64)',
   'function tryVerify(uint64, uint64, bytes, (bytes32 hash, bool isLeft)[]) view returns (bool, uint64)',
 ];
 const REGISTRY_ABI = ['function claimOf(uint256) view returns ((address claimant, address refuter, uint64 chainKey, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 spanFrom, uint64 spanTo, bytes32 spansHash, uint256 bond, uint256 bondStaked, uint64 openUntil, uint8 status, uint8 kind, uint32 members, bytes32 membersHash))'];
-const DESK_ABI = ['function assess(address, uint256, uint256) view returns (bool ok, uint8 reason)'];
-const REFUSAL = ['None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness', 'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent'];
+const DESK_ABI = [
+  'function assess(address, uint256, uint256, uint256[]) view returns (bool ok, uint8 reason)',
+  'function securityBudget(uint64) view returns (uint32 attestors, uint128 minBond, uint256 cap)',
+  'function totalOutstanding() view returns (uint256)',
+];
+const CHAIN_INFO_ABI = ['function get_latest_attestation_height_and_hash(uint64) view returns ((uint64 height, bytes32 hash, bool isAttestation, bool exists) result)'];
+const ENFORCEABLE_ABI = ['function enforceableLoss(uint256) view returns (uint256)'];
+const REFUSAL = [
+  'None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness',
+  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached',
+];
 const STATUS = ['None', 'Open', 'Refuted', 'Standing'];
 const PRECOMPILE_ABI = ['function verify(uint64 chainKey, uint64 height, bytes encodedTransaction, (bytes32 root, (bytes32 hash, bool isLeft)[] siblings) merkleProof, (bytes32 lowerEndpointDigest, bytes32[] roots) continuityProof) view returns (bool)'];
 
@@ -56,6 +69,31 @@ async function runGates() {
   const desk = new Contract(manifest.contracts.UnderwritingDesk.address, DESK_ABI, cc);
   const iface = new Interface(MIRROR_ABI);
   const block = await cc.getBlockNumber();
+
+  /**
+   * The sealed spans a caller hands the desk to prove the policy's window. The desk re-checks
+   * adjacency, chain, length and freshness itself -- offering them is a convenience, not a key -- so
+   * this is exactly what any consumer would compute before calling `assess`.
+   */
+  const offerFor = async (chainKey: number, window: number) => {
+    const n = Number(await mirror.spanCount());
+    const spans = (await Promise.all(Array.from({ length: n }, async (_, i) => ({ id: i, s: await mirror.spanOf(i) }))))
+      .filter((x) => Number(x.s.chainKey) === chainKey)
+      .map((x) => ({ id: x.id, from: Number(x.s.fromBlock), to: Number(x.s.toBlock) }));
+    let top = spans[0];
+    for (const x of spans) if (!top || x.to > top.to || (x.to === top.to && x.from < top.from)) top = x;
+    if (!top) return null;
+    const ids = [top.id];
+    let from = top.from;
+    while (top.to - from < window && ids.length < 8) {
+      const below = spans.find((x) => x.to + 1 === from && x.id !== top.id);
+      if (!below) break;
+      from = below.from;
+      ids.unshift(below.id);
+    }
+    return top.to - from < window ? null : { ids, from, to: top.to };
+  };
+  const offer = await offerFor(3, manifest.desk.window);
 
   const call = async (to: string, data: string, override?: Record<string, { code: string }>) => {
     try {
@@ -177,17 +215,85 @@ async function runGates() {
       return { pass: disagreements.length === 0, detail: disagreements.length ? disagreements.join('; ') : `${checks} checks over ${manifest.differential.length} real mainnet liquidations, 0 divergences` };
     }),
 
+    gate('run-unbroken', 'The run the site advertises holds every height, end to end', async () => {
+      const { from, length } = manifest.run;
+      const run = Number(await mirror.contiguousFrom(3, from, length));
+      return { pass: run >= length, detail: run >= length ? `${from.toLocaleString('en-US')} – ${(from + length - 1).toLocaleString('en-US')}, ${length.toLocaleString('en-US')} heights, no gap` : `first missing height ${(from + run).toLocaleString('en-US')} — the advertised run is broken` };
+    }),
+
+    gate('holes-closing', 'Heights missing below the advertised run only ever shrink', async () => {
+      const [held, lo, hi] = await Promise.all([mirror.mirroredBlocks(3), mirror.lowestMirrored(3), mirror.highestMirrored(3)]);
+      const missing = Number(hi) - Number(lo) + 1 - Number(held);
+      const was = manifest.run.unheldInRange;
+      const pass = missing <= was;
+      return { pass, detail: missing === 0 ? `no holes: ${Number(lo).toLocaleString('en-US')} – ${Number(hi).toLocaleString('en-US')} is unbroken` : `${missing.toLocaleString('en-US')} heights still missing between ${Number(lo).toLocaleString('en-US')} and ${Number(hi).toLocaleString('en-US')} (recorded ${was.toLocaleString('en-US')}${missing < was ? `, ${(was - missing).toLocaleString('en-US')} repaired since` : ''})` };
+    }),
+
+    gate('span-window', 'A sealed span proves 648,000 heights at the archive head', async () => {
+      if (!offer) return { pass: false, detail: 'no adjacent run of sealed spans covers 648,000 heights — the desk would refuse ArchiveTooShallow' };
+      const head = Number(await mirror.highestMirrored(3));
+      const lag = head - offer.to;
+      // A BlankFile policy carries maxStaleness 0: a window that stops below the head refuses outright.
+      return { pass: lag === 0, detail: `span${offer.ids.length > 1 ? 's' : ''} ${offer.ids.join(', ')} cover ${(offer.to - offer.from + 1).toLocaleString('en-US')} heights to ${offer.to.toLocaleString('en-US')}${lag === 0 ? ', at the head' : `, ${lag.toLocaleString('en-US')} below the head`}` };
+    }),
+
+    gate('attested-lag', 'The archive keeps up with what Creditcoin has attested', async () => {
+      const info = new Contract(CHAIN_INFO, CHAIN_INFO_ABI, cc);
+      const [att, head] = await Promise.all([info.get_latest_attestation_height_and_hash(3), mirror.highestMirrored(3)]);
+      const lag = Number(att.height) - Number(head);
+      return { pass: lag <= manifest.attested.maxLag, detail: `attested ${Number(att.height).toLocaleString('en-US')}, mirrored ${Number(head).toLocaleString('en-US')} — ${lag <= 0 ? 'at or ahead of' : lag.toLocaleString('en-US') + ' behind'} the attestation head (budget ${manifest.attested.maxLag})` };
+    }),
+
+    gate('desk-gas', 'The desk answers a 90-day question without walking 648,000 heights', async () => {
+      if (!offer) return { pass: false, detail: 'no window to price' };
+      const data = new Interface(DESK_ABI).encodeFunctionData('assess', [manifest.desk.nobody, manifest.desk.blankFileAave, 0, offer.ids]);
+      const now = Number(await cc.estimateGas({ to: manifest.desk.address, data }));
+      const prior = manifest.desk.gas.prior;
+      return { pass: now <= manifest.desk.gas.budget, detail: `${now.toLocaleString('en-US')} gas to price ninety days (budget ${manifest.desk.gas.budget.toLocaleString('en-US')}); the superseded desk walked the bitmap for ${prior.toLocaleString('en-US')} — ${(prior / now).toFixed(1)}× more` };
+    }),
+
     gate('desk-depth', 'The desk’s 90-day policy answers rather than refusing ArchiveTooShallow', async () => {
-      const [ok, reason] = await desk.assess(manifest.desk.nobody, manifest.desk.blankFileAave, 10n ** 17n);
+      if (!offer) return { pass: false, detail: 'no sealed window to offer: the desk would refuse ArchiveTooShallow' };
+      const [ok, reason] = await desk.assess(manifest.desk.nobody, manifest.desk.blankFileAave, 0, offer.ids);
       return { pass: REFUSAL[Number(reason)] === 'None' && ok === true, detail: `BlankFile policy ${manifest.desk.blankFileAave}, an address with nothing on file → ${REFUSAL[Number(reason)]}` };
+    }),
+
+    gate('desk-silence', 'The desk answers on silence and refuses to lend against it', async () => {
+      if (!offer) return { pass: false, detail: 'no sealed window to offer' };
+      const [asked, lend] = await Promise.all([
+        desk.assess(manifest.desk.nobody, manifest.desk.blankFileAave, 0, offer.ids),
+        desk.assess(manifest.desk.nobody, manifest.desk.blankFileAave, 10n ** 17n, offer.ids),
+      ]);
+      const pass = REFUSAL[Number(asked[1])] === 'None' && REFUSAL[Number(lend[1])] === 'NeedsBondedCover';
+      return { pass, detail: `an address with nothing on file: asked → ${REFUSAL[Number(asked[1])]}; asked for 0.1 tCTC → ${REFUSAL[Number(lend[1])]} (silence is not collateral)` };
+    }),
+
+    gate('desk-sizing', 'A loan may not exceed ten times what a lie would have cost', async () => {
+      const z = manifest.desk.sizing;
+      if (!z || manifest.desk.sizedAave === null || !offer) return { pass: false, detail: 'no standing claim recorded to size against' };
+      const reg = new Contract(manifest.contracts.AbsenceRegistryV3.address, ENFORCEABLE_ABI, cc);
+      const enforceable: bigint = await reg.enforceableLoss(z.claimId);
+      const atLimit = enforceable * BigInt(z.leverage);
+      const [inside, outside] = await Promise.all([
+        desk.assess(z.subject, manifest.desk.sizedAave, atLimit, offer.ids),
+        desk.assess(z.subject, manifest.desk.sizedAave, atLimit + 1n, offer.ids),
+      ]);
+      const pass = inside[0] === true && REFUSAL[Number(outside[1])] === 'NoBondedCleanliness';
+      return { pass, detail: `${z.subject.slice(0, 8)}… claim #${z.claimId} puts ${(Number(enforceable) / 1e18).toFixed(3)} tCTC beyond recovery: ${(Number(atLimit) / 1e18).toFixed(3)} tCTC → ${REFUSAL[Number(inside[1])]}, one wei more → ${REFUSAL[Number(outside[1])]}` };
+    }),
+
+    gate('desk-cap', 'The desk cannot lend past what the attestor quorum has bonded', async () => {
+      const [attestors, minBond, cap] = await desk.securityBudget(3);
+      const outstanding: bigint = await desk.totalOutstanding();
+      const pass = cap === BigInt(attestors) * minBond && outstanding <= cap;
+      return { pass, detail: `0x0FD4: ${Number(attestors)} attestors × ${(Number(minBond) / 1e18).toFixed(0)} CTC bonded ⇒ ceiling ${(Number(cap) / 1e18).toFixed(0)} tCTC; ${(Number(outstanding) / 1e18).toFixed(2)} outstanding` };
     }),
 
     gate('desk-liar', 'The desk refuses a borrower proven liquidated inside its window', async () => {
       const p = manifest.desk.provenLiar;
-      if (!p) return { pass: false, detail: 'no refuted claim recorded to check against' };
-      const head = Number(await mirror.highestMirrored(3));
-      const inWindow = p.evidenceBlock >= head - manifest.desk.window;
-      const [, reason] = await desk.assess(p.subject, manifest.desk.blankFileAave, 10n ** 17n);
+      if (!p || !offer) return { pass: false, detail: 'no refuted claim recorded to check against' };
+      const inWindow = p.evidenceBlock >= offer.to - manifest.desk.window;
+      const [, reason] = await desk.assess(p.subject, manifest.desk.blankFileAave, 0, offer.ids);
       const expected = inWindow ? 'ProvenLiar' : 'None';
       return { pass: REFUSAL[Number(reason)] === expected, detail: `${p.subject.slice(0, 8)}… (claim #${p.claimId}, liquidation at ${p.evidenceBlock.toLocaleString('en-US')}, ${inWindow ? 'inside' : 'now below'} the window) → ${REFUSAL[Number(reason)]}, expected ${expected}` };
     }),

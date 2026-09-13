@@ -2,8 +2,10 @@
 pragma solidity 0.8.28;
 
 import {IMirror} from "./IMirror.sol";
+import {IMirrorSpans} from "./IMirrorSpans.sol";
 import {IAbsence} from "./IAbsence.sol";
 import {IAbsenceV3} from "./IAbsenceV3.sol";
+import {AttestorStash} from "./IAttestorStash.sol";
 
 /// @title UnderwritingDesk
 /// @notice A lender that reads the archive and the absence market, and refuses.
@@ -34,6 +36,25 @@ import {IAbsenceV3} from "./IAbsenceV3.sol";
 ///      answer drawn from history it does not hold is not an answer. Refusing on incapacity is the
 ///      only safe direction for a lender, and it is the direction most file-based designs get wrong.
 ///
+///      HOW THE WINDOW IS PROVEN, AND WHY IT IS NOT WALKED
+///
+///      Depth used to be checked by walking the held bitmap across the whole window: ~2,532 cold
+///      SLOADs, 7.03M gas inside `borrow` for ninety days. A lender that expensive is a screenshot of
+///      a `view`. The walk is now done once, by `sealSpan`, and the caller passes the sealed spans it
+///      relies on: the desk checks they are adjacent, on the policy's chain, long enough to cover the
+///      window, and recent enough to still describe the head. That is a handful of slots, and it is
+///      the same fact -- a span cannot be sealed across a hole, and a held bit is never unset.
+///
+///      Passing spans is not a privilege. Anyone may seal; anyone may pass them; a caller who passes a
+///      stale or short set is refused, and one who passes somebody else's spans gets the same answer.
+///
+///      WHAT BACKS THE MONEY
+///
+///      Two ceilings, neither of them ours to raise: a loan may not exceed ten times what a liar would
+///      have lost (`enforceableLoss`, Utuh's sizing rule), and the desk's total outstanding may not
+///      exceed what the attestor quorum for the source chain has bonded (`0x0FD4`, Humanline's rule).
+///      `BlankFile` therefore answers but never lends: there is no bond under silence to size against.
+///
 ///      WHAT IT READS, AND WHAT IT REFUSES TO BE FOOLED BY
 ///
 ///      The desk reads the registry only through `IAbsenceV3`, and only under one key: chain, venue,
@@ -54,7 +75,7 @@ import {IAbsenceV3} from "./IAbsenceV3.sol";
 ///      check -- so it is never the default, and a consumer choosing it is choosing to rely on an
 ///      economic assertion rather than a cryptographic one.
 contract UnderwritingDesk {
-    IMirror public immutable MIRROR;
+    IMirrorSpans public immutable MIRROR;
     IAbsenceV3 public immutable REGISTRY;
 
     /// @notice Most claims under one key the desk will examine looking for bonded cleanliness.
@@ -62,6 +83,19 @@ contract UnderwritingDesk {
     ///      come from the registry's aggregates, which no volume of claims can hide. Somebody who
     ///      buries a subject's bonded claim under 64 newer ones gets that subject refused, not paid.
     uint256 public constant MAX_CLAIM_SCAN = 64;
+
+    /// @notice Most spans a caller may offer as proof of one window. Ninety days is five 131,072 seals.
+    uint256 public constant MAX_SPANS = 8;
+
+    /// @notice A loan may not exceed this multiple of what a liar could not recover. Utuh's formula.
+    uint256 public constant LEVERAGE_ON_ENFORCEABLE_LOSS = 10;
+
+    /// @notice tCTC the desk may have outstanding per CTC the attestor quorum has bonded.
+    uint256 public constant EXPOSURE_PER_BONDED_CTC = 1;
+
+    /// @notice Everything lent so far. There is no repayment path, so this only grows -- which is the
+    ///         honest way to compare it against a bonded ceiling.
+    uint256 public totalOutstanding;
 
     enum Kind {
         BlankFile,
@@ -83,7 +117,12 @@ contract UnderwritingDesk {
         EventOnRecord,
         /// This desk already lent to this address under this policy. One loan each: the desk has
         /// no repayment path, and a lender without one that lends twice is a faucet.
-        AlreadyLent
+        AlreadyLent,
+        /// Money against silence. `BlankFile` answers questions; it does not lend, because there is no
+        /// bond beneath it to size a loan against.
+        NeedsBondedCover,
+        /// The desk's outstanding total would exceed what the attestor quorum for this chain has bonded.
+        PoolCapReached
     }
 
     struct Policy {
@@ -121,7 +160,7 @@ contract UnderwritingDesk {
     error Rejected(Refusal reason);
     error TransferFailed();
 
-    constructor(IMirror mirror_, IAbsenceV3 registry_) {
+    constructor(IMirrorSpans mirror_, IAbsenceV3 registry_) {
         MIRROR = mirror_;
         REGISTRY = registry_;
     }
@@ -145,29 +184,38 @@ contract UnderwritingDesk {
 
     /// @notice The decision, for any address, without moving money.
     /// @dev Same code path `borrow` gates on. If this returns false for an address, that address
-    ///      cannot borrow, whoever is asking.
-    function assess(address subject, uint256 policyId, uint256 principal)
+    ///      cannot borrow, whoever is asking. Pass `principal = 0` to ask only what the file says.
+    function assess(address subject, uint256 policyId, uint256 principal, uint256[] calldata spanIds)
         external
         view
         returns (bool ok, Refusal reason)
     {
-        reason = _assess(subject, policyId, principal);
+        reason = _assess(subject, policyId, principal, spanIds);
         ok = reason == Refusal.None;
     }
 
     /// @notice Borrow against your own record. Underwrites `msg.sender`, by construction.
-    function borrow(uint256 policyId, uint256 principal) external {
+    function borrow(uint256 policyId, uint256 principal, uint256[] calldata spanIds) external {
         if (policyId >= _policies.length) revert NoSuchPolicy();
         if (principal == 0) revert ZeroPrincipal();
         if (principal > _policies[policyId].maxPrincipal) revert PrincipalTooLarge();
 
-        Refusal reason = _assess(msg.sender, policyId, principal);
+        Refusal reason = _assess(msg.sender, policyId, principal, spanIds);
         if (reason != Refusal.None) revert Rejected(reason);
 
         lent[msg.sender][policyId] = true;
+        totalOutstanding += principal;
         emit Lent(msg.sender, policyId, principal);
         (bool sent,) = payable(msg.sender).call{value: principal}("");
         if (!sent) revert TransferFailed();
+    }
+
+    /// @notice What the attestor quorum for `chainKey` has bonded, and the exposure the desk allows
+    ///         against it. Read live from `0x0FD4` on every decision.
+    function securityBudget(uint64 chainKey) public view returns (uint32 attestors, uint128 minBond, uint256 cap) {
+        attestors = AttestorStash.get().getAttestorsCount(chainKey);
+        minBond = AttestorStash.get().getMinBondRequirement(chainKey);
+        cap = (uint256(attestors) * uint256(minBond) * EXPOSURE_PER_BONDED_CTC);
     }
 
     function policyCount() external view returns (uint256) {
@@ -183,25 +231,26 @@ contract UnderwritingDesk {
     // The decision
     // -------------------------------------------------------------------------------------------
 
-    function _assess(address subject, uint256 policyId, uint256 principal) internal view returns (Refusal) {
+    function _assess(address subject, uint256 policyId, uint256 principal, uint256[] calldata spanIds)
+        internal
+        view
+        returns (Refusal)
+    {
         if (policyId >= _policies.length) return Refusal.NoSuchPolicy;
         Policy memory p = _policies[policyId];
 
         if (lent[subject][policyId]) return Refusal.AlreadyLent;
         if (address(this).balance < principal) return Refusal.DeskOutOfFunds;
 
-        // An answer drawn from history the archive does not hold is not an answer. "Holds" means
-        // every height in the window, not two endpoints: `lowestMirrored` and `highestMirrored`
-        // can sit ninety days apart around a hole, and a liquidation inside that hole is one no
-        // hunter can ever prove. `contiguousFrom` walks the held bitmap a word at a time, so the
-        // 648,000-block policy reads ~2,532 slots -- free in `assess`, 7.03M gas cold in `borrow`
-        // (measured, `test_gas_ninetyDayBorrowReadsTheBitmapWordWise`).
-        // Anchored on the highest held height, so anyone mirroring an isolated window above a gap
-        // makes the desk refuse until the gap is filled: fail-closed, which is the right way to fail.
-        uint64 head = MIRROR.highestMirrored(p.chainKey);
-        if (head == 0 || head < p.window) return Refusal.ArchiveTooShallow;
-        uint64 floor = head - p.window;
-        if (MIRROR.contiguousFrom(p.chainKey, floor, p.window + 1) <= p.window) return Refusal.ArchiveTooShallow;
+        // The window, proven once by `sealSpan` and offered here rather than walked. A span cannot be
+        // sealed across a hole and a held bit is never unset, so an old seal is still a true statement
+        // about its range -- but it must be a *recent* one to describe the head, and long enough to
+        // cover the policy's window.
+        (bool proven, uint64 spanTo) = _windowProven(p, spanIds);
+        // Not a new refusal: spans that do not prove the window mean the same thing they always did --
+        // the archive does not demonstrably hold the history this policy answers from.
+        if (!proven) return Refusal.ArchiveTooShallow;
+        uint64 floor = spanTo - p.window;
 
         bytes32 key = REGISTRY.keyOf(p.chainKey, p.venue, p.topic0, p.subjectTopic, bytes32(uint256(uint160(subject))));
         (uint32 open, uint32 refuted, uint64 lastEvidenceAt, uint64 lastMemberAt, uint32 total) = REGISTRY.recordOf(key);
@@ -214,21 +263,52 @@ contract UnderwritingDesk {
         // Somebody is hunting this address right now. Do not lend into a fight.
         if (open != 0) return Refusal.ClaimUnderHunt;
 
-        if (p.kind == Kind.BlankFile) return Refusal.None;
+        // Asking what the file says costs nothing and needs no bond.
+        if (principal == 0) return Refusal.None;
 
-        // BondedClean: a standing EmptySet that covers a full window of its own, ends near the head,
-        // and whose *unrecoverable* half covers what the desk is about to pay out.
-        uint256 need = principal > p.minBond ? principal : p.minBond;
+        // Money is different. Silence is not collateral, so BlankFile answers and stops here.
+        if (p.kind == Kind.BlankFile) return Refusal.NeedsBondedCover;
+
+        (,, uint256 cap) = securityBudget(p.chainKey);
+        if (totalOutstanding + principal > cap) return Refusal.PoolCapReached;
+
+        // BondedClean: a standing EmptySet that covers a full window of its own, ends inside this
+        // window, and whose unrecoverable half backs the loan at no more than tenfold.
+        uint256 need = (principal + LEVERAGE_ON_ENFORCEABLE_LOSS - 1) / LEVERAGE_ON_ENFORCEABLE_LOSS;
+        if (need < p.minBond) need = p.minBond;
         uint256 scanned;
         for (uint256 i = total; i > 0 && scanned < MAX_CLAIM_SCAN; ++scanned) {
             uint256 id = REGISTRY.claimUnderKey(key, --i);
             if (REGISTRY.kind(id) != IAbsenceV3.Kind.EmptySet) continue;
             if (!REGISTRY.isUsable(id, need)) continue;
-            (,,, uint64 spanFrom, uint64 spanTo) = REGISTRY.assurance(id);
-            if (spanTo - spanFrom < p.window) continue;
-            if (spanTo + p.maxStaleness < head) continue;
+            (,,, uint64 claimFrom, uint64 claimTo) = REGISTRY.assurance(id);
+            if (claimTo - claimFrom < p.window) continue;
+            if (claimTo < floor) continue;
+            if (claimTo + p.maxStaleness < spanTo) continue;
             return Refusal.None;
         }
         return Refusal.NoBondedCleanliness;
+    }
+
+    /// @dev The offered spans prove `[spanTo - window, spanTo]` is held with no gap, and `spanTo` is
+    ///      close enough to the archive head to still be describing it.
+    function _windowProven(Policy memory p, uint256[] calldata spanIds) internal view returns (bool, uint64) {
+        if (spanIds.length == 0 || spanIds.length > MAX_SPANS) return (false, 0);
+        IMirrorSpans.Span memory first = MIRROR.spanOf(spanIds[0]);
+        if (first.chainKey != p.chainKey) return (false, 0);
+        uint64 from = first.fromBlock;
+        uint64 to = first.toBlock;
+        for (uint256 i = 1; i < spanIds.length; ++i) {
+            IMirrorSpans.Span memory sp = MIRROR.spanOf(spanIds[i]);
+            // Adjacency, not merely order: a one-block hole is exactly what a sealed span rules out.
+            if (sp.chainKey != p.chainKey || sp.fromBlock != to + 1) return (false, 0);
+            to = sp.toBlock;
+        }
+        if (to - from < p.window) return (false, 0);
+        uint64 head = MIRROR.highestMirrored(p.chainKey);
+        if (head == 0 || to > head) return (false, 0);
+        // `maxStaleness` is how far below the head a window may end and still be underwritten on.
+        if (to + p.maxStaleness < head) return (false, 0);
+        return (true, to);
     }
 }

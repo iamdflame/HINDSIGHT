@@ -19,15 +19,18 @@
  * BondedClean mechanism end to end -- a claim that covered the whole 90-day window, stood, and whose
  * unrecoverable half covers the principal -- not that anyone vetted a stranger.
  *
- * Every verdict is written to docs/transcripts/desk-v3.json with the claim that caused it.
+ * Every verdict is written to docs/transcripts/desk-v4.json with the claim that caused it.
  */
 import { JsonRpcProvider, Wallet, Contract, parseEther, formatEther } from 'ethers';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { CC_RPC, EXPLORER } from './config.ts';
+import { CC_RPC, EXPLORER, MIRROR_ABI } from './config.ts';
+import { allSpans, offerFor, NINETY_DAYS } from './spans.ts';
 
 const DESK_ABI = [
-  'function assess(address subject, uint256 policyId, uint256 principal) view returns (bool ok, uint8 reason)',
-  'function borrow(uint256 policyId, uint256 principal)',
+  'function assess(address subject, uint256 policyId, uint256 principal, uint256[] spanIds) view returns (bool ok, uint8 reason)',
+  'function borrow(uint256 policyId, uint256 principal, uint256[] spanIds)',
+  'function securityBudget(uint64 chainKey) view returns (uint32 attestors, uint128 minBond, uint256 cap)',
+  'function totalOutstanding() view returns (uint256)',
   'function policyCount() view returns (uint256)',
   'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
   'error Rejected(uint8 reason)',
@@ -36,9 +39,12 @@ const REGISTRY_ABI = [
   'function claimOf(uint256) view returns ((address claimant, address refuter, uint64 chainKey, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 spanFrom, uint64 spanTo, bytes32 spansHash, uint256 bond, uint256 bondStaked, uint64 openUntil, uint8 status, uint8 kind, uint32 members, bytes32 membersHash))',
   'function finalize(uint256)',
 ];
-const REFUSAL = ['None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness', 'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent'];
+const REFUSAL = [
+  'None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness',
+  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached',
+];
 const STATUS = ['None', 'Open', 'Refuted', 'Standing'];
-const TRANSCRIPT = new URL('../../docs/transcripts/desk-v3.json', import.meta.url);
+const TRANSCRIPT = new URL('../../docs/transcripts/desk-v4.json', import.meta.url);
 
 async function main() {
   const phase = process.argv[process.argv.indexOf('--phase') + 1];
@@ -65,19 +71,40 @@ async function main() {
   const policies = await Promise.all(Array.from({ length: Number(await desk.policyCount()) }, (_, i) => desk.policyOf(i)));
   const blankAave = policies.findIndex((p: any) => Number(p.kind) === 0 && p.venue.toLowerCase() === '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2' && Number(p.window) === 648_000);
   const bondedAave = policies.findIndex((p: any) => Number(p.kind) === 1 && p.venue.toLowerCase() === '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2' && Number(p.window) === 648_000);
+  // The policy whose floor is low enough that the bond, not the policy, decides the size of the loan.
+  const sizedAave = policies.findIndex(
+    (p: any) => Number(p.kind) === 1 && p.venue.toLowerCase() === '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2' && BigInt(p.maxPrincipal) > parseEther('1'),
+  );
   const policyOfVenue = (venue: string) => policies.findIndex((p: any) => Number(p.kind) === 0 && p.venue.toLowerCase() === venue.toLowerCase() && Number(p.window) === 648_000);
   console.log('the desk —', d.contracts.UnderwritingDesk);
-  console.log(`  policies: BlankFile·Aave #${blankAave}, BondedClean·Aave #${bondedAave}`);
+  console.log(`  policies: BlankFile·Aave #${blankAave}, BondedClean·Aave #${bondedAave}, sized-by-bond #${sizedAave}`);
 
-  const MIRROR_ABI = ['function highestMirrored(uint64) view returns (uint64)'];
   const mirror = new Contract(d.contracts.EthereumMirror, MIRROR_ABI, cc);
+
+  // The window the desk is asked to price, proven once by `sealSpan` and offered here. The desk
+  // re-checks adjacency, chain, length and freshness itself: passing these is a convenience, not a key.
+  const offer = offerFor(await allSpans(mirror, 3), NINETY_DAYS);
+  if (!offer) throw new Error('no adjacent sealed run covers 648,000 blocks — run `node src/spans.ts --roll` first');
+  const head0 = Number(await mirror.highestMirrored(3));
+  const [attestors, minBond, cap] = await desk.securityBudget(3);
+  console.log(
+    `  window  : spans [${offer.ids.join(', ')}] ${offer.from.toLocaleString()}..${offer.to.toLocaleString()}` +
+      `${head0 === offer.to ? ' (at the head)' : ` (${(head0 - offer.to).toLocaleString()} below the head)`}`,
+  );
+  console.log(
+    `  backing : ${attestors} attestors × ${formatEther(minBond)} CTC bonded ⇒ pool cap ${formatEther(cap)} tCTC, ` +
+      `${formatEther(await desk.totalOutstanding())} outstanding`,
+  );
+
   const assessRow = async (label: string, subject: string, policyId: number, principal: bigint, claim?: any) => {
-    const [[ok, reason], head] = await Promise.all([desk.assess(subject, policyId, principal), mirror.highestMirrored(3)]);
+    const [[ok, reason], head] = await Promise.all([desk.assess(subject, policyId, principal, offer.ids), mirror.highestMirrored(3)]);
     const why = REFUSAL[Number(reason)];
     const c = claim ? await registry.claimOf(claim.claimId) : null;
     // Where the evidence sits relative to the policy's floor: a liquidation older than the window is
     // history this policy does not look back over, and the verdict changes as the archive head moves.
-    const floor = Number(head) - Number(policies[policyId].window);
+    // v4 measures the window from the top of the offered span, not from the head: the desk answers
+    // from history it can prove it holds, and `maxStaleness` is what ties that top back to the head.
+    const floor = offer.to - Number(policies[policyId].window);
     const evidenceBlock: number | undefined = claim?.counterexample?.block ?? claim?.omitted?.block ?? claim?.members?.at(-1)?.height;
     const position = evidenceBlock === undefined ? '' : evidenceBlock >= floor ? `evidence @${evidenceBlock} inside the window` : `evidence @${evidenceBlock} is ${floor - evidenceBlock} blocks below the 90-day floor`;
     console.log(`  ${ok ? 'PAYS   ' : 'REFUSES'} ${why.padEnd(20)} policy ${policyId}  ${subject}  ${label}${c ? `  (claim #${claim.claimId} ${STATUS[Number(c.status)]})` : ''}${position ? `  ${position}` : ''}`);
@@ -96,6 +123,15 @@ async function main() {
     await assessRow('real Aave borrower, nothing against it', c.subject, blankAave, parseEther('0.1'), c);
     await assessRow('same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)', c.subject, bondedAave, parseEther('1'), c);
   }
+  // Utuh's rule, said out loud on a real address: the claim about it stakes 0.5 tCTC, half of which a
+  // refuter would take, so 0.25 tCTC is what a lie would actually cost -- and ten times that, 2.5 tCTC,
+  // is the most the desk will lend against it. The two rows below straddle that line exactly.
+  if (sizedAave >= 0) {
+    for (const c of role('clean').slice(0, 1)) {
+      await assessRow('sized by the bond: 2.5 tCTC is ten times the 0.25 a lie would cost', c.subject, sizedAave, parseEther('2.5'), c);
+      await assessRow('one wei more than the bond supports', c.subject, sizedAave, parseEther('2.5') + 1n, c);
+    }
+  }
 
   if (phase === 'assess') {
     await assessRow('our own wallet after its loans', mine.subject, bondedAave, parseEther('1'), mine);
@@ -109,17 +145,18 @@ async function main() {
   const send = async (label: string, policyId: number, principal: bigint) => {
     const before = await cc.getBalance(borrower.address);
     try {
-      await desk.borrow.staticCall(policyId, principal);
+      await desk.borrow.staticCall(policyId, principal, offer.ids);
     } catch (e: any) {
       const reason = e?.revert?.args?.[0] !== undefined ? REFUSAL[Number(e.revert.args[0])] : String(e?.shortMessage ?? e?.message).slice(0, 80);
       // Mine the refusal too: a reverted transaction on the explorer is a refusal anyone can inspect.
-      const tx = await desk.borrow(policyId, principal, { gasLimit: 9_000_000 });
+      // Mined with a modest cap on purpose: a v4 refusal costs tens of thousands of gas, not millions.
+      const tx = await desk.borrow(policyId, principal, offer.ids, { gasLimit: 400_000 });
       const rc = await cc.waitForTransaction(tx.hash);
       console.log(`  REFUSED ON-CHAIN  ${reason}  policy ${policyId}  status ${rc?.status}  ${EXPLORER}/tx/${tx.hash}`);
       note({ kind: 'borrow', label, policyId, principal: principal.toString(), ok: false, reason, tx: tx.hash, txStatus: rc?.status });
       return;
     }
-    const rc = await (await desk.borrow(policyId, principal)).wait();
+    const rc = await (await desk.borrow(policyId, principal, offer.ids)).wait();
     const after = await cc.getBalance(borrower.address);
     const received = after - before + BigInt(rc.gasUsed) * BigInt(rc.gasPrice);
     console.log(`  LENT  ${formatEther(received)} tCTC  policy ${policyId}  ${Number(rc.gasUsed).toLocaleString()} gas  ${EXPLORER}/tx/${rc.hash}`);
@@ -140,7 +177,9 @@ async function main() {
   }
   await assessRow('our own wallet, bonded-clean over the whole window', borrower.address, bondedAave, parseEther('1'), mine);
   await send('bonded-clean: a standing 4 tCTC claim covering 91 days', bondedAave, parseEther('1'));
-  await send('blank file', blankAave, parseEther('0.1'));
+  // v4 answers under BlankFile and refuses to lend under it: there is no bond beneath silence to size
+  // a loan against. This row is the refusal, on chain, not an omission from the demo.
+  await send('blank file: answers, and will not lend on silence', blankAave, parseEther('0.1'));
   await send('a second loan under the same policy', bondedAave, parseEther('1'));
   console.log(`\n  transcript: ${TRANSCRIPT.pathname}`);
 }

@@ -15,11 +15,11 @@ Re-derive every number: `node worker/src/measure.ts --check` (the chain), `forge
 | Claim | Evidence |
 |---|---|
 | One Attestcoin proof carries the roots of many consecutive blocks, and one `mirror()` call keeps all of them | the widest call retained **901** roots — [`0xa9bb…5d70`](https://creditcoin-testnet.blockscout.com/tx/0xa9bb644f31b88e5a71c296b323a799d03ed7083b23b8b81d02cd1b37a3555d70) |
-| Ninety days of Ethereum mainnet are held, with no gap | **779,401** consecutive heights, 25,187,300 – 25,966,700 (≈ 108.3 days), read bit by bit from the mirror's bitmap. 780,302 heights held in all, added by 899 `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
-| Thirty days of Sepolia are held, with no gap | **300,601** consecutive heights (≈ 41.8 days) ending at 11,694,200 |
+| Ninety days of Ethereum mainnet are held, with no gap | **782,500** consecutive heights, 25,186,001 – 25,968,500 (≈ 108.7 days), read bit by bit from the mirror's bitmap. 783,401 heights held in all, added by 899 `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
+| Thirty days of Sepolia are held, with no gap | **302,401** consecutive heights (≈ 42.0 days) ending at 11,696,000 |
 | Keeping a root is cheap and flat | **23,596 gas** per newly held height (median; 23,492–27,232 over 834 calls that each added ≥ 800), from every campaign receipt |
-| An empty Ethereum block is held, and a sealed span crosses it | block **25,354,534** has a transaction root of zero (`rootIsZero: true`), `isMirrored` = **true**, and sealed span 0 (25,309,541 – 25,440,612, 131,072 blocks) covers it: `true`. 243 empty blocks are held on mainnet, 32 on Sepolia |
-| Proving a span gap-free is one read per 256 blocks | sealing **131,072** blocks cost **1,280,230 gas** — [`0x90d9…11a8`](https://creditcoin-testnet.blockscout.com/tx/0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8); 7 spans sealed |
+| An empty Ethereum block is held, and a sealed span crosses it | block **25,300,128** has a transaction root of zero (`rootIsZero: true`), `isMirrored` = **true**, and sealed span 7 (25,288,100 – 25,943,459, 655,360 blocks) covers it: `true`. 243 empty blocks are held on mainnet, 32 on Sepolia |
+| Proving a span gap-free is one read per 256 blocks | sealing **131,072** blocks cost **1,280,230 gas** — [`0x90d9…11a8`](https://creditcoin-testnet.blockscout.com/tx/0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8); 10 spans sealed |
 | A **second** transaction in a notarised block verifies with the precompile gone, and the control fails | transaction index 131 of block 25,954,574 (the block was notarised through index 263): `verifyOrRevert` as a plain `eth_call` → **131**; with `0x0FD2` blanked by a state override → **131**; with the mirror blanked instead → `ok: false`. The home page runs the same three calls live on a block picked as it loads |
 | The mirror reaches the same verdict as the precompile, and fails the same way | **2,684 checks over 122 real mainnet transactions × 22 adversarial mutations, 0 divergences**, against the live precompile — [transcript](./docs/transcripts/differential-2026-09-13T03-50-16.md) |
 | A contract in another repository uses the frozen interfaces and never calls `0x0FD2` | `Gate` at [`0xeeFa…a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254): `happened()` returns **263** for a real Aave liquidation plainly and **263** with the precompile blanked; with the mirror blanked it fails (`ok: false`). **Same GitHub owner as Hindsight** — it proves the interfaces are sufficient, not that a stranger chose to integrate |
@@ -75,10 +75,6 @@ The last audit (2026-09-13T09:39:35.796Z) re-scanned **23** claims, 19 of them s
 
 | What | Policy | Outcome | Gas | Transaction |
 |---|---|---|---|---|
-| own claim still open | 1 | `ClaimUnderHunt` · receipt status 0 | 7,041,506 | [`0x77f6…a0ff`](https://creditcoin-testnet.blockscout.com/tx/0x77f6188007a9d59e585db1a25954bd369be2f8e2c35fe8a474b262212dcda0ff) |
-| bonded-clean: a standing 4 tCTC claim covering 91 days | 1 | `Lent` · receipt status 1 | 7,089,575 | [`0x37e2…a07b`](https://creditcoin-testnet.blockscout.com/tx/0x37e22fb0e1467799e7def88a9c1c39508eaf630b3652b76b9dab4b965bd4a07b) |
-| blank file | 0 | `Lent` · receipt status 1 | 7,070,489 | [`0x9935…8e16`](https://creditcoin-testnet.blockscout.com/tx/0x993526fda92b018fcd55337fc5692d6b2edb0363d73c6eaae404f592cb318e16) |
-| a second loan under the same policy | 1 | `AlreadyLent` · receipt status 0 | 78,582 | [`0x4137…56ce`](https://creditcoin-testnet.blockscout.com/tx/0x4137262d863081baa55434a77d2a41597ae61d847ebf38a1f94d1ad0c70656ce) |
 
 A refusal about a real liquidated borrower is shown by `assess(subject, …)`, the same predicate `borrow()` gates
 on, because the desk only ever pays `msg.sender` and nobody here holds those borrowers' keys. The wallet that
@@ -89,12 +85,15 @@ the `BondedClean` mechanism, not a vetted stranger.
 
 | Claim | Evidence |
 |---|---|
-| The code does what this file says | **147** `forge test` cases, **27** of them fuzz properties at 256 runs each |
+| The code does what this file says | **150** `forge test` cases, **27** of them fuzz properties at 256 runs each |
 | The hosted prover is replaceable for Merkle paths | `worker/src/local-proof.ts` rebuilds a block from a public Ethereum node; root and every sibling with its direction bit are byte-identical to the prover's. The home page does the same in the browser and sends the prover nothing |
 | Empty blocks were the product limit, and are not now | `test_emptyBlockIsMirroredAndSealCrossesIt`, `test_zeroRootHeldDoesNotLookUnheld`, and a fuzz of the word-wise contiguity check against a per-height reference |
 | A listed member must be real, and the omitted one refutes | `testFuzz_completeSetRefutedByOmittedMember` over six real clustered Aave liquidations; fabricated, out-of-order, duplicated and out-of-span members are refused at assertion |
 | A liar cannot recover the burned half | `test_selfRefuteCannotRecoverBurn`, `testFuzz_enforceableLossIsExactlyTheBurnedHalf`, `testFuzz_isUsableBoundary` |
-| The desk refuses a shallow or holed archive | `test_deskRefusesArchiveTooShallowFor90Days`, `test_holeInsideTheWindowIsTooShallow`, `test_isolatedWindowAboveTheArchiveFailsClosed`, `testFuzz_depthBoundaryIsExact`; the 90-day check costs 7.03M gas cold inside `borrow` (`test_gas_ninetyDayBorrowReadsTheBitmapWordWise`) |
+| The desk refuses a shallow or holed archive | `test_deskRefusesArchiveTooShallowFor90Days`, `test_aHoleCannotBeSealedAndSoCannotBeOffered`, `test_aWindowThatNoLongerReachesTheHeadIsRefused`, `test_offeredSpansMustActuallyProveTheWindow`, `testFuzz_depthBoundaryIsExact` |
+| The depth check is cheap enough to sit inside `borrow` | `test_gas_ninetyDayDepthCheckUnder80k` fails the build above 80,000 gas cold; it measures **43,325**. On Creditcoin the whole question costs **407,960 gas** ([receipt](https://creditcoin-testnet.blockscout.com/tx/0x28aca01263d2221f4c135319179bfaa9d1c044f31012b22fd928132c7232b67f)) where the superseded desk spent **7,041,373** ([receipt](https://creditcoin-testnet.blockscout.com/tx/0x76434cd20d08f7b9dd8d99ba334a46b82342642a2352946d40f857ac5f6e8958)) — same address, same question, same block |
+| Money is capped twice, by rules that are not ours | a loan may not exceed ten times `enforceableLoss` (`test_bondedCleanAcceptsASufficientBond`, and live at `/api/gates` → `desk-sizing`, where 2.5 tCTC is paid and 2.5 tCTC + 1 wei is refused on a real Aave borrower); total lending may not exceed what the attestor quorum for the source chain has bonded, read live from `0x0FD4` (`desk-cap`) |
+| Silence is answered, and never lent against | `test_blankFileAnswersButNeverLends`; `BlankFile` returns `None` to a question and `NeedsBondedCover` to a request for money |
 | The desk cannot be handed a true statement about the wrong thing | `test_claimReadThroughAnotherTopicIsNotCleanliness`, `test_claimOnAnotherChainIsIgnored`, `test_listedLiquidationIsEventOnRecordNotCleanliness`, `test_subjectlessRefutationBrandsNobody` |
 | Nobody can switch the desk off with volume | `test_junkClaimsCannotSwitchOffTheDesk` files 576 claims; `test_buryingABondedClaimFailsClosed` buries one under 64 |
 | A claimant cannot keep its claim open by refusing its bond | `test_claimantRefusingItsBondCannotKeepAClaimOpen`, `test_claimantBurningGasCannotBlockFinalize` |
@@ -107,6 +106,8 @@ the `BondedClean` mechanism, not a vetted stranger.
 | A claim in **`Standing`** | Nobody refuted it within its window, over a gap-free sealed range, while `enforceableLoss` was at risk. **Not** that the event never happened |
 | `isUsable(claimId, exposure)` | Standing, and the burned half of the bond is at least `exposure`. Size reliance against what a liar cannot recover, not the headline bond |
 | The desk's refusal | `ProvenLiar` and `EventOnRecord` rest on transactions verified against held roots inside the policy's window. `ClaimUnderHunt` means an open claim exists. `BlankFile` is the default and does not treat silence as innocence; `BondedClean` needs a standing no-event claim covering the whole window, ending within a week of the head |
+| `NeedsBondedCover` | `BlankFile` answered the question and will not put money behind the answer. There is no bond beneath silence, so there is nothing to size a loan against — not a judgement about the address |
+| The pool ceiling | Every fact the desk underwrites on rests on the attestor quorum for the source chain, so total lending is capped at what that quorum has bonded (`0x0FD4`: 4 attestors). An argument about who is on the hook, not a solvency guarantee |
 | Bounties are worth hunting | refutations on this board cost **448,294–4,046,311 gas** each, against bonds of 2–3 tCTC of which half is paid out. An incentive argument, not a proof |
 | Commit–reveal defeats bounty theft | the commitment binds `msg.sender`. Not audited, and not proof against a validator who reorders or censors |
 
@@ -133,7 +134,7 @@ the `BondedClean` mechanism, not a vetted stranger.
   (190 logs against 0).
 - **The prover's archiver would not serve 25,186,001 – 25,187,000.** Every window touching it failed with
   `failed to get roots from archiver`, across strides of 900 and 500. The mainnet archive therefore has one hole,
-  below the unbroken run: 2 runs, 15,299 heights unheld inside the range. Nothing above it is affected.
+  below the unbroken run: 2 runs, 14,000 heights unheld inside the range. Nothing above it is affected.
 - **Unpaced campaign workers congest a shared testnet.** Four workers sending 21M-gas calls pushed CC3's base fee
   from 0.5 to 6.7 gwei. Every worker now pauses above 1.5 gwei.
 - **Counting concurrent writes by before/after totals is wrong.** It credited one call with every other worker's
@@ -144,13 +145,19 @@ the `BondedClean` mechanism, not a vetted stranger.
   endpoints; the registry pushed bonds, so a claimant refusing payment could keep a claim open forever. Addresses and
   reasons are under `contracts.superseded` in `deployments.json`.
 - **A policy window moves.** A liquidation that slips below the ninety-day floor stops refusing — by design. Two of
-  the refuted lies on the board already sit below it; `docs/transcripts/desk-v3.json` records the verdict with the
+  the refuted lies on the board already sit below it; `docs/transcripts/desk-v4.json` records the verdict with the
   evidence height and the floor.
 - **A follower is only as current as its wallet.** The Sepolia follower ran out of gas money and spent an hour
   retrying a transaction the node had dropped, re-sent byte-identical and refused as "already known". Followers now
   jitter their tip so every attempt is distinct; funding them remains an operational duty, and the archive stops
   lengthening — it never shrinks — when it lapses.
-- **The ninety-day check is not free inside a transaction:** 7.03M gas cold in `borrow`. `assess` is a `view`.
+- **The window is proven once, not on every question.** The desk no longer walks 648,000 held bits per call; it reads
+  sealed spans a caller hands it and checks they are adjacent, on the policy's chain, long enough and still describing
+  the head. Anyone may seal, anyone may pass them, and a stale or short set is refused — but it does mean a caller has
+  to know which spans to offer. `worker/src/spans.ts` computes that from chain, and `/api/gates` publishes it.
+- **A sealed span is only as fresh as somebody's transaction.** `maxStaleness 0` policies need the top span at the
+  archive head; the follower extends it after every window it mirrors, and the `span-window` gate goes red if it falls
+  behind. Nothing is lost when it does — the desk refuses `ArchiveTooShallow`, which is the safe direction.
 - **GitHub will not run this project's CI** (every job is refused: "account is locked due to a billing issue").
   The promises that do not need a compiler are re-checked instead by [`/api/gates`](https://hindsight.run/api/gates), in public, at
   [https://hindsight.run/status/](https://hindsight.run/status/): the runtime bytecode of every contract against what this repository compiles

@@ -79,7 +79,10 @@ the `BondedClean` mechanism, not a vetted stranger.
 | Empty blocks were the product limit, and are not now | `test_emptyBlockIsMirroredAndSealCrossesIt`, `test_zeroRootHeldDoesNotLookUnheld`, and a fuzz of the word-wise contiguity check against a per-height reference |
 | A listed member must be real, and the omitted one refutes | `testFuzz_completeSetRefutedByOmittedMember` over six real clustered Aave liquidations; fabricated, out-of-order, duplicated and out-of-span members are refused at assertion |
 | A liar cannot recover the burned half | `test_selfRefuteCannotRecoverBurn`, `testFuzz_enforceableLossIsExactlyTheBurnedHalf`, `testFuzz_isUsableBoundary` |
-| The desk refuses a shallow or holed archive | `test_deskRefusesArchiveTooShallowFor90Days`, `test_holeInsideTheWindowIsTooShallow`, `test_isolatedWindowAboveTheArchiveFailsClosed`, `testFuzz_depthBoundaryIsExact`; the 90-day check costs 7.03M gas cold inside `borrow` (`test_gas_ninetyDayBorrowReadsTheBitmapWordWise`) |
+| The desk refuses a shallow or holed archive | `test_deskRefusesArchiveTooShallowFor90Days`, `test_aHoleCannotBeSealedAndSoCannotBeOffered`, `test_aWindowThatNoLongerReachesTheHeadIsRefused`, `test_offeredSpansMustActuallyProveTheWindow`, `testFuzz_depthBoundaryIsExact` |
+| The depth check is cheap enough to sit inside `borrow` | `test_gas_ninetyDayDepthCheckUnder80k` fails the build above 80,000 gas cold; it measures **43,325**. On Creditcoin the whole question costs **407,960 gas** ([receipt]({{explorer}}/tx/0x28aca01263d2221f4c135319179bfaa9d1c044f31012b22fd928132c7232b67f)) where the superseded desk spent **7,041,373** ([receipt]({{explorer}}/tx/0x76434cd20d08f7b9dd8d99ba334a46b82342642a2352946d40f857ac5f6e8958)) — same address, same question, same block |
+| Money is capped twice, by rules that are not ours | a loan may not exceed ten times `enforceableLoss` (`test_bondedCleanAcceptsASufficientBond`, and live at `/api/gates` → `desk-sizing`, where 2.5 tCTC is paid and 2.5 tCTC + 1 wei is refused on a real Aave borrower); total lending may not exceed what the attestor quorum for the source chain has bonded, read live from `0x0FD4` (`desk-cap`) |
+| Silence is answered, and never lent against | `test_blankFileAnswersButNeverLends`; `BlankFile` returns `None` to a question and `NeedsBondedCover` to a request for money |
 | The desk cannot be handed a true statement about the wrong thing | `test_claimReadThroughAnotherTopicIsNotCleanliness`, `test_claimOnAnotherChainIsIgnored`, `test_listedLiquidationIsEventOnRecordNotCleanliness`, `test_subjectlessRefutationBrandsNobody` |
 | Nobody can switch the desk off with volume | `test_junkClaimsCannotSwitchOffTheDesk` files 576 claims; `test_buryingABondedClaimFailsClosed` buries one under 64 |
 | A claimant cannot keep its claim open by refusing its bond | `test_claimantRefusingItsBondCannotKeepAClaimOpen`, `test_claimantBurningGasCannotBlockFinalize` |
@@ -92,6 +95,8 @@ the `BondedClean` mechanism, not a vetted stranger.
 | A claim in **`Standing`** | Nobody refuted it within its window, over a gap-free sealed range, while `enforceableLoss` was at risk. **Not** that the event never happened |
 | `isUsable(claimId, exposure)` | Standing, and the burned half of the bond is at least `exposure`. Size reliance against what a liar cannot recover, not the headline bond |
 | The desk's refusal | `ProvenLiar` and `EventOnRecord` rest on transactions verified against held roots inside the policy's window. `ClaimUnderHunt` means an open claim exists. `BlankFile` is the default and does not treat silence as innocence; `BondedClean` needs a standing no-event claim covering the whole window, ending within a week of the head |
+| `NeedsBondedCover` | `BlankFile` answered the question and will not put money behind the answer. There is no bond beneath silence, so there is nothing to size a loan against — not a judgement about the address |
+| The pool ceiling | Every fact the desk underwrites on rests on the attestor quorum for the source chain, so total lending is capped at what that quorum has bonded (`0x0FD4`: {{measured.desk.securityBudget.attestors}} attestors). An argument about who is on the hook, not a solvency guarantee |
 | Bounties are worth hunting | refutations on this board cost **{{measured.board.refutationGas.min|n}}–{{measured.board.refutationGas.max|n}} gas** each, against bonds of 2–3 tCTC of which half is paid out. An incentive argument, not a proof |
 | Commit–reveal defeats bounty theft | the commitment binds `msg.sender`. Not audited, and not proof against a validator who reorders or censors |
 
@@ -129,13 +134,19 @@ the `BondedClean` mechanism, not a vetted stranger.
   endpoints; the registry pushed bonds, so a claimant refusing payment could keep a claim open forever. Addresses and
   reasons are under `contracts.superseded` in `deployments.json`.
 - **A policy window moves.** A liquidation that slips below the ninety-day floor stops refusing — by design. Two of
-  the refuted lies on the board already sit below it; `docs/transcripts/desk-v3.json` records the verdict with the
+  the refuted lies on the board already sit below it; `docs/transcripts/desk-v4.json` records the verdict with the
   evidence height and the floor.
 - **A follower is only as current as its wallet.** The Sepolia follower ran out of gas money and spent an hour
   retrying a transaction the node had dropped, re-sent byte-identical and refused as "already known". Followers now
   jitter their tip so every attempt is distinct; funding them remains an operational duty, and the archive stops
   lengthening — it never shrinks — when it lapses.
-- **The ninety-day check is not free inside a transaction:** 7.03M gas cold in `borrow`. `assess` is a `view`.
+- **The window is proven once, not on every question.** The desk no longer walks 648,000 held bits per call; it reads
+  sealed spans a caller hands it and checks they are adjacent, on the policy's chain, long enough and still describing
+  the head. Anyone may seal, anyone may pass them, and a stale or short set is refused — but it does mean a caller has
+  to know which spans to offer. `worker/src/spans.ts` computes that from chain, and `/api/gates` publishes it.
+- **A sealed span is only as fresh as somebody's transaction.** `maxStaleness 0` policies need the top span at the
+  archive head; the follower extends it after every window it mirrors, and the `span-window` gate goes red if it falls
+  behind. Nothing is lost when it does — the desk refuses `ArchiveTooShallow`, which is the safe direction.
 - **GitHub will not run this project's CI** (every job is refused: "account is locked due to a billing issue").
   The promises that do not need a compiler are re-checked instead by [`/api/gates`]({{site}}/api/gates), in public, at
   [{{site}}/status/]({{site}}/status/): the runtime bytecode of every contract against what this repository compiles

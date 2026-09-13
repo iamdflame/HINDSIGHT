@@ -20,7 +20,7 @@
   "contracts": {
     "EthereumMirror": "0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118",
     "AbsenceRegistryV3": "0x05844C991993F3d80fAf196e10355B12BE648e40",
-    "UnderwritingDesk": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
+    "UnderwritingDesk": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
     "MissingHeightBounty": "0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d",
     "superseded": {
       "AbsenceRegistryV3@0xf0a24364": {
@@ -32,6 +32,11 @@
         "address": "0xC0B1039C529bAef479D497FAD30DE5fc9321fC44",
         "replacedBy": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
         "reason": "v3.0 desk read claims by subject alone (a true claim about another topic slot, chain or kind counted as a clean record), walked every claim ever filed (512 junk claims switched it off), and checked archive depth by endpoints; v3.0 registry had no per-subject index and pushed bonds (a claimant rejecting payment kept its claim Open forever). Both had zero claims when replaced."
+      },
+      "UnderwritingDesk@0xC576E330": {
+        "address": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
+        "replacedBy": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
+        "reason": "v3.1 proved the policy window by walking the held bitmap: 7.03M gas for ninety days inside borrow, which is a lender nobody can use. v4 reads sealed spans instead (43k gas cold), sizes principal at no more than ten times enforceableLoss, caps total lending by what the attestor quorum for the source chain has bonded (0x0FD4), and stops lending on silence: BlankFile answers and refuses NeedsBondedCover."
       }
     },
     "v1": {
@@ -101,7 +106,7 @@
       "attestedHead": 25967160,
       "rows": [
         {
-          "label": "fresh (head \u2212 50)",
+          "label": "fresh (head − 50)",
           "age": 50,
           "block": 25967110,
           "tx": "0x1352b22b37565f263a3786d46ea589b0493759782c909284ad5b340dc1a1c016",
@@ -195,20 +200,20 @@
     },
     "chains": {
       "1": {
-        "held": 300601,
-        "heldAfterScan": 300601,
-        "bitmapHeld": 300601,
+        "held": 302401,
+        "heldAfterScan": 302401,
+        "bitmapHeld": 302401,
         "bitmapAgrees": true,
         "lowest": 11393600,
-        "highest": 11694200,
+        "highest": 11696000,
         "unheldInRange": 0,
         "runs": 1,
-        "longestRun": 300601,
+        "longestRun": 302401,
         "longestRunFrom": 11393600,
-        "topRun": 300601,
+        "topRun": 302401,
         "topRunFrom": 11393600,
-        "topRunDays": 41.75,
-        "days": 41.75,
+        "topRunDays": 42,
+        "days": 42,
         "emptyBlocks": 32,
         "emptyBlockSample": [
           11416000,
@@ -238,20 +243,20 @@
         }
       },
       "3": {
-        "held": 780302,
-        "heldAfterScan": 780302,
-        "bitmapHeld": 780302,
+        "held": 783401,
+        "heldAfterScan": 783401,
+        "bitmapHeld": 783401,
         "bitmapAgrees": true,
         "lowest": 25171100,
-        "highest": 25966700,
-        "unheldInRange": 15299,
+        "highest": 25968500,
+        "unheldInRange": 14000,
         "runs": 2,
-        "longestRun": 779401,
-        "longestRunFrom": 25187300,
-        "topRun": 779401,
-        "topRunFrom": 25187300,
-        "topRunDays": 108.25,
-        "days": 108.38,
+        "longestRun": 782500,
+        "longestRunFrom": 25186001,
+        "topRun": 782500,
+        "topRunFrom": 25186001,
+        "topRunDays": 108.68,
+        "days": 108.81,
         "emptyBlocks": 243,
         "emptyBlockSample": [
           25171352,
@@ -296,14 +301,29 @@
       "burnedWei": "10000000000000000000"
     },
     "desk": {
-      "policies": 4,
-      "balanceWei": "8900000000000000000",
+      "policies": 5,
+      "balanceWei": "10000000000000000000",
+      "window": {
+        "spanIds": [
+          8
+        ],
+        "from": 25288100,
+        "to": 25968500,
+        "heights": 680401
+      },
+      "securityBudget": {
+        "source": "0x0FD4 AttestorStash, read live on every decision",
+        "attestors": 4,
+        "minBondWei": "100000000000000000000",
+        "capWei": "400000000000000000000",
+        "outstandingWei": "0"
+      },
       "ninetyDay": [
         {
           "policy": 0,
           "kind": "BlankFile",
           "window": 648000,
-          "subject": "0x\u2026c1ea",
+          "subject": "0x…c1ea",
           "ok": true,
           "reason": "None"
         },
@@ -311,15 +331,15 @@
           "policy": 1,
           "kind": "BondedClean",
           "window": 648000,
-          "subject": "0x\u2026c1ea",
-          "ok": false,
-          "reason": "NoBondedCleanliness"
+          "subject": "0x…c1ea",
+          "ok": true,
+          "reason": "None"
         },
         {
           "policy": 2,
           "kind": "BlankFile",
           "window": 648000,
-          "subject": "0x\u2026c1ea",
+          "subject": "0x…c1ea",
           "ok": true,
           "reason": "None"
         },
@@ -327,171 +347,26 @@
           "policy": 3,
           "kind": "BlankFile",
           "window": 648000,
-          "subject": "0x\u2026c1ea",
+          "subject": "0x…c1ea",
+          "ok": true,
+          "reason": "None"
+        },
+        {
+          "policy": 4,
+          "kind": "BondedClean",
+          "window": 648000,
+          "subject": "0x…c1ea",
           "ok": true,
           "reason": "None"
         }
       ],
-      "transactions": [
-        {
-          "kind": "borrow",
-          "label": "own claim still open",
-          "policyId": 1,
-          "reason": "ClaimUnderHunt",
-          "ok": false,
-          "tx": "0x77f6188007a9d59e585db1a25954bd369be2f8e2c35fe8a474b262212dcda0ff",
-          "status": 0,
-          "gasUsed": 7041506
-        },
-        {
-          "kind": "finalize",
-          "reason": null,
-          "tx": "0x27c966094f90734a2fd1902e51291af3710210397292b29667c40686e1dd735f",
-          "status": 1,
-          "gasUsed": 223202
-        },
-        {
-          "kind": "borrow",
-          "label": "bonded-clean: a standing 4 tCTC claim covering 91 days",
-          "policyId": 1,
-          "reason": "Lent",
-          "ok": true,
-          "tx": "0x37e22fb0e1467799e7def88a9c1c39508eaf630b3652b76b9dab4b965bd4a07b",
-          "status": 1,
-          "gasUsed": 7089575
-        },
-        {
-          "kind": "borrow",
-          "label": "blank file",
-          "policyId": 0,
-          "reason": "Lent",
-          "ok": true,
-          "tx": "0x993526fda92b018fcd55337fc5692d6b2edb0363d73c6eaae404f592cb318e16",
-          "status": 1,
-          "gasUsed": 7070489
-        },
-        {
-          "kind": "borrow",
-          "label": "a second loan under the same policy",
-          "policyId": 1,
-          "reason": "AlreadyLent",
-          "ok": false,
-          "tx": "0x4137262d863081baa55434a77d2a41597ae61d847ebf38a1f94d1ad0c70656ce",
-          "status": 0,
-          "gasUsed": 78582
-        }
-      ],
+      "transactions": [],
       "assessedAtDemo": [
         {
           "label": "liquidated; a claim said otherwise",
           "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
           "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 0
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
-          "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 1
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
-          "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 2
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
-          "policyId": 2,
-          "reason": "ClaimUnderHunt",
-          "claimId": 3
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
-          "policyId": 2,
-          "reason": "ClaimUnderHunt",
-          "claimId": 4
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
-          "policyId": 3,
-          "reason": "ClaimUnderHunt",
-          "claimId": 5
-        },
-        {
-          "label": "its liquidations are listed on the board",
-          "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
-          "policyId": 0,
-          "reason": "EventOnRecord",
-          "claimId": 10
-        },
-        {
-          "label": "its liquidations are listed on the board",
-          "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
-          "policyId": 2,
-          "reason": "EventOnRecord",
-          "claimId": 11
-        },
-        {
-          "label": "its liquidations are listed on the board",
-          "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
-          "policyId": 0,
-          "reason": "EventOnRecord",
-          "claimId": 12
-        },
-        {
-          "label": "real Aave borrower, nothing against it",
-          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
-          "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 13
-        },
-        {
-          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
-          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
-          "policyId": 1,
-          "reason": "ClaimUnderHunt",
-          "claimId": 13
-        },
-        {
-          "label": "real Aave borrower, nothing against it",
-          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
-          "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 14
-        },
-        {
-          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
-          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
-          "policyId": 1,
-          "reason": "ClaimUnderHunt",
-          "claimId": 14
-        },
-        {
-          "label": "real Aave borrower, nothing against it",
-          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
-          "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 15
-        },
-        {
-          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
-          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
-          "policyId": 1,
-          "reason": "ClaimUnderHunt",
-          "claimId": 15
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
-          "policyId": 0,
-          "reason": "None",
+          "reason": "NeedsBondedCover",
           "claimId": 0
         },
         {
@@ -512,7 +387,7 @@
           "label": "liquidated; a claim said otherwise",
           "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
           "policyId": 2,
-          "reason": "None",
+          "reason": "NeedsBondedCover",
           "claimId": 3
         },
         {
@@ -554,119 +429,7 @@
           "label": "real Aave borrower, nothing against it",
           "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
           "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 13
-        },
-        {
-          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
-          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
-          "policyId": 1,
-          "reason": "ClaimUnderHunt",
-          "claimId": 13
-        },
-        {
-          "label": "real Aave borrower, nothing against it",
-          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
-          "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 14
-        },
-        {
-          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
-          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
-          "policyId": 1,
-          "reason": "ClaimUnderHunt",
-          "claimId": 14
-        },
-        {
-          "label": "real Aave borrower, nothing against it",
-          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
-          "policyId": 0,
-          "reason": "ClaimUnderHunt",
-          "claimId": 15
-        },
-        {
-          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
-          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
-          "policyId": 1,
-          "reason": "ClaimUnderHunt",
-          "claimId": 15
-        },
-        {
-          "label": "our own wallet, bonded-clean over the whole window",
-          "subject": "0x30E60eb0300B869d1323CDD75910c6105aDA0C97",
-          "policyId": 1,
-          "reason": "None",
-          "claimId": 19
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
-          "policyId": 0,
-          "reason": "None",
-          "claimId": 0
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
-          "policyId": 0,
-          "reason": "ProvenLiar",
-          "claimId": 1
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
-          "policyId": 0,
-          "reason": "ProvenLiar",
-          "claimId": 2
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
-          "policyId": 2,
-          "reason": "None",
-          "claimId": 3
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
-          "policyId": 2,
-          "reason": "ProvenLiar",
-          "claimId": 4
-        },
-        {
-          "label": "liquidated; a claim said otherwise",
-          "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
-          "policyId": 3,
-          "reason": "ProvenLiar",
-          "claimId": 5
-        },
-        {
-          "label": "its liquidations are listed on the board",
-          "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
-          "policyId": 0,
-          "reason": "ProvenLiar",
-          "claimId": 10
-        },
-        {
-          "label": "its liquidations are listed on the board",
-          "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
-          "policyId": 2,
-          "reason": "ProvenLiar",
-          "claimId": 11
-        },
-        {
-          "label": "its liquidations are listed on the board",
-          "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
-          "policyId": 0,
-          "reason": "EventOnRecord",
-          "claimId": 12
-        },
-        {
-          "label": "real Aave borrower, nothing against it",
-          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
-          "policyId": 0,
-          "reason": "None",
+          "reason": "NeedsBondedCover",
           "claimId": 13
         },
         {
@@ -680,7 +443,7 @@
           "label": "real Aave borrower, nothing against it",
           "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
           "policyId": 0,
-          "reason": "None",
+          "reason": "NeedsBondedCover",
           "claimId": 14
         },
         {
@@ -694,7 +457,7 @@
           "label": "real Aave borrower, nothing against it",
           "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
           "policyId": 0,
-          "reason": "None",
+          "reason": "NeedsBondedCover",
           "claimId": 15
         },
         {
@@ -708,24 +471,150 @@
           "label": "our own wallet after its loans",
           "subject": "0x30e60eb0300b869d1323cdd75910c6105ada0c97",
           "policyId": 1,
-          "reason": "AlreadyLent",
+          "reason": "None",
+          "claimId": 19
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
+          "policyId": 0,
+          "reason": "NeedsBondedCover",
+          "claimId": 0
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 1
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 2
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
+          "policyId": 2,
+          "reason": "NeedsBondedCover",
+          "claimId": 3
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
+          "policyId": 2,
+          "reason": "ProvenLiar",
+          "claimId": 4
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
+          "policyId": 3,
+          "reason": "ProvenLiar",
+          "claimId": 5
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 10
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
+          "policyId": 2,
+          "reason": "ProvenLiar",
+          "claimId": 11
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
+          "policyId": 0,
+          "reason": "EventOnRecord",
+          "claimId": 12
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 0,
+          "reason": "NeedsBondedCover",
+          "claimId": 13
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 1,
+          "reason": "NoBondedCleanliness",
+          "claimId": 13
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+          "policyId": 0,
+          "reason": "NeedsBondedCover",
+          "claimId": 14
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+          "policyId": 1,
+          "reason": "NoBondedCleanliness",
+          "claimId": 14
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+          "policyId": 0,
+          "reason": "NeedsBondedCover",
+          "claimId": 15
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+          "policyId": 1,
+          "reason": "NoBondedCleanliness",
+          "claimId": 15
+        },
+        {
+          "label": "sized by the bond: 2.5 tCTC is ten times the 0.25 a lie would cost",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 4,
+          "reason": "None",
+          "claimId": 13
+        },
+        {
+          "label": "one wei more than the bond supports",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 4,
+          "reason": "NoBondedCleanliness",
+          "claimId": 13
+        },
+        {
+          "label": "our own wallet after its loans",
+          "subject": "0x30e60eb0300b869d1323cdd75910c6105ada0c97",
+          "policyId": 1,
+          "reason": "None",
           "claimId": 19
         }
       ]
     },
     "acceptance": {
       "emptyBlockInSealedSpan": {
-        "height": 25354534,
-        "spanId": 0,
-        "spanFrom": 25309541,
-        "spanTo": 25440612,
+        "height": 25300128,
+        "spanId": 7,
+        "spanFrom": 25288100,
+        "spanTo": 25943459,
         "isMirrored": true,
         "rootIsZero": true,
         "spanCovers": true,
-        "spanBlocks": 131072
+        "spanBlocks": 655360
       },
       "sealing": {
-        "spans": 7,
+        "spans": 10,
         "widest": 131072,
         "gasForWidest": 1280230,
         "tx": "0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8"
@@ -823,7 +712,7 @@
               "claimId": 0,
               "role": "lie",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -843,7 +732,7 @@
               "claimId": 1,
               "role": "lie",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -863,7 +752,7 @@
               "claimId": 2,
               "role": "lie",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -883,7 +772,7 @@
               "claimId": 3,
               "role": "lie",
               "kind": "EmptySet",
-              "venue": "Morpho Blue \u00b7 Liquidate",
+              "venue": "Morpho Blue · Liquidate",
               "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -903,7 +792,7 @@
               "claimId": 4,
               "role": "lie",
               "kind": "EmptySet",
-              "venue": "Morpho Blue \u00b7 Liquidate",
+              "venue": "Morpho Blue · Liquidate",
               "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -923,7 +812,7 @@
               "claimId": 5,
               "role": "lie",
               "kind": "EmptySet",
-              "venue": "Compound V3 \u00b7 AbsorbDebt",
+              "venue": "Compound V3 · AbsorbDebt",
               "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -943,7 +832,7 @@
               "claimId": 6,
               "role": "bounty",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0xf330b5fe72e91d1a3782e65eed876cf3624c7802",
               "bondWei": "3000000000000000000",
               "status": "Open",
@@ -956,7 +845,7 @@
               "claimId": 7,
               "role": "bounty",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x494fe899f16a71391be9ebc6a5146a132f963806",
               "bondWei": "3000000000000000000",
               "status": "Open",
@@ -969,7 +858,7 @@
               "claimId": 8,
               "role": "bounty",
               "kind": "EmptySet",
-              "venue": "Morpho Blue \u00b7 Liquidate",
+              "venue": "Morpho Blue · Liquidate",
               "subject": "0x537ab709b03c5c7623dbc2e92b632018e05f57d4",
               "bondWei": "3000000000000000000",
               "status": "Open",
@@ -982,7 +871,7 @@
               "claimId": 9,
               "role": "bounty",
               "kind": "EmptySet",
-              "venue": "Compound V3 \u00b7 AbsorbDebt",
+              "venue": "Compound V3 · AbsorbDebt",
               "subject": "0x6aaa5ea1953418cd8eac45b8fdf179e0a783fa7c",
               "bondWei": "3000000000000000000",
               "status": "Open",
@@ -995,7 +884,7 @@
               "claimId": 10,
               "role": "omission",
               "kind": "CompleteSet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -1015,7 +904,7 @@
               "claimId": 11,
               "role": "omission",
               "kind": "CompleteSet",
-              "venue": "Morpho Blue \u00b7 Liquidate",
+              "venue": "Morpho Blue · Liquidate",
               "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -1035,7 +924,7 @@
               "claimId": 12,
               "role": "complete",
               "kind": "CompleteSet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
               "bondWei": "1000000000000000000",
               "status": "Standing",
@@ -1048,7 +937,7 @@
               "claimId": 13,
               "role": "clean",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
               "bondWei": "500000000000000000",
               "status": "Standing",
@@ -1061,7 +950,7 @@
               "claimId": 14,
               "role": "clean",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
               "bondWei": "500000000000000000",
               "status": "Standing",
@@ -1074,7 +963,7 @@
               "claimId": 15,
               "role": "clean",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
               "bondWei": "500000000000000000",
               "status": "Standing",
@@ -1087,7 +976,7 @@
               "claimId": 16,
               "role": "clean",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x23eac85727069d0d3e43bd4c03d9235d81f9b387",
               "bondWei": "500000000000000000",
               "status": "Standing",
@@ -1100,7 +989,7 @@
               "claimId": 17,
               "role": "clean",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x5d91aea302976d2a405e872638eda95b373e788f",
               "bondWei": "500000000000000000",
               "status": "Standing",
@@ -1113,7 +1002,7 @@
               "claimId": 18,
               "role": "clean",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x76f30e3f75437fb862b8d2c4d80a671bceba5b1a",
               "bondWei": "500000000000000000",
               "status": "Standing",
@@ -1126,7 +1015,7 @@
               "claimId": 19,
               "role": "borrower",
               "kind": "EmptySet",
-              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "venue": "Aave V3 · LiquidationCall",
               "subject": "0x30e60eb0300b869d1323cdd75910c6105ada0c97",
               "bondWei": "4000000000000000000",
               "status": "Standing",
@@ -1166,7 +1055,7 @@
               "claimId": 20,
               "role": "lie",
               "kind": "EmptySet",
-              "venue": "Aave V3 (Sepolia) \u00b7 LiquidationCall",
+              "venue": "Aave V3 (Sepolia) · LiquidationCall",
               "subject": "0x22b7437086bdcb911fe1777c6edf25d16cc60a18",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -1186,7 +1075,7 @@
               "claimId": 21,
               "role": "lie",
               "kind": "EmptySet",
-              "venue": "Aave V3 (Sepolia) \u00b7 LiquidationCall",
+              "venue": "Aave V3 (Sepolia) · LiquidationCall",
               "subject": "0xe21b479de26a32d3643b485f573d8e7b615bc1f6",
               "bondWei": "2000000000000000000",
               "status": "Refuted",
@@ -1206,7 +1095,7 @@
               "claimId": 22,
               "role": "complete",
               "kind": "CompleteSet",
-              "venue": "Aave V3 (Sepolia) \u00b7 LiquidationCall",
+              "venue": "Aave V3 (Sepolia) · LiquidationCall",
               "subject": "0x2d2ddd7bfe3a372d7238484d2780bdad589d0467",
               "bondWei": "1000000000000000000",
               "status": "Standing",
