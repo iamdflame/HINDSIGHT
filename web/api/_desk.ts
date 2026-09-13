@@ -44,6 +44,7 @@ const DESK_ABI = [
   'function totalOutstanding() view returns (uint256)',
 ];
 const REGISTRY_ABI = [
+  'function claimCount() view returns (uint256)',
   'function keyOf(uint64, address, bytes32, uint8, bytes32) pure returns (bytes32)',
   'function recordOf(bytes32) view returns (uint32 open, uint32 refuted, uint64 lastEvidenceAt, uint64 lastMemberAt, uint32 total)',
   'function claimUnderKey(bytes32, uint256) view returns (uint256)',

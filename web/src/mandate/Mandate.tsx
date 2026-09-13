@@ -59,6 +59,17 @@ export function Mandate() {
   }
 
   useEffect(() => {
+    // Inside Telegram the page is a Mini App: tell the client it is ready and take the full height.
+    // Outside Telegram there is no bridge and nothing happens; the page is the page.
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) {
+      try {
+        tg.ready();
+        tg.expand();
+      } catch {
+        /* an older client without these methods is still a browser */
+      }
+    }
     void run(initialSubject(), '1');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
