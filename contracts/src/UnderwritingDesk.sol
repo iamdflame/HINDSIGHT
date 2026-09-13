@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import {IMirror} from "./IMirror.sol";
 import {IAbsence} from "./IAbsence.sol";
-import {AbsenceRegistryV2} from "./AbsenceRegistryV2.sol";
+import {AbsenceRegistryV3} from "./AbsenceRegistryV3.sol";
 
 /// @title UnderwritingDesk
 /// @notice A lender that reads the archive and the absence market, and refuses.
@@ -47,7 +47,7 @@ import {AbsenceRegistryV2} from "./AbsenceRegistryV2.sol";
 ///      economic assertion rather than a cryptographic one.
 contract UnderwritingDesk {
     IMirror public immutable MIRROR;
-    AbsenceRegistryV2 public immutable REGISTRY;
+    AbsenceRegistryV3 public immutable REGISTRY;
 
     /// @notice Most registry claims the desk will walk before refusing outright.
     /// @dev A lender that cannot see every claim about an address must not lend to it. Sampling
@@ -75,6 +75,8 @@ contract UnderwritingDesk {
         Kind kind;
         uint64 chainKey;
         /// @dev How many blocks of mirrored history the desk insists on before answering at all.
+        ///      The production policy is 648,000 -- ninety days of Ethereum at 12s -- and the desk
+        ///      refuses `ArchiveTooShallow` until the archive really holds that much.
         uint64 window;
         address venue;
         bytes32 topic0;
@@ -97,7 +99,7 @@ contract UnderwritingDesk {
     error Rejected(Refusal reason);
     error TransferFailed();
 
-    constructor(IMirror mirror_, AbsenceRegistryV2 registry_) {
+    constructor(IMirror mirror_, AbsenceRegistryV3 registry_) {
         MIRROR = mirror_;
         REGISTRY = registry_;
     }
@@ -175,7 +177,7 @@ contract UnderwritingDesk {
         bool bondedClean = false;
 
         for (uint256 i; i < n; ++i) {
-            AbsenceRegistryV2.Claim memory c = REGISTRY.claimOf(i);
+            AbsenceRegistryV3.Claim memory c = REGISTRY.claimOf(i);
             if (c.subject != wanted) continue;
             if (c.venue != p.venue || c.topic0 != p.topic0) continue;
 
@@ -188,10 +190,12 @@ contract UnderwritingDesk {
                 // Somebody is hunting this address right now. Do not lend into a fight.
                 return Refusal.ClaimUnderHunt;
             }
-            // `holdsWithBond` is the registry's own statement of "stood, at at least this price".
-            // The desk asks it rather than re-deriving it, so a consumer written against IAbsence
-            // alone reaches the same verdict this one does. The window check is the desk's own.
-            if (REGISTRY.holdsWithBond(i, p.minBond)) {
+            // `isUsable` is the registry's own statement of "stood, and a lie would have cost at
+            // least this". Sized against the *principal*, not the policy's nominal minBond: the
+            // desk relies on the claim exactly as far as the liar would have lost, and no further.
+            // The window check is the desk's own. A consumer written against IAbsenceV3 alone
+            // reaches the same verdict.
+            if (REGISTRY.isUsable(i, principal > p.minBond ? principal : p.minBond)) {
                 if (c.spanTo >= head - p.window && c.spanFrom <= head) bondedClean = true;
             }
         }

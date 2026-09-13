@@ -9,7 +9,7 @@ import {IAbsence} from "../src/IAbsence.sol";
 ///
 /// @dev This contract exists to prove a negative about the architecture: that the file Hindsight
 ///      publishes is readable by someone who has never seen this repository's contracts. It
-///      imports no concrete type, holds no reference to `EthereumMirror` or `AbsenceRegistryV2`,
+///      imports no concrete type, holds no reference to `EthereumMirror` or `AbsenceRegistryV3`,
 ///      and could be compiled against the interfaces alone.
 ///
 ///      If a future change to the main desk makes this one stop compiling, the interfaces were not

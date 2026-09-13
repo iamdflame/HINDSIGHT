@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import {Test} from "forge-std/Test.sol";
 import {EthereumMirror} from "../src/EthereumMirror.sol";
-import {AbsenceRegistryV2} from "../src/AbsenceRegistryV2.sol";
+import {AbsenceRegistryV3} from "../src/AbsenceRegistryV3.sol";
 import {UnderwritingDesk} from "../src/UnderwritingDesk.sol";
 import {IMirror} from "../src/IMirror.sol";
 import {IAbsence} from "../src/IAbsence.sol";
@@ -29,7 +29,7 @@ contract MockVerifier {
 ///         being a real Aave liquidation on Ethereum mainnet that nobody involved controls.
 contract UnderwritingDeskTest is Test {
     EthereumMirror internal mirror;
-    AbsenceRegistryV2 internal registry;
+    AbsenceRegistryV3 internal registry;
     UnderwritingDesk internal desk;
 
     uint64 constant ETH_MAINNET = 3;
@@ -58,7 +58,7 @@ contract UnderwritingDeskTest is Test {
     function setUp() public {
         vm.etch(address(uint160(0x0FD2)), address(new MockVerifier()).code);
         mirror = new EthereumMirror();
-        registry = new AbsenceRegistryV2(mirror);
+        registry = new AbsenceRegistryV3(mirror);
         desk = new UnderwritingDesk(IMirror(address(mirror)), registry);
 
         string memory json = vm.readFile("test/fixtures/liquidation.json");
@@ -199,7 +199,9 @@ contract UnderwritingDeskTest is Test {
     }
 
     function test_bondedCleanAcceptsASufficientBond() public {
-        uint256 claimId = _claimClean(cleanBorrower, 1 ether, 15 minutes);
+        // Half the bond burns on refutation, so 2 ether staked is 1 ether the liar cannot recover,
+        // which is exactly the principal being borrowed.
+        uint256 claimId = _claimClean(cleanBorrower, 2 ether, 15 minutes);
         vm.warp(block.timestamp + 16 minutes);
         registry.finalize(claimId);
 
@@ -209,9 +211,11 @@ contract UnderwritingDeskTest is Test {
         assertEq(cleanBorrower.balance, before + PRINCIPAL);
     }
 
-    /// A claim backed by dust is not worth relying on, however confidently it is phrased.
+    /// A claim backed by dust is not worth relying on, however confidently it is phrased. And a
+    /// bond that only *nominally* covers the principal is not enough either: half of it would
+    /// come back to the liar, so 1 ether staked covers 0.5 ether of exposure, not 1.
     function test_bondedCleanRejectsAnInsufficientBond() public {
-        uint256 claimId = _claimClean(cleanBorrower, 0.01 ether, 15 minutes);
+        uint256 claimId = _claimClean(cleanBorrower, 1 ether, 15 minutes);
         vm.warp(block.timestamp + 16 minutes);
         registry.finalize(claimId);
 
@@ -246,6 +250,26 @@ contract UnderwritingDeskTest is Test {
 
     /// A principal inside the policy's cap but beyond what the desk actually holds. The cap is
     /// checked first by design, so this needs a policy generous enough to reach the funds check.
+    /// The mandate's named test: a 90-day policy on a shallow archive refuses. On the live desk
+    /// this fails until the campaign has actually notarised 648,000 blocks -- which is the point.
+    function test_deskRefusesArchiveTooShallowFor90Days() public {
+        uint256 ninety = desk.createPolicy(
+            UnderwritingDesk.Policy({
+                kind: UnderwritingDesk.Kind.BlankFile,
+                chainKey: ETH_MAINNET,
+                window: 648_000,
+                venue: AAVE_V3_POOL,
+                topic0: LIQUIDATION_CALL,
+                subjectTopic: 3,
+                minBond: 0,
+                maxPrincipal: 10 ether
+            })
+        );
+        (bool ok, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, ninety, PRINCIPAL);
+        assertFalse(ok);
+        assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow));
+    }
+
     function test_deskOutOfFundsIsRefused() public {
         uint256 generous = desk.createPolicy(
             UnderwritingDesk.Policy({
