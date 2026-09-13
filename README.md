@@ -24,8 +24,8 @@ Every dApp pays that, every time.
 
 | | Ethereum mainnet (`chainKey 3`) | Sepolia (`chainKey 1`) |
 |---|---|---|
-| Heights held on Creditcoin | **790,901** | **303,301** |
-| Unbroken run ending at the top | **790,000** blocks ≈ **109.7 days** (25,180,001 – 25,970,000) | **303,301** blocks ≈ **42.1 days** |
+| Heights held on Creditcoin | **792,101** | **303,301** |
+| Unbroken run ending at the top | **791,200** blocks ≈ **109.9 days** (25,179,001 – 25,970,200) | **303,301** blocks ≈ **42.1 days** |
 | Empty Ethereum blocks inside, held like any other | 243 | 32 |
 | `mirror()` calls that added heights | 899 | 332 |
 | Gas per newly held height (median) | **23,596** | 23,594 |
@@ -73,10 +73,10 @@ Refutation is commit–reveal, bound to the refuter's address. **Half the bond g
 is burned**, so a liar who refutes themselves from a second wallet still loses half. Consumers size against
 `enforceableLoss` — that burned half — through `isUsable(claimId, exposure)`.
 
-The board on mainnet covers **25,314,641 – 25,970,000**, five sealed spans, ninety-one days.
-It holds 21 claims about real Aave V3, Morpho Blue and Compound V3 borrowers; the ones that are
+The board on mainnet covers **25,314,741 – 25,970,100**, five sealed spans, ninety-one days.
+It holds 26 claims about real Aave V3, Morpho Blue and Compound V3 borrowers; the ones that are
 false are recorded in [`board-v3-mainnet.json`](./contracts/test/fixtures/board-v3-mainnet.json) with the transaction that makes each false.
-11 refutations so far, **11.50 tCTC burned**. A standing claim means nobody refuted it in its window while
+13 refutations so far, **13.50 tCTC burned**. A standing claim means nobody refuted it in its window while
 that much was at risk — never that it is true.
 
 ## The desk — a refusal, not a score

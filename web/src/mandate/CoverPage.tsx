@@ -153,9 +153,10 @@ export function CoverPage() {
               </tbody>
             </table>
             <p className="t-caption">
-              Offers marked "the house" are written by this project on bounties the repository documents as false, so
-              whoever buys one is paid when the hunt settles the claim. That is not a bet the house expects to win: it
-              is the settlement path, run in public with real money, once per open claim.
+              Offers marked "the house" are written by this project on every open claim. Where the row says the claim
+              is documented false, whoever buys is paid when the hunt settles it — not a bet the house expects to win,
+              but the settlement path run in public with real money. Where it does not, the house is underwriting a
+              claim it believes, at a price it set, and keeps the premium if it stands.
             </p>
 
             {closed.length > 0 && (

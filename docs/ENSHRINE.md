@@ -68,7 +68,7 @@ Measured on CC3 testnet (every figure read from chain state by `worker/src/measu
 |---|---|
 | Gas per newly held height | **23,596** median (23,492–27,232) |
 | Roots kept by one `mirror()` call | up to **901** |
-| Mainnet heights held | **790,901**; the unbroken run ending at the top is 790,000 blocks ≈ 109.7 days |
+| Mainnet heights held | **792,101**; the unbroken run ending at the top is 791,200 blocks ≈ 109.9 days |
 | Sepolia heights held | **303,301**, one unbroken run |
 | Empty blocks held among them | 243 mainnet, 32 Sepolia |
 | Verifying a transaction against a held root | `view` call, no continuity, no prover, no `0x0FD2` |
@@ -108,7 +108,63 @@ and is paid only for heights someone actually asked about.
 extend it, and `IMirror` is frozen. This works. It is simply slower than putting it in the node, and
 it means every chain that adopts Attestcoin re-derives the same cache in Solidity.
 
-We would prefer B.
+We would prefer B. Here it is written down properly, so that "prefer" costs you nothing to evaluate.
+
+## 5b. RIP: `BlockRootCache`
+
+**Storage.** One mapping in the runtime, keyed exactly as the polyfill keys it:
+
+```
+rootOf[chainKey][height] -> bytes32      // zero means "not held"; a held zero root is an empty block
+held[chainKey][height >> 8] -> uint256   // one bit per height, so an empty block is not a hole
+```
+
+**Write.** As a side effect of every *successful* `verifyAndEmit`: for each `(number[i], root[i])` the
+continuity array carried, set `rootOf` and the held bit. No new trust: the call has just proven every
+one of those roots terminates at a stored attestation, and it is that proof -- not the caller -- that
+writes. A failed verification writes nothing. Two callers proving overlapping ranges write the same
+values; the second pays only for bits that were clear.
+
+**Read.** A new entrypoint beside `verifyAndEmit`, with the same Merkle-proof argument and *no*
+continuity argument:
+
+```
+mirrorVerify(chainKey, height, txBytes, merkleProof) -> (bool ok, uint64 txIndex)
+```
+
+If `held[chainKey][height]` is set, it checks the Merkle path against `rootOf` and returns; the
+continuity walk is skipped because it already happened, once, for everyone. If the height is not
+held it returns `(false, 0)` and the caller falls back to `verifyAndEmit` with a continuity proof --
+which, on success, holds the height for the next caller. Fail-closed: an unheld height is not "false",
+it is "not yet answerable", and the two are distinguishable by `held`.
+
+**ABI delta.** `verifyAndEmit` additionally emits
+
+```
+event ContinuityRetained(uint64 indexed chainKey, uint64 indexed fromHeight, uint64 indexed toHeight, uint64 newlyHeld)
+```
+
+so an indexer can watch the cache fill without polling. Existing callers are unaffected: nothing they
+pass changes and nothing they receive changes.
+
+**What it costs, and what it saves.** Every figure below is measured; nothing is modelled.
+
+| | Today (`0x0FD2` per question) | Polyfill (`EthereumMirror`, measured) | Native cache (this RIP) |
+|---|---|---|---|
+| First question about a block 180 days old | 841 roots hashed, discarded | 841 roots hashed by the precompile, then 23,596 gas per root to store in Solidity | the same hashes, then one runtime write per root -- no Solidity in the loop |
+| Second question about that block | 841 roots hashed again | a Merkle path against stored state; `view`, no precompile | a Merkle path against stored state; no continuity argument at all |
+| Ten-thousandth question | the same again | the same `view` | the same |
+| Who pays to make a height answerable | every asker, every time | whoever notarises it once; 899 calls have held 792,101 mainnet heights so far | the first asker, as a side effect of asking |
+| A consumer's dependency for a second question | the prover and the precompile | one frozen interface, `IMirror` | nothing beyond the runtime |
+
+The polyfill column is what runs at [https://hindsight.run](https://hindsight.run) today: 792,101 mainnet heights held, the
+top 791,200 of them unbroken, verified by a differential of 2,684 checks against the live
+precompile with zero divergences. The native column removes the 23,596 gas per root
+that Solidity storage costs, and the one contract address a consumer has to know.
+
+**What the RIP deliberately does not do.** It does not store headers, so it does not change what
+attestors sign. It does not answer state or storage questions. It does not make a negative provable.
+It does not add an owner, a pause or a fee. It caches what the protocol already computed and verified.
 
 ## 6. What this is not
 

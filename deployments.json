@@ -257,20 +257,20 @@
         }
       },
       "3": {
-        "held": 790901,
-        "heldAfterScan": 790901,
-        "bitmapHeld": 790901,
+        "held": 792101,
+        "heldAfterScan": 792101,
+        "bitmapHeld": 792101,
         "bitmapAgrees": true,
         "lowest": 25171100,
-        "highest": 25970000,
-        "unheldInRange": 8000,
+        "highest": 25970200,
+        "unheldInRange": 7000,
         "runs": 2,
-        "longestRun": 790000,
-        "longestRunFrom": 25180001,
-        "topRun": 790000,
-        "topRunFrom": 25180001,
-        "topRunDays": 109.72,
-        "days": 109.85,
+        "longestRun": 791200,
+        "longestRunFrom": 25179001,
+        "topRun": 791200,
+        "topRunFrom": 25179001,
+        "topRunDays": 109.89,
+        "days": 110.01,
         "emptyBlocks": 243,
         "emptyBlockSample": [
           25171352,
@@ -301,29 +301,29 @@
       }
     },
     "claims": {
-      "total": 24,
+      "total": 29,
       "byStatus": {
-        "open": 4,
-        "refuted": 11,
+        "open": 7,
+        "refuted": 13,
         "standing": 9
       },
       "byKind": {
-        "emptySet": 20,
-        "completeSet": 4
+        "emptySet": 24,
+        "completeSet": 5
       },
-      "bondStakedWei": "44000000000000000000",
-      "burnedWei": "11500000000000000000"
+      "bondStakedWei": "52500000000000000000",
+      "burnedWei": "13500000000000000000"
     },
     "desk": {
-      "policies": 6,
+      "policies": 8,
       "balanceWei": "10000000000000000000",
       "window": {
         "spanIds": [
           8
         ],
         "from": 25288100,
-        "to": 25970000,
-        "heights": 681901
+        "to": 25970200,
+        "heights": 682101
       },
       "securityBudget": {
         "source": "0x0FD4 AttestorStash, read live on every decision",
@@ -386,6 +386,24 @@
           "subject": "0x…c1ea",
           "ok": false,
           "reason": "UnprovenSubject"
+        },
+        {
+          "policy": 6,
+          "kind": "BlankFile",
+          "requiresBinding": false,
+          "window": 648000,
+          "subject": "0x…c1ea",
+          "ok": true,
+          "reason": "None"
+        },
+        {
+          "policy": 7,
+          "kind": "BlankFile",
+          "requiresBinding": false,
+          "window": 648000,
+          "subject": "0x…c1ea",
+          "ok": true,
+          "reason": "None"
         }
       ],
       "transactions": [],
@@ -670,7 +688,7 @@
         "spanBlocks": 655360
       },
       "sealing": {
-        "spans": 15,
+        "spans": 20,
         "widest": 131072,
         "gasForWidest": 1280230,
         "tx": "0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8"
@@ -713,26 +731,26 @@
     "board": {
       "chains": {
         "mainnet": {
-          "spanFrom": 25314641,
-          "spanTo": 25970000,
+          "spanFrom": 25314741,
+          "spanTo": 25970100,
           "spanIds": [
-            10,
-            11,
-            12,
-            13,
-            14
+            15,
+            16,
+            17,
+            18,
+            19
           ],
-          "claims": 21,
+          "claims": 26,
           "byRole": {
             "lie": {
-              "total": 6,
+              "total": 8,
               "Open": 0,
-              "Refuted": 6,
+              "Refuted": 8,
               "Standing": 0
             },
             "bounty": {
-              "total": 5,
-              "Open": 4,
+              "total": 6,
+              "Open": 5,
               "Refuted": 1,
               "Standing": 0
             },
@@ -743,14 +761,14 @@
               "Standing": 0
             },
             "complete": {
-              "total": 1,
-              "Open": 0,
+              "total": 2,
+              "Open": 1,
               "Refuted": 0,
               "Standing": 1
             },
             "clean": {
-              "total": 6,
-              "Open": 0,
+              "total": 7,
+              "Open": 1,
               "Refuted": 0,
               "Standing": 6
             },
@@ -1099,6 +1117,85 @@
               "assertTx": "0xdf466ceeb89463ccf55d72d6f20fc2c76f3c05c6f7fc919c3ff2e221ddeab783",
               "refutation": null,
               "openUntil": 1789928625
+            },
+            {
+              "claimId": 24,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "USDC · Blacklisted",
+              "subject": "0x110cb5c5089fc35ba0deb718a291dd64f6d1bec8",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0xfd11ca393093ac85ab93803fd7746eca90ff3caa2dd51e6ab3c97180b1b25206",
+              "refutation": {
+                "tx": "0x12e7d476354079076a234bb0fbe706f5dc7fd2f38350a8d81abdac6970d86b23",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25374836,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 372582
+              },
+              "openUntil": 1789412160
+            },
+            {
+              "claimId": 25,
+              "role": "clean",
+              "kind": "EmptySet",
+              "venue": "USDC · Blacklisted",
+              "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+              "bondWei": "500000000000000000",
+              "status": "Open",
+              "members": 0,
+              "assertTx": "0x0e36ea76a1ea38c5c1e917c96504a4a41785db05d355aaf6a4e67dadb43cdf01",
+              "refutation": null,
+              "openUntil": 1789329375
+            },
+            {
+              "claimId": 26,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Spark · LiquidationCall",
+              "subject": "0x72ecde10a60f42eb942de9b1c28755d25d7abea1",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0x4ed0ba25d9dbfaf0858b0b8a9e12cc49113bc165fbeb484efb8d5e934094171c",
+              "refutation": {
+                "tx": "0x1e5ee3c8cd86a9ecfd7b54165e21cbc9e6aa0d09998ac65ecb50998dd0203391",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25317529,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 507430
+              },
+              "openUntil": 1789412190
+            },
+            {
+              "claimId": 27,
+              "role": "bounty",
+              "kind": "EmptySet",
+              "venue": "Spark · LiquidationCall",
+              "subject": "0xfd70f29e5f36a2cd5396214ac157958fbe407cb8",
+              "bondWei": "3000000000000000000",
+              "status": "Open",
+              "members": 0,
+              "assertTx": "0xe423318098a458f06294a47c34450dad04e07970c4304a01b7c3224f6092728f",
+              "refutation": null,
+              "openUntil": 1789930605
+            },
+            {
+              "claimId": 28,
+              "role": "complete",
+              "kind": "CompleteSet",
+              "venue": "Chainlink ETH/USD · AnswerUpdated",
+              "subject": "0x000000000000000000000000000000000000769c",
+              "bondWei": "1000000000000000000",
+              "status": "Open",
+              "members": 1,
+              "assertTx": "0x9985416b5afc1f30ebcd21ef647dcdead1347108511f92fcfd84905aff8c87b0",
+              "refutation": null,
+              "openUntil": 1789329435
             }
           ]
         },
@@ -1183,9 +1280,9 @@
           ]
         }
       },
-      "refutations": 11,
-      "burnedWei": "11500000000000000000",
-      "paidWei": "11500000000000000000",
+      "refutations": 13,
+      "burnedWei": "13500000000000000000",
+      "paidWei": "13500000000000000000",
       "audit": {
         "at": "2026-09-13T09:39:35.796Z",
         "claims": 23,
@@ -1194,7 +1291,7 @@
         "unscannable": 0
       },
       "refutationGas": {
-        "min": 448294,
+        "min": 372582,
         "max": 4046311
       }
     },

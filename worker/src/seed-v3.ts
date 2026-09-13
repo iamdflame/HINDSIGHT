@@ -6,6 +6,8 @@
  *   node src/seed-v3.ts --chain 3 --plan                  read-only: spans, subjects, what would be filed
  *   node src/seed-v3.ts --chain 3 --execute [--borrower 0x…]
  *   node src/seed-v3.ts --chain 3 --replenish 4           file bounties until four documented lies are open
+ *   node src/seed-v3.ts --chain 3 --execute --append --venues usdc-blacklisted,spark-liquidations,chainlink-eth-usd
+ *                                                          seed only the named venues onto an existing board
  *   MARKET_KEY=0x…  the claimant wallet (defaults to the deployer key)
  *
  * `--replenish N` is the hunt's supply side. A bounty is a lie left open for a week for anyone to
@@ -45,6 +47,7 @@ import {
   LOG_RPCS,
   VENUES,
   SEPOLIA_VENUES,
+  CHAINLINK_ETH_USD,
   AAVE_V3_POOL,
   TOPIC_BORROW,
   privateKey,
@@ -108,6 +111,7 @@ async function sendWithRetry<T>(what: string, f: () => Promise<T>): Promise<T> {
 async function main() {
   const chain = Number(get('--chain') ?? 3);
   const replenishTo = get('--replenish') !== undefined ? Number(get('--replenish')) : undefined;
+  const onlyVenues = get('--venues') ? new Set(get('--venues')!.split(',')) : null;
   const execute = process.argv.includes('--execute') || replenishTo !== undefined;
   const append = process.argv.includes('--append') || replenishTo !== undefined;
   const borrower = get('--borrower');
@@ -198,7 +202,9 @@ async function main() {
   }
 
   // ---- the exhaustive scans ----------------------------------------------------------------------
-  const venues = chain === 3 ? VENUES.filter((v) => v.key !== 'aave-repays') : SEPOLIA_VENUES;
+  const allVenues: Venue[] = chain === 3 ? [...VENUES.filter((v) => v.key !== 'aave-repays'), CHAINLINK_ETH_USD as unknown as Venue] : SEPOLIA_VENUES;
+  const venues = onlyVenues ? allVenues.filter((v) => onlyVenues.has(v.key)) : allVenues.filter((v) => v.key !== 'chainlink-eth-usd');
+  if (onlyVenues && venues.length !== onlyVenues.size) throw new Error(`unknown venue in --venues; known: ${allVenues.map((v) => v.key).join(', ')}`);
   const scans = new Map<string, Log[]>();
   for (const v of venues) {
     const logs = (await getLogsAdaptive(LOG_RPCS[chain], { address: v.address, topics: [v.topic0] }, spanFrom, top, {
@@ -243,7 +249,27 @@ async function main() {
     }
   };
 
-  if (replenishTo !== undefined) {
+  if (onlyVenues) {
+    // New venues onto an existing board: one documented lie each, a bounty where the venue is a lending
+    // pool, a completeness claim for the oracle, and a "never blacklisted" clean claim about an address
+    // the board already knows is a real borrower.
+    for (const v of venues) {
+      if (v.key === 'chainlink-eth-usd') {
+        take(v, 'complete', 1, (l) => l.length === 1);
+        continue;
+      }
+      take(v, 'lie', 1, (l) => l.length === 1);
+      if (v.key === 'spark-liquidations') take(v, 'bounty', 1, (l) => l.length >= 1);
+      if (v.key === 'usdc-blacklisted') {
+        const blacklisted = new Set(scans.get(v.key)!.map((l) => '0x' + l.topics[1].slice(26).toLowerCase()));
+        const known: string[] = existsSync(out) ? JSON.parse(readFileSync(out, 'utf8')).claims.filter((c: any) => c.role === 'clean').map((c: any) => String(c.subject).toLowerCase()) : [];
+        // A known real borrower, reused on purpose: the same address under a different venue is a
+        // different file, and "never blacklisted" about somebody with an Aave history is the useful case.
+        const subject = known.find((a) => !blacklisted.has(a));
+        if (subject) plan.push({ role: 'clean', kind: 0, venue: v, subject, logs: [] });
+      }
+    }
+  } else if (replenishTo !== undefined) {
     // Bounties only, spread across the venues that have counterexamples, newest history first.
     const pool = chain === 3 ? venues.filter((v) => v.key !== 'aave-repays') : venues;
     for (let k = 0; plan.length < bountiesWanted && k < bountiesWanted * pool.length; k++) {

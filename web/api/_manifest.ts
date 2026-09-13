@@ -146,7 +146,7 @@ export const manifest = {
   }
  },
  "held": {
-  "mainnet": 790901,
+  "mainnet": 792101,
   "sepolia": 303301
  },
  "emptyBlock": {
@@ -690,6 +690,26 @@ export const manifest = {
     "role": "bounty"
    },
    {
+    "claimId": 24,
+    "role": "lie"
+   },
+   {
+    "claimId": 25,
+    "role": "clean"
+   },
+   {
+    "claimId": 26,
+    "role": "lie"
+   },
+   {
+    "claimId": 27,
+    "role": "bounty"
+   },
+   {
+    "claimId": 28,
+    "role": "complete"
+   },
+   {
     "claimId": 20,
     "role": "lie"
    },
@@ -722,7 +742,9 @@ export const manifest = {
    "19": "Standing",
    "20": "Refuted",
    "21": "Refuted",
-   "22": "Standing"
+   "22": "Standing",
+   "24": "Refuted",
+   "26": "Refuted"
   }
  },
  "desk": {
@@ -751,9 +773,9 @@ export const manifest = {
   "freshWallet": "0x30e60eb0300b869d1323cdd75910c6105ada0c97"
  },
  "run": {
-  "from": 25180001,
-  "length": 790000,
-  "unheldInRange": 8000
+  "from": 25179001,
+  "length": 791200,
+  "unheldInRange": 7000
  },
  "attested": {
   "maxLag": 400

@@ -4,7 +4,7 @@
  * Usage:
  *   node src/desk-policies.ts [--fund 10]
  *
- * Six policies, all over ninety days of Ethereum mainnet (648,000 blocks at 12s). `BlankFile` is the
+ * Eight policies, all over ninety days of Ethereum mainnet (648,000 blocks at 12s). `BlankFile` is the
  * default and appears first: silence is silence; a refutation or a listed event inside the window
  * blocks, and so does an open claim. It answers questions and never lends -- there is no bond under
  * silence to size a loan against. The two `BondedClean` policies each need a standing no-event claim
@@ -71,6 +71,10 @@ async function main() {
       requiresBinding: true,
       label: 'BondedClean · Aave V3 · bound Ethereum address only',
     },
+    // The seventh and eighth: a compliance negative and a second lending venue with the same event
+    // signature at a different address, which is the case that keying claims by venue exists for.
+    { kind: 0, venue: v('usdc-blacklisted'), minBond: 0n, maxStaleness: 0, label: 'BlankFile · USDC Blacklisted' },
+    { kind: 0, venue: v('spark-liquidations'), minBond: 0n, maxStaleness: 0, label: 'BlankFile · Spark LiquidationCall' },
   ] as { kind: number; venue: (typeof VENUES)[number]; minBond: bigint; maxStaleness: number; maxPrincipal?: bigint; requiresBinding?: boolean; label: string }[];
 
   const n = Number(await desk.policyCount());

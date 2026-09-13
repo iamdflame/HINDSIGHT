@@ -77,6 +77,21 @@ export const VENUES = [
     ],
   },
   {
+    label: 'Circle USDC',
+    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    events: [{ label: 'Blacklisted', topic0: '0xffa4e6181777692565cf28528fc88fd1516ea86b56da075235fa575af6a4b855', subjectTopic: 1, subjectName: 'account' }],
+  },
+  {
+    label: 'Spark (MakerDAO)',
+    address: '0xC13e21B648A5Ee794902342038FF3aDAB66BE987',
+    events: [{ label: 'LiquidationCall', topic0: '0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286', subjectTopic: 3, subjectName: 'borrower' }],
+  },
+  {
+    label: 'Chainlink ETH/USD',
+    address: '0x7d4E742018fb52E48b08BE73d041C18B21de6Fb5',
+    events: [{ label: 'AnswerUpdated', topic0: '0x0559884fd3a460db3073b7fc896cc77986f16e378210ded43186175bf646fc5f', subjectTopic: 2, subjectName: 'roundId' }],
+  },
+  {
     // Sepolia's own Aave V3 pool. A claim here is chainKey 1: a different file from any mainnet claim.
     label: 'Aave V3 Pool (Sepolia)',
     address: '0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951',

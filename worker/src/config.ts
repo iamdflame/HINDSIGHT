@@ -114,7 +114,48 @@ export const VENUES: Venue[] = [
     subjectTopic: 2,
     subjectName: 'borrower',
   },
+  {
+    // Circle's compliance action on USDC. "Never blacklisted" is the negative a counterparty actually
+    // wants; 141 Blacklisted logs in the 90 days before this venue was added, verified live.
+    key: 'usdc-blacklisted',
+    label: 'USDC · Blacklisted',
+    protocol: 'Circle USDC',
+    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    event: 'Blacklisted(address)',
+    topic0: '0xffa4e6181777692565cf28528fc88fd1516ea86b56da075235fa575af6a4b855',
+    subjectTopic: 1,
+    subjectName: 'account',
+  },
+  {
+    // MakerDAO's Spark lending pool: an Aave V3 fork, so the same LiquidationCall signature at a
+    // different address, which is exactly why claims are keyed by venue. 71 logs in 90 days, verified.
+    key: 'spark-liquidations',
+    label: 'Spark · LiquidationCall',
+    protocol: 'Spark (MakerDAO)',
+    address: '0xC13e21B648A5Ee794902342038FF3aDAB66BE987',
+    event: 'LiquidationCall(address,address,address,uint256,uint256,address,bool)',
+    topic0: TOPIC_LIQUIDATION_CALL,
+    subjectTopic: 3,
+    subjectName: 'borrower',
+  },
 ];
+
+/**
+ * Not a venue for the desk: a claim about an *oracle round*, not an address. "These are all the
+ * AnswerUpdated events for round N" is a completeness statement the registry can hold and the hunt can
+ * refute (an omitted update inside the range), and the subject is the round id rather than an account.
+ * The aggregator behind the ETH/USD proxy on 2026-09-13; the proxy itself emits nothing.
+ */
+export const CHAINLINK_ETH_USD = {
+  key: 'chainlink-eth-usd',
+  label: 'Chainlink ETH/USD · AnswerUpdated',
+  protocol: 'Chainlink',
+  address: '0x7d4E742018fb52E48b08BE73d041C18B21de6Fb5',
+  event: 'AnswerUpdated(int256,uint256,uint256)',
+  topic0: '0x0559884fd3a460db3073b7fc896cc77986f16e378210ded43186175bf646fc5f',
+  subjectTopic: 2,
+  subjectName: 'roundId',
+} as const;
 
 /**
  * Venues on Sepolia (chainKey 1). The same Aave V3 event, at Sepolia's own pool: a different file,

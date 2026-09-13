@@ -438,19 +438,164 @@
     "txHash": "0xfcdbe42aab031f78bbd55ab554d994139b34196a26eda941bfebb086153cf34b",
     "block": 25318249
    }
+  },
+  {
+   "claimId": 24,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "venueLabel": "USDC · Blacklisted",
+   "topic0": "0xffa4e6181777692565cf28528fc88fd1516ea86b56da075235fa575af6a4b855",
+   "subjectTopic": 1,
+   "subject": "0x110cb5c5089fc35ba0deb718a291dd64f6d1bec8",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789412160,
+   "assertTx": "0xfd11ca393093ac85ab93803fd7746eca90ff3caa2dd51e6ab3c97180b1b25206",
+   "gasUsed": 362490,
+   "matchingLogsInRange": 1,
+   "spanIds": [
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "spanFrom": 25314741,
+   "spanTo": 25970100,
+   "counterexample": {
+    "txHash": "0xbddc2de6401244b036bacd46a2d0fa90590aaced32a6e88e453d3dc1ae838f5b",
+    "block": 25374836
+   }
+  },
+  {
+   "claimId": 25,
+   "role": "clean",
+   "kind": "EmptySet",
+   "venue": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "venueLabel": "USDC · Blacklisted",
+   "topic0": "0xffa4e6181777692565cf28528fc88fd1516ea86b56da075235fa575af6a4b855",
+   "subjectTopic": 1,
+   "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+   "bond": "500000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789329375,
+   "assertTx": "0x0e36ea76a1ea38c5c1e917c96504a4a41785db05d355aaf6a4e67dadb43cdf01",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 0,
+   "spanIds": [
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "spanFrom": 25314741,
+   "spanTo": 25970100
+  },
+  {
+   "claimId": 26,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0xC13e21B648A5Ee794902342038FF3aDAB66BE987",
+   "venueLabel": "Spark · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x72ecde10a60f42eb942de9b1c28755d25d7abea1",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789412190,
+   "assertTx": "0x4ed0ba25d9dbfaf0858b0b8a9e12cc49113bc165fbeb484efb8d5e934094171c",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 1,
+   "spanIds": [
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "spanFrom": 25314741,
+   "spanTo": 25970100,
+   "counterexample": {
+    "txHash": "0x89f05561b519b2a28d5bb6ec5fe4b7161970c16c02b687e34ed9e330122004a9",
+    "block": 25317529
+   }
+  },
+  {
+   "claimId": 27,
+   "role": "bounty",
+   "kind": "EmptySet",
+   "venue": "0xC13e21B648A5Ee794902342038FF3aDAB66BE987",
+   "venueLabel": "Spark · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0xfd70f29e5f36a2cd5396214ac157958fbe407cb8",
+   "bond": "3000000000000000000",
+   "windowSeconds": 604800,
+   "openUntil": 1789930605,
+   "assertTx": "0xe423318098a458f06294a47c34450dad04e07970c4304a01b7c3224f6092728f",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 1,
+   "spanIds": [
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "spanFrom": 25314741,
+   "spanTo": 25970100,
+   "counterexample": {
+    "txHash": "0x122ab06e0837dc29cdd790295706b25b08ffffcf7c8d4023e28a31b14fbcee18",
+    "block": 25317767
+   }
+  },
+  {
+   "claimId": 28,
+   "role": "complete",
+   "kind": "CompleteSet",
+   "venue": "0x7d4E742018fb52E48b08BE73d041C18B21de6Fb5",
+   "venueLabel": "Chainlink ETH/USD · AnswerUpdated",
+   "topic0": "0x0559884fd3a460db3073b7fc896cc77986f16e378210ded43186175bf646fc5f",
+   "subjectTopic": 2,
+   "subject": "0x000000000000000000000000000000000000769c",
+   "bond": "1000000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789329435,
+   "assertTx": "0x9985416b5afc1f30ebcd21ef647dcdead1347108511f92fcfd84905aff8c87b0",
+   "gasUsed": 480531,
+   "matchingLogsInRange": 1,
+   "spanIds": [
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "spanFrom": 25314741,
+   "spanTo": 25970100,
+   "members": [
+    {
+     "height": 25314997,
+     "txIndex": 236,
+     "logIndex": 2,
+     "txHash": "0xe7e81425e73988c07c577223904d7439727042edf11130c19f89b11dfe90c9e9"
+    }
+   ]
   }
  ],
  "registry": "0x05844C991993F3d80fAf196e10355B12BE648e40",
  "chainKey": 3,
  "spanIds": [
-  10,
-  11,
-  12,
-  13,
-  14
+  15,
+  16,
+  17,
+  18,
+  19
  ],
- "spanFrom": 25314641,
- "spanTo": 25970000,
+ "spanFrom": 25314741,
+ "spanTo": 25970100,
  "scannedWith": [
   "gateway.tenderly.co",
   "rpc.mevblocker.io",
