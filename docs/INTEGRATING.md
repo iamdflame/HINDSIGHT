@@ -110,17 +110,42 @@ No key, no gas, no `.env`. It rebuilds the Merkle path from a public Ethereum no
 the prover is not contacted.
 
 ```js
-import { verify } from 'hindsight-mirror';
+import { verify, assess, checks, usable } from 'hindsight-mirror';
 const { mirrored, verified, txIndex } = await verify(txHash);
+const { verdicts } = await assess('0x…', 10n ** 18n);   // the desk, every instrument, with the spans it was priced against
+const five = await checks(txHash);                      // status · depth · clock · stall · replay — numbers, no decision
+const ok = await usable(claimId, exposureWei);          // Standing, and the burned half of the bond covers the exposure
 ```
+
+Or without any code: `GET https://hindsight.run/api/assess?subject=0x…` returns the same verdicts as JSON and
+`/api/certificate` the same reading as a one-page PDF; `/openapi.json` describes both. For an agent,
+`npx -y hindsight-mcp` exposes them as MCP tools, none of which can spend.
+
+## From Solidity, with nothing but the interfaces
+
+Copy [`templates/foundry-consumer`](../templates/foundry-consumer). Two remappings, two frozen imports —
+`IMirror.verifyOrRevert` for inclusion, `IAbsenceV3.isUsable` for a bonded negative — and a test file that
+deletes the precompile at `0x0FD2` in your own build and shows the answer does not change. Five checks before
+you act are named there: status and replay in the contract, depth, clock and stall yours.
+
+## Borrowing as an Ethereum address
+
+`borrow` underwrites `msg.sender`. To be underwritten as an Ethereum address instead, sign any Ethereum
+transaction whose data is the 32 bytes `hindsight-mirror bind calldata <your Creditcoin address>` prints,
+wait for the archive to hold that block, and `hindsight-mirror bind submit <tx>`. From then on the desk
+reads the Ethereum address's record when your Creditcoin key asks — and instruments that require a proven
+owner (`UnprovenSubject` otherwise) will answer. The subject is still not a parameter: it is the `from` of a
+transaction you had to be able to sign.
 
 ## Addresses
 
 | | CC3 testnet |
 |---|---|
-| `EthereumMirror` v2 (`IMirror`) | `0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118` |
+| `EthereumMirror` v2 (`IMirror`, `IMirrorSpans`) | `0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118` |
 | `AbsenceRegistryV3` (`IAbsence`, `IAbsenceV3`) | `0x05844C991993F3d80fAf196e10355B12BE648e40` |
-| `UnderwritingDesk` | `0xC576E330400ce4D031daB3b9c2dA2423211B6e25` |
+| `UnderwritingDesk` v5 | `0xc176b4307315F8494A763773385B455aE0b7f9d2` |
+| `SubjectBinding` (`ISubjectBinding`) | `0x2d2120Da8877579E4eA58EA6f079d373b71ea7f0` |
+| `Cover` | `0xCb0054B41705c8b2050893158523C26BA3f5b922` |
 | `MissingHeightBounty` | `0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d` |
 
 All ownerless. No pause. No upgrade path. The interface files never change; additions arrive as new

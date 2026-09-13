@@ -41,5 +41,23 @@
  "refutationGas": {
   "min": 372582,
   "max": 4046311
+ },
+ "summary": {
+  "held": 792101,
+  "topRun": 791200,
+  "topRunDays": 109.89,
+  "sepoliaHeld": 303301,
+  "claims": 29,
+  "refuted": 13,
+  "open": 7,
+  "standing": 9,
+  "burnedWei": "13500000000000000000",
+  "policies": 8,
+  "forgeTests": 176,
+  "fuzzTests": 27,
+  "differentialChecks": 2684,
+  "differentialDivergences": 0,
+  "attestors": 4,
+  "deskCapWei": "400000000000000000000"
  }
 }

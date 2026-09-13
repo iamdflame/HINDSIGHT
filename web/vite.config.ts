@@ -45,6 +45,8 @@ export default defineConfig({
         files: here('./files/index.html'),
         hunt: here('./hunt/index.html'),
         cover: here('./cover/index.html'),
+        ceip: here('./ceip/index.html'),
+        aella: here('./aella/index.html'),
         // The same Mandate page, served as a Telegram Mini App (the bridge script is the only difference).
         tg: here('./tg/index.html'),
       },

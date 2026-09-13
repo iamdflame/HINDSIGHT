@@ -11,6 +11,8 @@ throws them away. Hindsight keeps them. After that, proving any other transactio
 
 ---
 
+*[한국어 (기계 번역 보조, 미검토)](./README.ko.md)*
+
 ## The problem
 
 A continuity proof is the chain of transaction roots from the block you ask about up to an attested
@@ -82,12 +84,22 @@ that much was at risk — never that it is true.
 ## The desk — a refusal, not a score
 
 `UnderwritingDesk` reads the archive and the board and either pays or refuses with a reason: `ArchiveTooShallow`,
-`ProvenLiar`, `EventOnRecord`, `ClaimUnderHunt`, `NoBondedCleanliness`, `AlreadyLent`. Its policies look
-back **648,000 blocks — ninety days — and refuse outright unless every one of those heights is held.** On
-the live desk that check passes today: BlankFile policy 0 answers `None` for an address nothing is on file about.
+`ProvenLiar`, `EventOnRecord`, `ClaimUnderHunt`, `NoBondedCleanliness`, `NeedsBondedCover`, `UnprovenSubject`,
+`PoolCapReached`, `AlreadyLent`. Its 8 instruments look back **648,000 blocks — ninety days — and refuse outright
+unless every one of those heights is proven held**, by sealed spans the caller offers and the desk re-checks
+(43,325 gas cold in Foundry; 407,960 gas on Creditcoin, where the superseded desk that walked the bitmap
+spent 7,041,373 for the same question). A loan may not exceed ten times what a liar could not recover, the
+book may not exceed what the attestors behind the source chain have bonded, silence is answered and never
+lent against, and an instrument may insist the borrower has signed for its Ethereum address.
 
-Nothing is minted, nothing is transferable, and there is no number. Assess any address, no wallet:
-[https://hindsight.run/assess/](https://hindsight.run/assess/).
+Nothing is minted, nothing is transferable, and there is no number. Ask about any address, no wallet:
+[mandate.hindsight.run](https://mandate.hindsight.run) — or `GET /api/assess?subject=0x…`, or
+`npx hindsight-mirror mandate assess 0x…`, or the `hindsight-mcp` tool `mandate_assess`, all the same view.
+
+**Mandate** is the product face: [assess](https://mandate.hindsight.run/mandate/) ·
+[files](https://mandate.hindsight.run/files/) · [cover](https://mandate.hindsight.run/cover/) ·
+[versus](https://mandate.hindsight.run/versus/) · [hunt](https://mandate.hindsight.run/hunt/). Same paper,
+same wax, same runtime; the word *precompile* does not appear on it.
 
 ## Enshrine it
 
@@ -137,7 +149,9 @@ node worker/src/campaign.ts --chain 3 --follow  # keep the archive current (need
 ```
 contracts/   EthereumMirror · AbsenceRegistryV3 · UnderwritingDesk · MissingHeightBounty · frozen interfaces · tests
 worker/      campaign + follower · hunter · board seeder · desk demo · differential · measure · document renderer
-packages/    hindsight-mirror — verify from Node, cold
-web/         the site: / · /verify · /record · /watch · /assess · /order · /judge · /claims · /enshrine · /integrate · /independence
-docs/        ENSHRINE · INTEGRATING · MIGRATION · SUBMISSION · campaign logs · transcripts
+packages/    hindsight-mirror — the SDK and CLI (verify · assess · checks · usable · hunt · bind) · hindsight-mcp — the MCP server
+templates/   foundry-consumer — a consumer that deletes the precompile in its own tests and keeps working
+web/         hindsight.run: / · /verify · /record · /watch · /assess · /order · /judge · /claims · /enshrine · /integrate · /independence · /status
+             mandate.hindsight.run: /mandate · /files · /cover · /versus · /hunt · /tg — and /api/assess · /api/certificate · /api/dump · /api/gates · /api/telegram · /openapi.json
+docs/        ENSHRINE (with the BlockRootCache RIP) · INTEGRATING · OPERATIONS · MIGRATION · SUBMISSION · campaign logs · transcripts
 ```

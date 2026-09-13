@@ -125,6 +125,25 @@ function main() {
       widestCallRoots: record.measured?.chains?.['3']?.widestCall?.roots ?? null,
       // What a refutation has cost on this board, cheapest and dearest, for the hunt's expected value.
       refutationGas: record.measured?.board?.refutationGas ?? null,
+      // The handful of figures the /ceip and /aella pages print. Measured, never typed.
+      summary: {
+        held: record.measured?.chains?.['3']?.held ?? null,
+        topRun: record.measured?.chains?.['3']?.topRun ?? null,
+        topRunDays: record.measured?.chains?.['3']?.topRunDays ?? null,
+        sepoliaHeld: record.measured?.chains?.['1']?.held ?? null,
+        claims: record.measured?.claims?.total ?? null,
+        refuted: record.measured?.claims?.byStatus?.refuted ?? null,
+        open: record.measured?.claims?.byStatus?.open ?? null,
+        standing: record.measured?.claims?.byStatus?.standing ?? null,
+        burnedWei: record.measured?.claims?.burnedWei ?? null,
+        policies: record.measured?.desk?.policies ?? null,
+        forgeTests: record.static.forgeTests,
+        fuzzTests: record.static.fuzzTests,
+        differentialChecks: record.measured?.differential?.checks ?? null,
+        differentialDivergences: record.measured?.differential?.divergences ?? null,
+        attestors: record.measured?.desk?.securityBudget?.attestors ?? null,
+        deskCapWei: record.measured?.desk?.securityBudget?.capWei ?? null,
+      },
     };
     const body = JSON.stringify(facts, null, 1) + '\n';
     const url = new URL('web/src/lib/record.generated.json', ROOT);

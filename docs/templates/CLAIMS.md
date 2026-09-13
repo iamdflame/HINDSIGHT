@@ -165,6 +165,9 @@ the `BondedClean` mechanism, not a vetted stranger.
 - **The cover cycle above was run by the house against itself.** Buyer, underwriter and hunter are all this
   project's wallets, and the hunter was told to take the claim early so the transcript could be made. What it shows
   is that the contract settles the way the claim settles; it does not show that anyone wants to buy cover.
+- **The Korean is machine-assisted and unreviewed.** `README.ko.md` and the Korean column of `/ceip` were written
+  by a language model and no native speaker has read them. They are labelled so at the top. Where they disagree
+  with the English, the English is right. This is not localisation quality and is not presented as such.
 - **Nobody has bound an Ethereum address yet.** The binding contract is deployed, its bytecode is checked on every
   gate run, and `worker/src/bind.ts` builds the proof from a public node and was run against a real mainnet
   transaction — the deployed mirror accepted the locally built leaf and path, the receipt passed, and the contract

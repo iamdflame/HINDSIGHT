@@ -15,6 +15,7 @@ export const MORE = [
   { path: '/integrate/', label: 'Integrate', id: 'integrate' },
   { path: '/enshrine/', label: 'Enshrine', id: 'enshrine' },
   { path: '/claims/', label: 'Claims', id: 'claims' },
+  { path: '/ceip/', label: 'CEIP', id: 'ceip' },
   { path: '/status/', label: 'Status', id: 'status' },
 ] as const;
 
