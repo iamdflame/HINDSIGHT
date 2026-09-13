@@ -1,13 +1,14 @@
 /**
- * Deploy the market and the desk against the current mirror.
+ * Deploy the completeness market and the desk against Mirror v2.
  *
  * Usage:
- *   node src/deploy-v3.ts [--dry-run]
+ *   node src/deploy-v3.ts [--desk-only] [--dry-run]
  *
- * The mirror is NOT redeployed. It holds the archive, the archive is the expensive thing, and
- * redeploying it to gain a registry feature would discard every root in it. `AbsenceRegistryV2`,
- * `UnderwritingDesk` and `MissingHeightBounty` are all additive and point at the mirror already on
- * chain.
+ * `--desk-only` redeploys `UnderwritingDesk` against the registry already on chain. Claims, bonds
+ * and spans live in the registry and the mirror; the desk holds nothing but its policies and a
+ * float, so replacing it discards nothing a hunter or a claimant owns. The address it replaces is
+ * kept under `contracts.superseded` with the reason, because a link in an old transcript should
+ * still resolve to something that explains itself.
  *
  * This exists instead of `forge script` because Creditcoin's Substrate EVM does not set
  * `prevrandao` in its block headers, and forge's simulation refuses to run against a chain whose
@@ -29,36 +30,49 @@ function artifact(file: string, name: string) {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
+  const deskOnly = process.argv.includes('--desk-only');
+  const reasonArg = process.argv.indexOf('--reason');
+  const reason = reasonArg >= 0 ? process.argv[reasonArg + 1] : '';
   const provider = new JsonRpcProvider(CC_RPC);
   const wallet = new Wallet(privateKey(), provider);
+  const d = JSON.parse(readFileSync(DEPLOYMENTS, 'utf8'));
 
-  console.log('deploying against the existing mirror');
+  console.log(deskOnly ? 'redeploying the desk against the existing registry' : 'deploying registry v3 and the desk');
   console.log('  mirror  :', MIRROR);
+  if (deskOnly) console.log('  registry:', d.contracts.AbsenceRegistryV3);
   console.log('  deployer:', wallet.address);
   console.log('  balance :', (await provider.getBalance(wallet.address)) / 10n ** 18n, 'tCTC');
+  if (deskOnly && !d.contracts.AbsenceRegistryV3) throw new Error('--desk-only needs contracts.AbsenceRegistryV3 in deployments.json');
+  if (d.contracts.UnderwritingDesk && !reason) throw new Error('this replaces live contracts: pass --reason "<why>" so the record explains itself');
   if (dryRun) {
     console.log('  DRY RUN — nothing will be deployed');
     return;
   }
 
   const deployed: Record<string, string> = {};
-
+  const blocks: Record<string, number> = {};
   const deploy = async (file: string, name: string, args: unknown[]) => {
     const { abi, bytecode } = artifact(file, name);
-    const factory = new ContractFactory(abi, bytecode, wallet);
-    const c = await factory.deploy(...args);
+    const c = await new ContractFactory(abi, bytecode, wallet).deploy(...args);
     const rc = await c.deploymentTransaction()!.wait();
     const addr = await c.getAddress();
     deployed[name] = addr;
-    console.log(`  ${name.padEnd(20)} ${addr}  ${Number(rc!.gasUsed).toLocaleString()} gas`);
+    blocks[name] = rc!.blockNumber;
+    console.log(`  ${name.padEnd(20)} ${addr}  ${Number(rc!.gasUsed).toLocaleString()} gas  block ${rc!.blockNumber}`);
     return addr;
   };
 
-  const registry = await deploy('AbsenceRegistryV3.sol', 'AbsenceRegistryV3', [MIRROR]);
+  const registry = deskOnly ? d.contracts.AbsenceRegistryV3 : await deploy('AbsenceRegistryV3.sol', 'AbsenceRegistryV3', [MIRROR]);
   await deploy('UnderwritingDesk.sol', 'UnderwritingDesk', [MIRROR, registry]);
 
-  // Record them where every other part of the system reads addresses from.
-  const d = JSON.parse(readFileSync(DEPLOYMENTS, 'utf8'));
+  d.contracts.superseded = d.contracts.superseded ?? {};
+  for (const [name, addr] of Object.entries(deployed)) {
+    const previous: string | undefined = d.contracts[name];
+    if (previous && previous.toLowerCase() !== addr.toLowerCase()) {
+      d.contracts.superseded[`${name}@${previous.slice(0, 10)}`] = { address: previous, replacedBy: addr, reason };
+    }
+  }
+  if (blocks.AbsenceRegistryV3) d.registryDeployBlock = blocks.AbsenceRegistryV3;
   Object.assign(d.contracts, deployed);
   writeFileSync(DEPLOYMENTS, JSON.stringify(d, null, 2) + '\n');
   console.log('\n  recorded in deployments.json');

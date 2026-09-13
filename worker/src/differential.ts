@@ -66,6 +66,8 @@ function loadFixtures(): Fixture[] {
 
   const read = (url: URL, label: string) => {
     const j = JSON.parse(readFileSync(url, 'utf8'));
+    // Board records and other evidence files share the directory; only proof fixtures are inputs.
+    if (!j.txBytes || !Array.isArray(j.siblingHashes) || !Array.isArray(j.continuityRoots)) return;
     out.push({
       path: label,
       headerNumber: j.headerNumber,

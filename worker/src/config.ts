@@ -39,7 +39,9 @@ const deployments = JSON.parse(
   readFileSync(new URL('../../deployments.json', import.meta.url), 'utf8'),
 );
 export const MIRROR: string = process.env.MIRROR ?? deployments.contracts.EthereumMirror;
-export const REGISTRY: string = process.env.REGISTRY ?? deployments.contracts.AbsenceRegistry;
+export const REGISTRY: string = process.env.REGISTRY ?? deployments.contracts.AbsenceRegistryV3;
+/** Creditcoin block the current registry was deployed at; event scans start here. */
+export const REGISTRY_DEPLOY_BLOCK: number = deployments.registryDeployBlock ?? deployments.deployBlock ?? 0;
 export const EXPLORER: string = deployments.explorer;
 
 /** Real Ethereum mainnet venues. We deploy nothing here and control none of it. */
@@ -114,6 +116,27 @@ export const VENUES: Venue[] = [
   },
 ];
 
+/**
+ * Venues on Sepolia (chainKey 1). The same Aave V3 event, at Sepolia's own pool: a different file,
+ * which is the point of keying claims by chain as well as by address. Measured before use: 185
+ * LiquidationCall logs in the 30 days before the board was seeded.
+ */
+export const SEPOLIA_VENUES: Venue[] = [
+  {
+    key: 'aave-sepolia-liquidations',
+    label: 'Aave V3 (Sepolia) · LiquidationCall',
+    protocol: 'Aave V3 Sepolia',
+    address: '0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951',
+    event: 'LiquidationCall(address,address,address,uint256,uint256,address,bool)',
+    topic0: TOPIC_LIQUIDATION_CALL,
+    subjectTopic: 3,
+    subjectName: 'borrower',
+  },
+];
+
+/** Aave V3 `Borrow`: where to find real, active borrowers to make honest clean claims about. */
+export const TOPIC_BORROW = '0xb3d084820fb1a9decffb176436bd02558d15fac9b0ddfed8c465bc7359d7dce0';
+
 export function venueByKey(key: string): Venue {
   const v = VENUES.find((x) => x.key === key);
   if (!v) throw new Error(`unknown venue "${key}"; known: ${VENUES.map((x) => x.key).join(', ')}`);
@@ -123,21 +146,33 @@ export function venueByKey(key: string): Venue {
 /**
  * Public Ethereum endpoints for log scanning, tried in order.
  *
- * Wide `eth_getLogs` ranges are rejected by every free tier -- measured: 400 at 40,000 blocks --
- * so callers must chunk. `getLogsChunked` does.
+ * Chosen by measurement, not reputation (2026-09-13, Aave V3 LiquidationCall at known heights):
+ * Tenderly and mevblocker returned every log; nodies returned them for narrow ranges. `rpc.flashbots.net`
+ * returned **zero logs, with no error, for every range asked** -- including a single block holding
+ * four -- and publicnode answered 403. An endpoint that says "nothing" when something is there is
+ * worse than one that fails, because a negative is exactly what an absence claim rests on, so both
+ * are out, and `getLogsAdaptive` additionally canaries every endpoint before believing its silence.
  */
 export const ETH_LOG_RPCS = [
   'https://gateway.tenderly.co/public/mainnet',
   'https://rpc.mevblocker.io',
-  'https://rpc.flashbots.net',
-  'https://ethereum-rpc.publicnode.com',
+  'https://ethereum-public.nodies.app',
 ];
 
-/** Sepolia log endpoints, ordered by measured range. */
+/**
+ * Sepolia log endpoints. `ethereum-sepolia-rpc.publicnode.com` serves blocks from months ago but
+ * returns no logs and no receipts for them -- measured on eleven LiquidationCall blocks from August --
+ * and `rpc-sepolia.flashbots.net` returned zero for ranges holding logs. Neither is used. OnFinality
+ * returned every log Tenderly did.
+ */
 export const SEPOLIA_LOG_RPCS = [
   'https://gateway.tenderly.co/public/sepolia',
-  'https://ethereum-sepolia-rpc.publicnode.com',
+  'https://eth-sepolia.api.onfinality.io/public',
+  'https://ethereum-sepolia-public.nodies.app',
 ];
+
+/** ERC-20 `Transfer`: present in almost every block, so an endpoint with none is not serving that depth. */
+const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 export const LOG_RPCS: Record<number, string[]> = { 3: ETH_LOG_RPCS, 1: SEPOLIA_LOG_RPCS };
 
@@ -173,23 +208,6 @@ export const MIRROR_ABI = [
   'function spanOf(uint256) view returns (uint64 chainKey, uint64 fromBlock, uint64 toBlock)',
   'event BlocksMirrored(uint64 indexed chainKey, uint64 indexed fromBlock, uint64 indexed toBlock, uint64 newlyAdded)',
   'event SpanSealed(uint256 indexed spanId, uint64 indexed chainKey, uint64 fromBlock, uint64 toBlock)',
-];
-
-export const REGISTRY_ABI = [
-  'function assertAbsence(uint256 spanId, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 window) payable returns (uint256)',
-  'function commitmentFor(uint256 claimId, uint64 blockNumber, bytes encodedTransaction, (bytes32 hash, bool isLeft)[] siblings, bytes32 salt, address refuter) pure returns (bytes32)',
-  'function commitRefutation(bytes32 commitment)',
-  'function revealRefutation(uint256 claimId, uint64 blockNumber, bytes encodedTransaction, (bytes32 hash, bool isLeft)[] siblings, bytes32 salt)',
-  'function assurance(uint256 claimId) view returns (uint8 status, uint256 bond, uint64 openUntil, uint64 spanFrom, uint64 spanTo)',
-  'function holdsWithBond(uint256 claimId, uint256 minBond) view returns (bool)',
-  'function MIN_BOND() view returns (uint256)',
-  'function MIN_WINDOW() view returns (uint64)',
-  'function finalize(uint256 claimId)',
-  'function holds(uint256 claimId) view returns (bool)',
-  'function claimCount() view returns (uint256)',
-  'function claimOf(uint256) view returns ((address claimant, address refuter, uint256 spanId, uint64 chainKey, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint256 bond, uint256 bondStaked, uint64 openUntil, uint8 status))',
-  'event AbsenceAsserted(uint256 indexed claimId, address indexed claimant, uint256 indexed spanId, address venue, bytes32 topic0, bytes32 subject, uint256 bond, uint64 openUntil)',
-  'event AbsenceRefuted(uint256 indexed claimId, address indexed refuter, uint64 blockNumber, uint64 txIndex, uint256 bondPaid)',
 ];
 
 /** Fetch a proof from the hosted prover. Used for convenience; see local-proof.ts for the
@@ -280,12 +298,24 @@ export async function getLogsAdaptive(
   filter: { address: string; topics: (string | null)[] },
   fromBlock: number,
   toBlock: number,
-  opts: { corroboration?: number; minChunk?: number; timeoutMs?: number; onProgress?: (m: string) => void } = {},
+  opts: {
+    corroboration?: number;
+    minChunk?: number;
+    timeoutMs?: number;
+    onProgress?: (m: string) => void;
+    /**
+     * Every matching log is needed, not just one. A completeness question -- "is anything missing
+     * from this list?" -- is a negative about the *remainder*, so one endpoint's partial answer is
+     * not enough even when it found something. Requires `corroboration` endpoints to each cover the
+     * whole range, unions them, and throws if they disagree on the count.
+     */
+    exhaustive?: boolean;
+  } = {},
 ): Promise<any[]> {
   const { JsonRpcProvider } = await import('ethers');
   const corroboration = opts.corroboration ?? 2;
   const minChunk = opts.minChunk ?? 500;
-  const timeoutMs = opts.timeoutMs ?? 25_000;
+  const timeoutMs = opts.timeoutMs ?? Number(process.env.LOG_TIMEOUT_MS ?? 25_000);
 
   const withTimeout = <T,>(p: Promise<T>) =>
     Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))]);
@@ -311,23 +341,40 @@ export async function getLogsAdaptive(
   const seen = new Map<string, any>();
   let covered = 0;
   const failures: string[] = [];
+  const counts: number[] = [];
 
   for (const url of urls) {
     try {
+      // Canary: before an endpoint's answer can count, it must show it serves logs at the bottom of
+      // the range at all. Pruned nodes answer old queries with an empty list, not an error.
+      const probe = new JsonRpcProvider(url, undefined, { staticNetwork: true, batchMaxCount: 1 });
+      const canary = await withTimeout(probe.getLogs({ topics: [TRANSFER_TOPIC], fromBlock, toBlock: fromBlock + 4 }));
+      if (canary.length === 0) throw new Error(`${new URL(url).host} returned no Transfer logs at ${fromBlock}..${fromBlock + 4}: pruned or lossy, not counted`);
       opts.onProgress?.(`scanning ${fromBlock}..${toBlock} on ${new URL(url).host}`);
       const logs = await cover(url, fromBlock, toBlock);
       covered++;
+      counts.push(new Set(logs.map((l) => `${l.transactionHash}:${l.index ?? l.logIndex}`)).size);
       for (const l of logs) seen.set(`${l.transactionHash}:${l.index ?? l.logIndex}`, l);
-      // A positive is verified cryptographically downstream; act on it.
-      if (seen.size > 0) break;
-      // A negative needs `corroboration` endpoints that each covered the whole range.
+      // A positive is verified cryptographically downstream; for an existence question, act on it.
+      if (!opts.exhaustive && seen.size > 0) break;
+      // A negative -- or, when exhaustive, a complete list -- needs `corroboration` full covers.
       if (covered >= corroboration) break;
     } catch (e) {
       failures.push((e as Error).message);
     }
   }
 
-  if (seen.size === 0 && covered < corroboration) {
+  if (opts.exhaustive) {
+    if (covered < corroboration) {
+      throw new Error(
+        `only ${covered} endpoint(s) covered ${fromBlock}..${toBlock}; an exhaustive list needs ${corroboration} ` +
+          `(${failures.join(' | ').slice(0, 200)})`,
+      );
+    }
+    if (counts.some((c) => c !== seen.size)) {
+      throw new Error(`endpoints disagree on ${fromBlock}..${toBlock}: ${counts.join(' vs ')} logs (union ${seen.size}); not treating either as complete`);
+    }
+  } else if (seen.size === 0 && covered < corroboration) {
     throw new Error(
       `only ${covered} endpoint(s) covered ${fromBlock}..${toBlock} and none found a log; ` +
         `refusing to report that as silence (${failures.join(' | ').slice(0, 200)})`,

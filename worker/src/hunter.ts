@@ -2,7 +2,8 @@
  * The hunter: a searcher that refutes false claims on the absence registry without a human.
  *
  * Usage:
- *   node src/hunter.ts [--once] [--interval 60] [--registry <address>] [--dry-run]
+ *   node src/hunter.ts [--once] [--interval 60] [--min-age-hours 0] [--only 3,7] [--registry <address>] [--dry-run]
+ *   node src/hunter.ts --audit     scan every settled claim again, read-only, and record what is found
  *   HUNTER_KEY=0x… to run as a separate actor (recommended; see below)
  *
  * WHY THIS IS THE LOAD-BEARING PART OF THE MARKET
@@ -29,10 +30,15 @@
  *
  * Refutation rebuilds the block from a public node rather than asking the prover, because the block
  * is already mirrored and refutation must keep working when the proving service does not.
+ *
+ * --min-age-hours makes this a deliberately slow searcher: it leaves claims younger than N hours alone.
+ * That is how the board keeps live bounties for a human to hunt from the browser while still proving
+ * that an automated searcher closes every lie eventually. It is stated on the board, not hidden.
  */
-import { JsonRpcProvider, Wallet, Contract, AbiCoder } from 'ethers';
-import { readFileSync } from 'node:fs';
-import { CC_RPC, MIRROR, MIRROR_ABI, EXPLORER, CHAINS, LOG_RPCS, VENUES, privateKey, getLogsAdaptive } from './config.ts';
+import { JsonRpcProvider, Wallet, Contract } from 'ethers';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { CC_RPC, MIRROR, MIRROR_ABI, EXPLORER, CHAINS, LOG_RPCS, VENUES, REGISTRY_DEPLOY_BLOCK, privateKey, getLogsAdaptive } from './config.ts';
+import { receiptLogIndex, verifiedPathFor, topicsFor, type Member } from './evidence.ts';
 
 const REGISTRY_V3_ABI = [
   'function claimCount() view returns (uint256)',
@@ -46,20 +52,15 @@ const REGISTRY_V3_ABI = [
   'function enforceableLoss(uint256) view returns (uint256)',
   'event MembersListed(uint256 indexed claimId, (uint64 height, uint64 txIndex, uint32 logIndex)[] members)',
   'event AbsenceRefuted(uint256 indexed claimId, address indexed refuter, uint64 blockNumber, uint64 txIndex, uint256 paidToRefuter, uint256 burned)',
+  'event AbsenceAsserted(uint256 indexed claimId, address indexed claimant, uint8 kind, uint256[] spanIds, address venue, bytes32 topic0, bytes32 subject, uint256 bond, uint64 openUntil, uint64 spanFrom, uint64 spanTo)',
 ];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const sdkMod = await import('@gluwa/usc-sdk/dist/index.js');
-const sdk: any = (sdkMod as any).proofProvider ? sdkMod : (sdkMod as any).default;
-const { proofProvider, encoding } = sdk;
-const { SimpleBlockProvider } = proofProvider.raw.blockProvider;
-const { KeccakMerkleTree } = proofProvider.merkle;
-
-type Member = { height: number; txIndex: number; logIndex: number };
 
 type Claim = {
   id: number;
+  assertedAt: number;
   chainKey: number;
   venue: string;
   topic0: string;
@@ -81,22 +82,34 @@ function registryAddress(): string {
   return a;
 }
 
-const providers = new Map<number, JsonRpcProvider>();
-function ethFor(chainKey: number): JsonRpcProvider {
-  if (!providers.has(chainKey)) {
-    providers.set(chainKey, new JsonRpcProvider(LOG_RPCS[chainKey][0], undefined, { staticNetwork: true }));
+/** claimId -> assertion timestamp, filled incrementally so a long-running hunter never rescans. */
+const assertedAt = new Map<number, number>();
+let scannedTo = REGISTRY_DEPLOY_BLOCK - 1;
+
+async function assertionTimes(registry: Contract): Promise<Map<number, number>> {
+  const cc = registry.runner!.provider!;
+  const head = await cc.getBlockNumber();
+  for (let from = scannedTo + 1; from <= head; from += 5_000) {
+    const to = Math.min(from + 4_999, head);
+    for (const ev of await registry.queryFilter(registry.filters.AbsenceAsserted(), from, to)) {
+      const blk = await (ev as any).getBlock();
+      assertedAt.set(Number((ev as any).args.claimId), blk.timestamp);
+    }
+    scannedTo = to;
   }
-  return providers.get(chainKey)!;
+  return assertedAt;
 }
 
 async function openClaims(registry: Contract): Promise<Claim[]> {
   const n = Number(await registry.claimCount());
+  const times = await assertionTimes(registry);
   const out: Claim[] = [];
   for (let i = 0; i < n; i++) {
     const c = await registry.claimOf(i);
     if (Number(c.status) !== 1) continue;
     out.push({
       id: i,
+      assertedAt: times.get(i) ?? 0,
       chainKey: Number(c.chainKey),
       venue: c.venue,
       topic0: c.topic0,
@@ -114,56 +127,24 @@ async function openClaims(registry: Contract): Promise<Claim[]> {
 
 /** The member list exactly as asserted, from the registry's own event. */
 async function membersOf(registry: Contract, claimId: number): Promise<Member[]> {
-  const cc = registry.runner!.provider!;
-  const deployBlock = JSON.parse(readFileSync(new URL('../../deployments.json', import.meta.url), 'utf8')).deployBlock ?? 0;
-  const logs = await registry.queryFilter(registry.filters.MembersListed(claimId), deployBlock, 'latest');
+  const logs = await registry.queryFilter(registry.filters.MembersListed(claimId), REGISTRY_DEPLOY_BLOCK, 'latest');
   if (logs.length !== 1) throw new Error(`expected one MembersListed for claim ${claimId}, found ${logs.length}`);
   const parsed = registry.interface.parseLog(logs[0] as any)!;
-  void cc;
   return (parsed.args.members as any[]).map((m) => ({ height: Number(m.height), txIndex: Number(m.txIndex), logIndex: Number(m.logIndex) }));
-}
-
-function topicsFor(c: Claim): (string | null)[] {
-  const t: (string | null)[] = [c.topic0];
-  if (c.subjectTopic > 0) {
-    for (let i = 1; i < c.subjectTopic; i++) t.push(null);
-    t.push(c.subject);
-  }
-  return t;
-}
-
-/** Receipt-local position of a log -- the index the registry and the decoder use. */
-async function receiptLogIndex(eth: JsonRpcProvider, log: any): Promise<number> {
-  const rc = await eth.getTransactionReceipt(log.transactionHash);
-  if (!rc) throw new Error(`no receipt for ${log.transactionHash}`);
-  if (rc.status !== 1) return -1; // a failed transaction is not evidence; the registry would refuse it
-  const i = rc.logs.findIndex((l) => l.index === (log.index ?? log.logIndex));
-  if (i < 0) throw new Error(`log not found in its own receipt: ${log.transactionHash}`);
-  return i;
-}
-
-/** Rebuild the block locally and take the path for one transaction. No prover involved. */
-async function pathFor(chainKey: number, blockNumber: number, txHash: string) {
-  const eth = ethFor(chainKey);
-  const withReceipts = await new SimpleBlockProvider(eth).getBlockWithReceipts(blockNumber);
-  if (!withReceipts) throw new Error('block unavailable from this RPC');
-  const { transactions, receipts } = withReceipts;
-  const leaves = transactions.map((t: any, i: number) => encoding.abiEncode(t, receipts[i], encoding.EncodingVersion.V1).abi);
-  const idx = receipts.findIndex((r: any) => (r.hash ?? r.transactionHash)?.toLowerCase() === txHash.toLowerCase());
-  if (idx < 0) throw new Error('transaction not present in the rebuilt block');
-  const proof = new KeccakMerkleTree(leaves).getProof(idx);
-  return { txBytes: leaves[idx], siblings: proof.siblings.map((s: any) => ({ hash: s.hash, isLeft: s.isLeft })), index: idx };
 }
 
 type Counterexample = { log: any; logIndex: number; members?: Member[] };
 
 async function findCounterexample(registry: Contract, c: Claim): Promise<Counterexample | null> {
-  const logs = await getLogsAdaptive(LOG_RPCS[c.chainKey], { address: c.venue, topics: topicsFor(c) }, c.spanFrom, c.spanTo);
-  const eth = ethFor(c.chainKey);
+  // A CompleteSet hunt needs every matching log -- an endpoint that returned only the listed ones
+  // would otherwise read as "nothing omitted" -- so it is exhaustive and corroborated.
+  const logs = await getLogsAdaptive(LOG_RPCS[c.chainKey], { address: c.venue, topics: topicsFor(c.topic0, c.subjectTopic, c.subject) }, c.spanFrom, c.spanTo, {
+    exhaustive: c.kind === 1,
+  });
 
   if (c.kind === 0) {
     for (const log of logs) {
-      const li = await receiptLogIndex(eth, log);
+      const li = await receiptLogIndex(c.chainKey, log);
       if (li >= 0) return { log, logIndex: li };
     }
     return null;
@@ -172,7 +153,7 @@ async function findCounterexample(registry: Contract, c: Claim): Promise<Counter
   const members = await membersOf(registry, c.id);
   const listed = new Set(members.map((m) => `${m.height}:${m.txIndex}:${m.logIndex}`));
   for (const log of logs) {
-    const li = await receiptLogIndex(eth, log);
+    const li = await receiptLogIndex(c.chainKey, log);
     if (li < 0) continue;
     const key = `${log.blockNumber}:${log.transactionIndex}:${li}`;
     if (!listed.has(key)) return { log, logIndex: li, members };
@@ -180,14 +161,19 @@ async function findCounterexample(registry: Contract, c: Claim): Promise<Counter
   return null;
 }
 
-async function hunt(registry: Contract, mirror: Contract, dryRun: boolean) {
-  const claims = await openClaims(registry);
+async function hunt(registry: Contract, mirror: Contract, dryRun: boolean, minAgeHours: number, only: Set<number> | null) {
+  const claims = (await openClaims(registry)).filter((c) => !only || only.has(c.id));
   const now = Math.floor(Date.now() / 1000);
   console.log(`\n[${new Date().toISOString().slice(11, 19)}] ${claims.length} open claim(s)`);
 
   for (const c of claims) {
     const label = `claim ${String(c.id).padStart(3)} ${c.kind === 0 ? 'EmptySet   ' : 'CompleteSet'} ${CHAINS[c.chainKey]?.slug ?? c.chainKey}`;
     if (now > c.openUntil) continue; // finalised below
+    const ageH = (now - c.assertedAt) / 3600;
+    if (ageH < minAgeHours) {
+      console.log(`  ${label}  left for human hunters (asserted ${ageH.toFixed(1)}h ago, house hunter waits ${minAgeHours}h)`);
+      continue;
+    }
 
     let found: Counterexample | null;
     try {
@@ -216,7 +202,7 @@ async function hunt(registry: Contract, mirror: Contract, dryRun: boolean) {
     }
 
     try {
-      const { txBytes, siblings } = await pathFor(c.chainKey, log.blockNumber, log.transactionHash);
+      const { txBytes, siblings } = await verifiedPathFor(mirror, c.chainKey, log.blockNumber, log.transactionHash);
       const salt = '0x' + Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('hex');
       const me = await (registry.runner as Wallet).getAddress();
 
@@ -249,6 +235,7 @@ async function hunt(registry: Contract, mirror: Contract, dryRun: boolean) {
   // Anyone may finalise an expired claim; doing it here keeps the board readable.
   const n = Number(await registry.claimCount());
   for (let i = 0; i < n; i++) {
+    if (only && !only.has(i)) continue;
     const c = await registry.claimOf(i);
     if (Number(c.status) === 1 && now > Number(c.openUntil)) {
       if (dryRun) continue;
@@ -262,6 +249,40 @@ async function hunt(registry: Contract, mirror: Contract, dryRun: boolean) {
   }
 }
 
+/**
+ * Audit: re-scan every claim that has settled and record whether a counterexample exists today.
+ * A Refuted claim should still have one; a Standing claim should not. Read-only -- nothing is sent --
+ * and it is the evidence that "Standing" on this board was not merely "nobody was looking".
+ */
+async function audit(registry: Contract) {
+  const n = Number(await registry.claimCount());
+  const rows: any[] = [];
+  for (let i = 0; i < n; i++) {
+    const c = await registry.claimOf(i);
+    const status = ['None', 'Open', 'Refuted', 'Standing'][Number(c.status)];
+    const claim: Claim = {
+      id: i, assertedAt: 0, chainKey: Number(c.chainKey), venue: c.venue, topic0: c.topic0, subject: c.subject,
+      subjectTopic: Number(c.subjectTopic), spanFrom: Number(c.spanFrom), spanTo: Number(c.spanTo),
+      openUntil: Number(c.openUntil), kind: Number(c.kind) as 0 | 1, members: Number(c.members),
+    };
+    try {
+      const found = await findCounterexample(registry, claim);
+      const consistent = status === 'Open' || (status === 'Refuted') === Boolean(found);
+      rows.push({ claimId: i, status, kind: claim.kind === 0 ? 'EmptySet' : 'CompleteSet', counterexample: found ? found.log.transactionHash : null, consistent });
+      console.log(`  claim ${String(i).padStart(3)} ${status.padEnd(8)} ${found ? `counterexample ${found.log.transactionHash.slice(0, 12)}…` : 'no counterexample, corroborated'}${consistent ? '' : '  ← INCONSISTENT'}`);
+    } catch (e) {
+      rows.push({ claimId: i, status, error: String((e as Error).message).slice(0, 160), consistent: null });
+      console.log(`  claim ${String(i).padStart(3)} ${status.padEnd(8)} COULD NOT SCAN — ${(e as Error).message.slice(0, 100)}`);
+    }
+  }
+  const out = new URL('../../docs/transcripts/audit-v3.json', import.meta.url);
+  writeFileSync(out, JSON.stringify({ registry: await registry.getAddress(), at: new Date().toISOString(), rows }, null, 1) + '\n');
+  const bad = rows.filter((r) => r.consistent === false).length;
+  console.log(`\n  audited ${rows.length} claims · inconsistent ${bad} · unscannable ${rows.filter((r) => r.consistent === null).length}`);
+  console.log(`  ${out.pathname}`);
+  if (bad) process.exit(1);
+}
+
 async function main() {
   const argv = process.argv;
   const get = (f: string) => {
@@ -271,6 +292,8 @@ async function main() {
   const once = argv.includes('--once');
   const dryRun = argv.includes('--dry-run');
   const interval = Number(get('--interval') ?? 60) * 1000;
+  const minAgeHours = Number(get('--min-age-hours') ?? 0);
+  const only = get('--only') ? new Set(get('--only')!.split(',').map(Number)) : null;
 
   const cc = new JsonRpcProvider(CC_RPC);
   // A hunter that is also the claimant proves nothing about whether anyone else would bother.
@@ -282,12 +305,14 @@ async function main() {
   console.log('  registry :', await registry.getAddress());
   console.log('  as       :', wallet.address);
   console.log('  venues   :', [...new Set(VENUES.map((v) => v.protocol))].join(', '));
+  if (minAgeHours > 0) console.log(`  waits    : ${minAgeHours}h before touching a claim, so humans get the first shot`);
+  if (only) console.log(`  only     : claims ${[...only].join(', ')}`);
   if (dryRun) console.log('  DRY RUN — no transactions will be sent');
-  void AbiCoder;
+  if (argv.includes('--audit')) return audit(registry);
 
   for (;;) {
     try {
-      await hunt(registry, mirror, dryRun);
+      await hunt(registry, mirror, dryRun, minAgeHours, only);
     } catch (e) {
       console.log('  ! pass failed:', (e as Error).message.slice(0, 160));
     }

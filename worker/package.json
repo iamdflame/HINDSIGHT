@@ -1,12 +1,20 @@
 {
   "name": "hindsight-worker",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "local-proof": "node src/local-proof.ts",
-    "mirror": "node src/mirror.ts",
-    "scan": "node src/scan.ts"
+    "typecheck": "tsc -p .",
+    "measure": "node src/measure.ts",
+    "measure:check": "node src/measure.ts --check",
+    "docs": "node src/claims-doc.ts",
+    "docs:check": "node src/claims-doc.ts --check",
+    "differential": "node src/differential.ts",
+    "hunter": "node src/hunter.ts",
+    "audit": "node src/hunter.ts --audit",
+    "follow:mainnet": "node src/campaign.ts --chain 3 --follow",
+    "follow:sepolia": "node src/campaign.ts --chain 1 --follow",
+    "local-proof": "node src/local-proof.ts"
   },
   "dependencies": {
     "@gluwa/usc-sdk": "^0.18.0",

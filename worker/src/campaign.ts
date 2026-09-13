@@ -6,7 +6,11 @@
  *   node src/campaign.ts --chain 1 --days 30            backfill 30 days of Sepolia
  *   node src/campaign.ts --chain 3 --follow             keep the head fresh, forever
  *   node src/campaign.ts --chain 3 --target 100000      (older form: a height count)
- *   ... [--stride 900] [--from <height>] [--key ENV_VAR] [--dry-run]
+ *   ... [--stride 900] [--from <height>] [--to <height>] [--key ENV_VAR] [--dry-run]
+ *
+ * `--from`/`--to` bound one worker's slice of a backfill (descending: --from is the top, --to the
+ * lowest height it is responsible for), so several funded wallets can split a range without two of
+ * them proving the same window. In `--follow` mode `--from` is the anchor the follower extends.
  *
  * Why this is not simply a loop over `mirror.ts`
  * ----------------------------------------------
@@ -94,6 +98,7 @@ type Args = {
   target?: number;
   stride: number;
   from?: number;
+  to?: number;
   keyEnv?: string;
   follow: boolean;
   dryRun: boolean;
@@ -113,6 +118,7 @@ function parseArgs(argv: string[]): Args {
     target: get('--target') ? Number(get('--target')) : undefined,
     stride: Number(get('--stride') ?? DEFAULT_STRIDE),
     from: get('--from') ? Number(get('--from')) : undefined,
+    to: get('--to') ? Number(get('--to')) : undefined,
     keyEnv: get('--key'),
     follow: argv.includes('--follow'),
     dryRun: argv.includes('--dry-run'),
@@ -230,7 +236,12 @@ async function main() {
   if (args.dryRun) console.log('  DRY RUN — no transactions will be sent');
   console.log();
 
-  if (args.follow) return follow({ mirror, eth, cc, chain: args.chain, stride: args.stride, dryRun: args.dryRun, maxBaseFeeGwei: args.maxBaseFeeGwei, log });
+  if (args.to !== undefined) console.log('  lower bound   :', args.to.toLocaleString());
+  if (args.follow) {
+    const highest = Number(await mirror.highestMirrored(args.chain));
+    const anchor = args.from ?? (args.days && (await mirror.isMirrored(args.chain, floor)) ? floor : highest);
+    return follow({ mirror, eth, cc, chain: args.chain, stride: args.stride, dryRun: args.dryRun, maxBaseFeeGwei: args.maxBaseFeeGwei, log, anchor });
+  }
 
   // Walk downward from just under the attested head. Descending keeps every stride inside
   // already-attested history, and leaves the follower the fresh edge.
@@ -250,6 +261,10 @@ async function main() {
       console.log(args.days ? `reached the ${args.days}-day floor.` : 'reached the bottom of the chain.');
       break;
     }
+    if (args.to !== undefined && windowHi < args.to) {
+      console.log(`reached this worker's lower bound ${args.to.toLocaleString()}.`);
+      break;
+    }
 
     try {
       const added = await mirrorWindow({ mirror, eth, chain: args.chain, windowLo, windowHi, dryRun: args.dryRun, maxBaseFeeGwei: args.maxBaseFeeGwei, log });
@@ -260,6 +275,13 @@ async function main() {
       failures = 0;
     } catch (e) {
       const err = e as Error;
+      // A transaction already in the mempool (ours, re-sent after a dropped response) is not a
+      // failure of the window: wait for it to land, and the next attempt will find it held.
+      if (/already known|nonce too low|replacement (fee|transaction) (too low|underpriced)/i.test(err.message)) {
+        console.log(`  … ${windowLo}..${windowHi}: a transaction for this signer is still pending — waiting for it`);
+        await sleep(20_000);
+        continue;
+      }
       failures++;
       console.log(`  ! ${windowLo}..${windowHi}: ${err.message.slice(0, 160)}`);
       if (e instanceof ProverError && !e.retriable) {
@@ -292,9 +314,17 @@ async function main() {
 }
 
 /**
- * Keep the archive current. Every minute, if the attested head has moved a full stride past what is
- * held, mirror the next window upward. The archive that is still lengthening during judging is a
- * protocol; the one that stopped at the screenshot is a demo.
+ * Keep the archive current. Every minute, extend the contiguous run that starts at `anchor` by the
+ * next window, as soon as that window is attested.
+ *
+ * The run's top comes from `contiguousFrom`, not `highestMirrored`. `mirror()` is permissionless, so
+ * anyone can notarise an isolated window above the archive; a follower that stepped up from the
+ * highest held height would jump that gap and leave it open for good -- and the desk, which demands
+ * every height of its window, would refuse until someone noticed. Filling from the run's own top
+ * closes such a gap on the next tick.
+ *
+ * The archive that is still lengthening during judging is a protocol; the one that stopped at the
+ * screenshot is a demo.
  */
 async function follow(o: {
   mirror: Contract;
@@ -305,18 +335,27 @@ async function follow(o: {
   dryRun: boolean;
   maxBaseFeeGwei: number;
   log: (l: string) => void;
+  anchor: number;
 }) {
+  let anchor = o.anchor;
+  console.log(`  following the run that contains ${anchor.toLocaleString()}`);
   for (;;) {
     try {
       const head = await attestedHeight(o.cc, o.chain);
-      const highest = Number(await o.mirror.highestMirrored(o.chain));
+      const run = Number(await o.mirror.contiguousFrom(o.chain, anchor, 2n ** 40n));
+      if (run === 0) throw new Error(`anchor ${anchor} is not held; pass --from a held height`);
+      const top = anchor + run - 1;
+      anchor = top; // keep the next scan short
       const safeTop = bucketOf(head - HEAD_MARGIN);
-      // Next window starts at the checkpoint just above what is held, so overlap stays one block.
-      const windowLo = highest === 0 ? safeTop - o.stride : bucketOf(highest);
+      // The window starts at the checkpoint at or below the run's top, so it overlaps held history
+      // by less than a checkpoint and always covers `top + 1`.
+      const windowLo = bucketOf(top);
       const windowHi = windowLo + o.stride - 1;
 
       if (windowHi + 1 > safeTop) {
-        console.log(`[${new Date().toISOString().slice(11, 19)}] held to ${highest.toLocaleString()}, attested ${head.toLocaleString()} — waiting`);
+        const highest = Number(await o.mirror.highestMirrored(o.chain));
+        const note = highest > top ? ` (someone holds an isolated window up to ${highest.toLocaleString()}; the gap closes when attested)` : '';
+        console.log(`[${new Date().toISOString().slice(11, 19)}] contiguous to ${top.toLocaleString()}, attested ${head.toLocaleString()} — waiting${note}`);
       } else {
         await mirrorWindow({ ...o, windowLo, windowHi });
         continue; // there may be more than one window to catch up on
@@ -326,6 +365,19 @@ async function follow(o: {
     }
     await sleep(FOLLOW_POLL_MS);
   }
+}
+
+/** Every height in [lo, hi] held, read word by word from the mirror's bitmap. */
+async function fullyHeld(mirror: Contract, chain: number, lo: number, hi: number): Promise<boolean> {
+  for (let w = lo >> 8; w <= hi >> 8; w++) {
+    const word = BigInt(await mirror.heldWord(chain, w));
+    const first = Math.max(lo, w << 8) - (w << 8);
+    const last = Math.min(hi, (w << 8) + 255) - (w << 8);
+    const width = BigInt(last - first + 1);
+    const mask = ((1n << width) - 1n) << BigInt(first);
+    if ((word & mask) !== mask) return false;
+  }
+  return true;
 }
 
 let lastCalmNote = 0;
@@ -355,13 +407,10 @@ async function mirrorWindow(o: {
 }): Promise<number | null> {
   const { mirror, eth, chain, windowLo, windowHi } = o;
 
-  // Cheap pre-check: if both ends and the middle are already held, the stride is very likely
-  // done. `_retain` would no-op anyway, but skipping saves a prover call and a transaction.
-  const probes = await Promise.all(
-    [windowLo, Math.floor((windowLo + windowHi) / 2), windowHi].map((h) => mirror.isMirrored(chain, h)),
-  );
-  if (probes.every(Boolean)) {
-    console.log(`  = ${windowLo}..${windowHi} already held, skipping`);
+  // Skip a window only if every height in it is held -- read from the bitmap, five words at most,
+  // so a hole in the middle of an otherwise-held window is never mistaken for done.
+  if (await fullyHeld(mirror, chain, windowLo, windowHi + 1)) {
+    console.log(`  = ${windowLo}..${windowHi + 1} already held, skipping`);
     return null;
   }
 
@@ -398,7 +447,13 @@ async function mirrorWindow(o: {
     return null;
   }
 
-  const tx = await mirror.mirror(...call, { gasLimit: (gas * 12n) / 10n });
+  // A few wei of jitter on the tip gives every attempt a distinct hash. Without it, a re-sent window whose
+  // first attempt the node dropped is refused forever as "already known" -- measured on the Sepolia
+  // follower, which retried an identical transaction for an hour.
+  const fee = await (mirror.runner!.provider as JsonRpcProvider).getFeeData();
+  const tip = (fee.maxPriorityFeePerGas ?? 1_000_000n) + BigInt(1 + Math.floor(Math.random() * 100_000));
+  const cap = (fee.maxFeePerGas ?? 2_000_000_000n) + tip;
+  const tx = await mirror.mirror(...call, { gasLimit: (gas * 12n) / 10n, maxPriorityFeePerGas: tip, maxFeePerGas: cap });
   const rc = await tx.wait();
   // Read what *this* call added from its own event. `mirroredBlocks` after-minus-before is wrong the
   // moment more than one worker is writing: it counts everyone's additions in the interval.
