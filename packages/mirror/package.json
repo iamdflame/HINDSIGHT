@@ -1,6 +1,6 @@
 {
   "name": "hindsight-mirror",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Verify Ethereum transactions on Creditcoin against notarised history \u2014 no prover, no precompile, no wallet.",
   "type": "module",
   "main": "src/index.js",

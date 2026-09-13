@@ -83,3 +83,31 @@ Defaults target the Creditcoin CC3 testnet deployment. Point `mirror` at another
 rest follows.
 
 MIT.
+
+## The desk, the registry, the binding
+
+```
+npx hindsight-mirror mandate assess 0x7562be20…   [--principal 1]   # the desk's verdict, every instrument
+npx hindsight-mirror checks 0x3a4b8bcf…                              # status · depth · clock · stall · replay
+npx hindsight-mirror usable 13 --exposure 0.25                       # can a standing claim carry this much
+npx hindsight-mirror hunt                                            # open bounties and what they pay
+npx hindsight-mirror bind calldata 0x<creditcoin address>            # the 32 bytes to sign from Ethereum
+npx hindsight-mirror bind submit 0x<ethereum tx>                     # prove it (PRIVATE_KEY, gas)
+```
+
+```js
+import { assess, checks, usable, claims, spanOffer, mirrorIfNeeded, bindingCalldata, bind, refute } from 'hindsight-mirror';
+
+const { verdicts } = await assess('0x7562be2022d31a75f9887b7b932256c704f0c8e7', 10n ** 18n);
+// → [{ policy, pays: false, reason: 'ProvenLiar', window: { spanIds: [8], from, to } }, …]
+
+const k = await checks('0x3a4b8bcf…');
+// → { pass, status, depth, clock, stall, replay: { key: '3:25954574:263' } }  — decide for yourself
+
+await mirrorIfNeeded(txHash, privateKey); // verify; notarise first only if the block is not yet held
+```
+
+`assess` is a view on the same `assess` that `borrow` gates on; what it returns is what the money
+would do. `checks` answers the five questions in Dokett's ASC review with numbers and decides nothing.
+`spanOffer` computes the sealed spans to hand the desk — a convenience, not a permission: the desk
+re-checks adjacency, chain, length and freshness itself. Nothing here is a score.

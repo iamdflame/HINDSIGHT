@@ -1,0 +1,36 @@
+{
+  "name": "hindsight-mcp",
+  "version": "0.1.0",
+  "description": "An MCP server for agents that need to know whether an Ethereum address would be lent to, whether a transaction happened, and which bounties are open \u2014 read from Creditcoin, no prover, no precompile, no wallet.",
+  "type": "module",
+  "bin": {
+    "hindsight-mcp": "src/server.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "creditcoin",
+    "attestcoin",
+    "ethereum",
+    "underwriting"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamdflame/HINDSIGHT.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/iamdflame/HINDSIGHT/tree/master/packages/mcp",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "hindsight-mirror": "^0.4.0",
+    "zod": "^3.24.0"
+  }
+}
