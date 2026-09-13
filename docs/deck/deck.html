@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Hindsight × Mandate — deck</title>
+<style>
+@font-face { font-family: Fraunces; src: url("../../web/public/fonts/fraunces-latin-var.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: Plex; src: url("../../web/public/fonts/ibm-plex-mono-regular.woff2") format("woff2"); }
+:root { --paper:#F3EFE4; --paper2:#E8E2D2; --ink:#17150F; --soft:#5C5648; --faint:#8A8373; --rule:#D4CDB8; --wax:#7A1F2B; }
+@page { size: 1280px 720px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: Fraunces, Georgia, serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.slide { width: 1280px; height: 720px; padding: 64px 80px 56px; position: relative; page-break-after: always; break-after: page; overflow: hidden; display: flex; flex-direction: column; }
+.slide:last-child { page-break-after: auto; }
+.k { font-family: Plex, ui-monospace, monospace; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+h1 { font-weight: 500; font-size: 58px; line-height: 1.04; margin: 14px 0 22px; letter-spacing: -.01em; max-width: 1000px; }
+h2 { font-weight: 500; font-size: 40px; line-height: 1.08; margin: 12px 0 20px; max-width: 1040px; letter-spacing: -.005em; }
+p, li { font-size: 21px; line-height: 1.42; color: var(--ink); margin: 0 0 12px; max-width: 1060px; }
+.soft { color: var(--soft); }
+.small { font-size: 17px; line-height: 1.4; color: var(--soft); }
+.mono { font-family: Plex, ui-monospace, monospace; font-size: 17px; }
+.foot { position: absolute; left: 80px; right: 80px; bottom: 28px; display: flex; justify-content: space-between; font-family: Plex, monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); border-top: 1px solid var(--rule); padding-top: 10px; }
+.wax { color: var(--wax); }
+.rule { border: 0; border-top: 1px solid var(--rule); margin: 8px 0 18px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; }
+.cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 28px; }
+.box { border: 1px solid var(--rule); padding: 18px 20px; background: rgba(255,255,255,.25); }
+.box .k { margin-bottom: 8px; display:block; }
+.big { font-size: 54px; line-height: 1; font-weight: 500; margin: 6px 0 4px; letter-spacing: -.01em; }
+.big small { font-size: 18px; color: var(--soft); font-weight: 400; letter-spacing: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 19px; }
+th { text-align: left; font-family: Plex, monospace; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); padding: 0 14px 8px 0; border-bottom: 1px solid var(--ink); }
+td { padding: 9px 14px 9px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td.m { font-family: Plex, monospace; font-size: 16px; }
+ul { padding-left: 22px; margin: 0; }
+li { margin-bottom: 8px; }
+.stamp { position: absolute; right: 120px; bottom: 110px; transform: rotate(-11deg); border: 3px solid var(--wax); color: var(--wax); font-weight: 600; font-size: 34px; letter-spacing: .14em; padding: 8px 18px; opacity: .92; }
+.seal { position:absolute; right: 80px; bottom: 60px; width: 76px; height: 76px; }
+.quote { font-size: 30px; line-height: 1.3; font-style: italic; max-width: 1000px; color: var(--ink); margin: 20px 0; }
+.title .k { font-size: 14px; }
+.title h1 { font-size: 88px; margin-top: 90px; }
+.hostline { font-family: Plex, monospace; font-size: 20px; color: var(--soft); margin-top: 30px; }
+.hostline b { color: var(--ink); font-weight: 500; }
+.grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; }
+.num { font-size: 42px; line-height: 1; font-weight: 500; margin-bottom: 2px; }
+.numk { font-size: 15px; color: var(--soft); }
+.wide { max-width: 1120px; }
+</style></head><body>
+
+<section class="slide title">
+  <div class="k">BUIDL CTC 2026 Fall · DeFi · built on the Attestcoin Protocol</div>
+  <h1>Attestcoin already proves<br>the roots. This is where<br>they live.</h1>
+  <div class="hostline"><b>hindsight.run</b> — the runtime &nbsp;·&nbsp; <b>mandate.hindsight.run</b> — the desk</div>
+  <img class="seal" src="../../web/public/brand/seal.svg" alt="">
+  <div class="foot"><span>Hindsight × Mandate</span><span>Creditcoin CC3 testnet · every figure measured, on chain</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">1 · the observation</div>
+  <h2>Every Attestcoin query proves a run of Ethereum block roots — then lets them go.</h2>
+  <div class="cols">
+    <div>
+      <p>A readability query carries a continuity proof: an array of transaction Merkle roots chained by digest up to a stored attestation. <code class="mono">0x0FD2</code> verifies the whole chain, so acceptance binds <em>every</em> root in it.</p>
+      <p>Then the call returns and the roots are dropped. The next question about the same block pays for the same proof again.</p>
+      <p class="soft">This is not a flaw. Verifying is not the same job as remembering. It is the only part worth changing.</p>
+    </div>
+    <div class="box">
+      <span class="k">measured on the live prover, chainKey 3</span>
+      <table>
+        <tr><th>block age</th><th>roots per question</th></tr>
+        <tr><td>fresh</td><td class="m">1</td></tr>
+        <tr><td>1 day – 90 days</td><td class="m">41</td></tr>
+        <tr><td>180 days</td><td class="m">841</td></tr>
+      </table>
+      <p class="small" style="margin-top:12px">Paid by every asker, every time. Kept by nobody.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Hindsight × Mandate</span><span>2 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">2 · what Hindsight is</div>
+  <h2>Three ownerless contracts. Each reads only the one below it.</h2>
+  <table class="wide">
+    <tr><th style="width:170px">layer</th><th style="width:230px">contract</th><th>does</th><th style="width:130px">owner</th></tr>
+    <tr><td><b>L0 · memory</b></td><td class="m">EthereumMirror</td><td>Keeps every root the precompile verified. A <em>sealed span</em> proves a range is gap-free once and records it. Frozen <code class="mono">IMirror</code>: a second question in a held block is a <code class="mono">view</code> — no prover, no <code class="mono">0x0FD2</code>, no wallet.</td><td>none</td></tr>
+    <tr><td><b>L1 · files</b></td><td class="m">AbsenceRegistryV3</td><td>Bonded statements: “no such event about X in this range” and “these are all of them”. Anyone may refute with the transaction; half the bond to them, half burned. A standing claim is <b>economic</b>, and labelled so everywhere.</td><td>none</td></tr>
+    <tr><td><b>L2 · refusal</b></td><td class="m">UnderwritingDesk</td><td>Reads the archive and the files, and pays or refuses — naming the fact. No score, nothing minted, nothing transferable, no number.</td><td>none</td></tr>
+  </table>
+  <p class="small" style="margin-top:18px">Above them: <span class="mono">SubjectBinding</span> (an Ethereum address signs for the Creditcoin key that speaks for it) and <span class="mono">Cover</span> (insurance on an open claim, settled by the hunt). No pause key anywhere. No upgrade path anywhere.</p>
+  <div class="foot"><span>Hindsight × Mandate</span><span>3 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">3 · Attestcoin depth</div>
+  <h2>All three precompiles, used for what each one is for.</h2>
+  <div class="cols3">
+    <div class="box"><span class="k">0x0FD2 · BlockProver</span><p><b>Write once.</b> <span class="mono">verifyAndEmit</span> notarises a height and the archive retains the full continuity array it bound. Every later verify is a Merkle path against stored state.</p></div>
+    <div class="box"><span class="k">0x0FD3 · ChainInfo</span><p><b>Self-repair.</b> Checkpoints every 1,000 blocks at any depth. Roots computed from public receipts, the digest chain walked from a checkpoint, the precompile asked to reject it — it does not. <b>The archive extends with the hosted prover switched off.</b></p></div>
+    <div class="box"><span class="k">0x0FD4 · AttestorStash</span><p><b>The ceiling.</b> The desk may not lend more than the attestor quorum behind the source chain has bonded, read live on every decision. 4 attestors × 100 CTC today.</p></div>
+  </div>
+  <p style="margin-top:22px">Receipt status is checked before any log is trusted. No state proof is claimed. No absence is called a proof. <b>Independence:</b> the home page verifies a second transaction with <span class="mono">0x0FD2</span> deleted for the call — and the control, with the mirror deleted, fails — on every load.</p>
+  <div class="foot"><span>Hindsight × Mandate</span><span>4 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">4 · the record, as measured</div>
+  <h2>Nothing on this slide is a target.</h2>
+  <div class="grid2" style="margin-top:8px">
+    <div><div class="num">792,101</div><div class="numk">mainnet heights held · top 791,200 unbroken ≈ 110 days · hole below it being repaired, prover off</div></div>
+    <div><div class="num">2,684 / 0</div><div class="numk">differential checks against the live precompile, including forgeries / divergences</div></div>
+    <div><div class="num">177 · 22</div><div class="numk">Foundry tests (27 fuzz) · public gates re-run on a cron and every visit, 503 on any failure</div></div>
+    <div><div class="num">29 · 13 · 13.5</div><div class="numk">claims on the board · refuted by the hunt · tCTC burned</div></div>
+    <div><div class="num">8</div><div class="numk">instruments on real venues: Aave V3, Morpho Blue, Compound V3, Spark, Circle USDC <span class="mono">Blacklisted</span></div></div>
+    <div><div class="num">303,301</div><div class="numk">Sepolia heights, one unbroken run — a different chain is a different file</div></div>
+  </div>
+  <p class="small" style="margin-top:26px">Every number above is written to <span class="mono">deployments.json</span> by <span class="mono">measure.ts</span> from chain state, graded in <span class="mono">CLAIMS.md</span>, and checked live at hindsight.run/status.</p>
+  <div class="foot"><span>Hindsight × Mandate</span><span>5 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">5 · Mandate — the product</div>
+  <div class="stamp">REFUSED</div>
+  <h2>Paste an address. The desk pays, or refuses and names the transaction.</h2>
+  <div class="cols">
+    <div>
+      <p>Four rows settle: <b>history on hand</b>, <b>what is on file</b>, <b>under challenge</b>, <b>verdict</b>. The verdict is last because it follows from the three above it.</p>
+      <p>Every answer is a live call to the contract that holds the money — the same <span class="mono">assess</span> that <span class="mono">borrow</span> gates on. A judge can run the refusal against a real liquidated mainnet borrower without anyone’s key.</p>
+      <p class="soft">The word <em>precompile</em> does not appear on it.</p>
+    </div>
+    <div class="box">
+      <span class="k">the refusals, by name</span>
+      <p class="mono" style="font-size:15px;line-height:1.7">ArchiveTooShallow · ClaimUnderHunt · ProvenLiar · EventOnRecord · NoBondedCleanliness · NeedsBondedCover · PoolCapReached · UnprovenSubject · AlreadyLent · DeskOutOfFunds</p>
+      <p class="small">Each is an enum name beside a sentence. None is a number.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Hindsight × Mandate</span><span>6 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">6 · the gas that made it a product</div>
+  <h2>7,041,373 → 407,960. Same question, same block, both mined.</h2>
+  <div class="cols">
+    <div>
+      <p>The first desk proved its ninety-day window by walking 648,000 held bits inside <span class="mono">borrow</span>: 2,532 cold reads. A lender that expensive is a screenshot of a view.</p>
+      <p>Now <span class="mono">sealSpan</span> does the walk once and records it; the caller hands the desk the spans it relies on; the desk re-checks adjacency, chain, length and freshness. A span cannot be sealed across a hole and a held bit is never unset — the same fact, for a handful of slots.</p>
+    </div>
+    <div class="box">
+      <div class="big">43,325 <small>gas, cold, Foundry</small></div>
+      <p class="small">The depth check. <span class="mono">test_gas_ninetyDayDepthCheckUnder80k</span> fails the build above 80,000.</p>
+      <div class="big" style="margin-top:14px">17.3× <small>cheaper on Creditcoin</small></div>
+      <p class="small">Two receipts, one block: the superseded desk and the live one, asked about the same address.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Hindsight × Mandate</span><span>7 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">7 · negatives are economic, and the hunt is a job</div>
+  <h2>“Never liquidated” cannot be proven. It can be bonded, hunted, and burned.</h2>
+  <div class="cols">
+    <div>
+      <p><b>/hunt</b> lists every open bounty with what it pays, the measured gas to refute it (448k–4.0M) and the expected value. The board promises at least four documented lies open at all times; a replenisher keeps it so; a gate goes red if it slips.</p>
+      <p>The leaderboard is scored by tCTC <b>burned</b> — the only number you cannot farm by refuting yourself. Every name on it today is the house, and it says so.</p>
+    </div>
+    <div>
+      <p><b>Cover</b>: an underwriter locks a payout on an open claim, a buyer pays a premium, and the claim’s own outcome decides who collects. No oracle — the hunt is the oracle. Run once with real money: bought for 0.05, the hunt refuted the claim, 1.0 tCTC collected. Four receipts.</p>
+      <p class="soft">Loans are sized to what a liar could not recover: ten times <span class="mono">enforceableLoss</span>, binding to the wei on a real Aave borrower.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Hindsight × Mandate</span><span>8 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">8 · identity without a score</div>
+  <h2>The desk pays a Creditcoin key that has signed for its Ethereum address.</h2>
+  <div class="cols">
+    <div>
+      <p><span class="mono">borrow</span> underwrites <span class="mono">msg.sender</span> and takes no subject — a refusal must not be one parameter away from being washed. <b>SubjectBinding</b> closes the cost of that rule: an Ethereum address signs a transaction naming a Creditcoin key, proven against a held root, and the desk underwrites what that key speaks for. Still not a parameter: a liar would need a stranger’s Ethereum key.</p>
+      <p>Replay-safe by Ethereum height. One record gets one loan however many keys its owner rotates through.</p>
+    </div>
+    <div class="box">
+      <span class="k">requiresBinding</span>
+      <p>An instrument may refuse any subject nobody has proven control of — <span class="mono">UnprovenSubject</span>. A fresh wallet with a true-of-everyone claim about itself is exactly what this refusal exists for, and the public gate shows the desk’s own demo wallet refused by it.</p>
+      <p class="small">Nothing minted. Nothing transferable. No number.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Hindsight × Mandate</span><span>9 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">9 · where the question can be asked</div>
+  <h2>The same view, from wherever people already are.</h2>
+  <table class="wide">
+    <tr><th style="width:250px">surface</th><th>what it does</th><th style="width:170px">can it spend?</th></tr>
+    <tr><td><b>Telegram</b> <span class="mono">@MandateDeskBot</span></td><td><span class="mono">/assess 0x…</span> · <span class="mono">/hunt</span> · <span class="mono">/bounty</span>, plus the Mini App. Webhook secret-verified; live.</td><td>no</td></tr>
+    <tr><td><b>Agents</b> <span class="mono">hindsight-run-mcp</span></td><td>Seven MCP tools: assess, verify, the five checks, hunt, usable, coverage, binding. The one that signs is not registered without a key.</td><td>not without a key</td></tr>
+    <tr><td><b>SDK · CLI</b> <span class="mono">hindsight-mirror</span></td><td><span class="mono">assess · checks · usable · bind · refute · mirrorIfNeeded</span>. <span class="mono">npx hindsight-mirror mandate assess 0x…</span></td><td>only where it says so</td></tr>
+    <tr><td><b>Solidity</b></td><td>A Foundry template whose tests delete <span class="mono">0x0FD2</span> and keep working. Two remappings, two frozen imports.</td><td>—</td></tr>
+    <tr><td><b>HTTP</b></td><td><span class="mono">/api/assess</span> JSON · <span class="mono">/api/certificate</span> one-page PDF with the exact call to re-run · <span class="mono">/api/dump</span> · OpenAPI</td><td>no</td></tr>
+  </table>
+  <div class="foot"><span>Hindsight × Mandate</span><span>10 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">10 · what is not claimed</div>
+  <h2>The honesty machine runs in public, and it says these out loud.</h2>
+  <ul>
+    <li><b>No vetted stranger.</b> Both consumer contracts are the same person; every name on the leaderboard is the house; the only borrower paid is a house wallet. The site says so wherever a stranger would matter.</li>
+    <li><b>~110 days, not 180.</b> The deepening runs with the prover off at a measured rate; the <span class="mono">run-unbroken</span> gate will say when it gets there.</li>
+    <li><b>Nobody has bound an Ethereum address</b> — it needs an Ethereum wallet with gas, and the binding contract has a proof pipeline tested to the last step.</li>
+    <li><b>Cover is on open claims</b>, because a standing claim cannot be refuted and the registry’s rule won over the plan.</li>
+    <li><b>The Korean is machine-assisted and unreviewed.</b> The hire-purchase corridor is not built.</li>
+  </ul>
+  <p class="small" style="margin-top:14px"><span class="mono">CLAIMS.md</span> grades every statement by its evidence and is generated from chain. <span class="mono">/api/gates</span> answers 503 the moment a promise breaks.</p>
+  <div class="foot"><span>Hindsight × Mandate</span><span>11 / 12</span></div>
+</section>
+
+<section class="slide">
+  <div class="k">11 · enshrine, and the ask</div>
+  <h2>The better home for this cache is the node.</h2>
+  <div class="cols">
+    <div>
+      <p><b>RIP: BlockRootCache.</b> <span class="mono">rootOf[chainKey][height]</span> and a held bit, written as a side effect of every successful <span class="mono">verifyAndEmit</span>; <span class="mono">mirrorVerify</span> with no continuity argument; one new event. Every figure in the cost table is measured. It is in <span class="mono">docs/ENSHRINE.md</span>.</p>
+      <p><b>CEIP ask:</b> archive capital from 180 days to a year · a CertiK review of L0 and L1 · Telegram distribution · one hire-purchase corridor with a real counterparty · a bounty for the first integrator we do not operate. Milestoned; every milestone a gate on <span class="mono">/status</span>.</p>
+    </div>
+    <div>
+      <p class="quote">“We would rather help you build B than be the reason it is not needed.”</p>
+      <p class="small">— the last line of ENSHRINE, which does not change.</p>
+      <p class="mono" style="margin-top:28px;font-size:16px">hindsight.run · mandate.hindsight.run<br>github.com/iamdflame/HINDSIGHT<br>hindsight.run/ceip · hindsight.run/status</p>
+    </div>
+  </div>
+  <div class="foot"><span>Hindsight × Mandate</span><span>12 / 12</span></div>
+</section>
+
+</body></html>
