@@ -38,6 +38,20 @@ import {IAbsenceV3} from "./IAbsenceV3.sol";
 ///      snapshotted at assertion; receipt status required to be `0x1`; a per-claimer cap on open
 ///      claims. Each exists because removing it reintroduces a specific attack.
 ///
+///      WHY THERE IS AN INDEX
+///
+///      A consumer deciding about one address must not have to read every claim ever filed: the
+///      first version of the desk did, capped the walk at 512, and so could be switched off for
+///      everyone by five tCTC of junk claims. `recordOf(keyOf(...))` answers "anything refuted, open
+///      or listed about this subject?" in one read, whatever else is on the board.
+///
+///      WHY A RETURNED BOND IS PULLED IF IT CANNOT BE PUSHED
+///
+///      `finalize` is how an Open claim stops being Open. If it pushed the bond and reverted on
+///      failure, a claimant contract that rejects payment would keep its claim Open forever -- and
+///      an Open claim blocks lending to its subject. The bond is pushed with a gas stipend and, if
+///      that fails, credited to `owed` for the claimant to withdraw; the claim stands either way.
+///
 ///      A claim in `Standing` still DOES NOT MEAN the statement is true. It means: nobody refuted
 ///      it within its window, over a gap-free range, while this much unrecoverable bond was at risk.
 contract AbsenceRegistryV3 is IAbsenceV3 {
@@ -103,6 +117,25 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
     /// @notice claimant => number of their claims currently Open.
     mapping(address => uint256) public openClaims;
 
+    /// @dev See `recordOf`. Packed into one slot.
+    struct Record {
+        uint32 open;
+        uint32 refuted;
+        uint64 lastEvidenceAt;
+        uint64 lastMemberAt;
+        uint32 total;
+    }
+
+    mapping(bytes32 => Record) internal _records;
+    mapping(bytes32 => uint256[]) internal _underKey;
+
+    /// @notice Bonds that could not be pushed back to their claimant. Withdraw with `withdraw()`.
+    mapping(address => uint256) public owed;
+
+    /// @notice Gas forwarded when returning a bond. Enough for an EOA or a smart wallet's receive;
+    ///         not enough to turn `finalize` into somebody else's gas bill.
+    uint256 public constant RETURN_GAS = 50_000;
+
     event AbsenceAsserted(
         uint256 indexed claimId,
         address indexed claimant,
@@ -128,6 +161,8 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
         uint256 burned
     );
     event AbsenceStands(uint256 indexed claimId, address indexed claimant, uint256 bondReturned);
+    event BondOwed(address indexed claimant, uint256 amount);
+    event Withdrawn(address indexed claimant, uint256 amount);
 
     error BondTooSmall();
     error WindowTooShort();
@@ -156,6 +191,7 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
     error WrongMemberList();
     error MemberAlreadyListed();
     error WrongKind();
+    error NothingOwed();
 
     constructor(EthereumMirror mirror_) {
         MIRROR = mirror_;
@@ -228,6 +264,11 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
             keccak256(abi.encode(members)),
             window
         );
+        // Members are strictly ordered, so the last one is the highest. Each is a verified,
+        // successful, matching log: an event on record about this subject, whatever the claim's fate.
+        Record storage r = _records[_keyOfClaim(_claims[claimId])];
+        uint64 top = members[members.length - 1].height;
+        if (top > r.lastMemberAt) r.lastMemberAt = top;
         emit MembersListed(claimId, members);
     }
 
@@ -271,6 +312,9 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
         bytes32 membersHash,
         uint64 window
     ) internal returns (uint256 claimId) {
+        // A claim that constrains no topic constrains no subject; storing one would let it be
+        // indexed, and read, as though it were about somebody.
+        if (subjectTopic == 0) subject = bytes32(0);
         claimId = _claims.length;
         uint64 openUntil = uint64(block.timestamp) + window;
         _claims.push(
@@ -297,6 +341,13 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
         unchecked {
             ++openClaims[msg.sender];
         }
+        bytes32 key = keyOf(chainKey, venue, topic0, subjectTopic, subject);
+        Record storage r = _records[key];
+        unchecked {
+            ++r.open;
+            ++r.total;
+        }
+        _underKey[key].push(claimId);
         emit AbsenceAsserted(claimId, msg.sender, kind_, spanIds, venue, topic0, subject, msg.value, openUntil, from, to);
     }
 
@@ -419,6 +470,13 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
         c.bond = 0;
         _releaseOpenSlot(c.claimant);
 
+        Record storage r = _records[_keyOfClaim(c)];
+        unchecked {
+            --r.open;
+            ++r.refuted;
+        }
+        if (blockNumber > r.lastEvidenceAt) r.lastEvidenceAt = blockNumber;
+
         uint256 toRefuter = (bond * REFUTER_SHARE_BPS) / 10_000;
         uint256 burned = bond - toRefuter;
 
@@ -441,10 +499,28 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
         uint256 bond = c.bond;
         c.bond = 0;
         _releaseOpenSlot(c.claimant);
+        unchecked {
+            --_records[_keyOfClaim(c)].open;
+        }
 
         emit AbsenceStands(claimId, c.claimant, bond);
 
-        (bool sent,) = payable(c.claimant).call{value: bond}("");
+        // Pushed with a stipend; if the claimant cannot or will not receive it, it is owed instead.
+        // Either way the claim is no longer Open, which is the part other people depend on.
+        (bool sent,) = payable(c.claimant).call{value: bond, gas: RETURN_GAS}("");
+        if (!sent) {
+            owed[c.claimant] += bond;
+            emit BondOwed(c.claimant, bond);
+        }
+    }
+
+    /// @notice Collect bonds `finalize` could not push.
+    function withdraw() external {
+        uint256 amount = owed[msg.sender];
+        if (amount == 0) revert NothingOwed();
+        owed[msg.sender] = 0;
+        emit Withdrawn(msg.sender, amount);
+        (bool sent,) = payable(msg.sender).call{value: amount}("");
         if (!sent) revert TransferFailed();
     }
 
@@ -546,6 +622,34 @@ contract AbsenceRegistryV3 is IAbsenceV3 {
     /// @inheritdoc IAbsenceV3
     function memberCount(uint256 claimId) external view returns (uint256) {
         return _claimAt(claimId).members;
+    }
+
+    /// @inheritdoc IAbsenceV3
+    function keyOf(uint64 chainKey, address venue, bytes32 topic0, uint8 subjectTopic, bytes32 subject)
+        public
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(chainKey, venue, topic0, subjectTopic, subjectTopic == 0 ? bytes32(0) : subject));
+    }
+
+    /// @inheritdoc IAbsenceV3
+    function recordOf(bytes32 key)
+        external
+        view
+        returns (uint32 open, uint32 refuted, uint64 lastEvidenceAt, uint64 lastMemberAt, uint32 total)
+    {
+        Record storage r = _records[key];
+        return (r.open, r.refuted, r.lastEvidenceAt, r.lastMemberAt, r.total);
+    }
+
+    /// @inheritdoc IAbsenceV3
+    function claimUnderKey(bytes32 key, uint256 index) external view returns (uint256) {
+        return _underKey[key][index];
+    }
+
+    function _keyOfClaim(Claim storage c) internal view returns (bytes32) {
+        return keyOf(c.chainKey, c.venue, c.topic0, c.subjectTopic, c.subject);
     }
 
     function claimOf(uint256 claimId) external view returns (Claim memory) {

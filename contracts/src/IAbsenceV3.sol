@@ -39,4 +39,35 @@ interface IAbsenceV3 is IAbsence {
 
     /// @notice For a `CompleteSet` claim, how many members it enumerated. Zero for `EmptySet`.
     function memberCount(uint256 claimId) external view returns (uint256);
+
+    /// @notice The index key for every claim about one subject, at one venue, for one event, on
+    ///         one chain, read through one topic slot.
+    /// @dev All five are part of the key because each one changes what a claim *means*. A claim
+    ///      read through topic 1 of `LiquidationCall` is about a collateral asset, not a borrower;
+    ///      a claim over Sepolia says nothing about mainnet. A consumer that matched on subject
+    ///      alone could be handed a true statement about the wrong thing. When `subjectTopic` is
+    ///      zero the claim constrains no subject, and the registry stores the subject as zero.
+    function keyOf(uint64 chainKey, address venue, bytes32 topic0, uint8 subjectTopic, bytes32 subject)
+        external
+        pure
+        returns (bytes32);
+
+    /// @notice What is on record under a key, kept as running aggregates so that no consumer has to
+    ///         walk the claim list -- and so that nobody can hide a refutation by filing a thousand
+    ///         claims in front of it.
+    /// @return open             claims under this key still `Open`. Includes claims whose window has
+    ///                          closed but that nobody has finalised yet; `finalize` is permissionless.
+    /// @return refuted          claims under this key that were refuted.
+    /// @return lastEvidenceAt   the highest source-chain height at which refuting evidence sits, zero
+    ///                          if nothing was ever refuted. Evidence always matches the subject.
+    /// @return lastMemberAt     the highest height of any member a `CompleteSet` under this key listed
+    ///                          -- each verified against the mirror at assertion -- zero if none.
+    /// @return total            claims ever filed under this key.
+    function recordOf(bytes32 key)
+        external
+        view
+        returns (uint32 open, uint32 refuted, uint64 lastEvidenceAt, uint64 lastMemberAt, uint32 total);
+
+    /// @notice The `index`-th claim filed under `key`, oldest first; `index < total`.
+    function claimUnderKey(bytes32 key, uint256 index) external view returns (uint256 claimId);
 }

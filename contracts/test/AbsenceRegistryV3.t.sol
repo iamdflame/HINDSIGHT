@@ -22,6 +22,39 @@ contract Accepts {
     }
 }
 
+/// A claimant that refuses to be paid, and can be told to change its mind.
+contract StubbornClaimant {
+    bool public accept;
+    bool public burnGas;
+
+    function setAccept(bool a) external {
+        accept = a;
+    }
+
+    function setBurnGas(bool b) external {
+        burnGas = b;
+    }
+
+    function assertAbsence(AbsenceRegistryV3 r, uint256[] calldata spans, address venue, bytes32 topic0, uint64 window)
+        external
+        payable
+        returns (uint256)
+    {
+        return r.assertAbsence{value: msg.value}(spans, venue, topic0, bytes32(0), 0, window);
+    }
+
+    function withdraw(AbsenceRegistryV3 r) external {
+        r.withdraw();
+    }
+
+    receive() external payable {
+        if (burnGas) {
+            while (true) {}
+        }
+        require(accept, "no thanks");
+    }
+}
+
 /// @title Completeness, and the burn
 /// @notice Six real Aave V3 liquidations on Ethereum mainnet, all inside a 64-block window, all
 ///         with their real Merkle paths. A `CompleteSet` claim that lists all six should stand. One
@@ -369,6 +402,120 @@ contract AbsenceRegistryV3Test is Test {
     }
 
     /// EmptySet regression: a false "no liquidations here" is refuted, with the burn.
+    // ---------------------------------------------------------------------------------------
+    // The index a consumer reads instead of walking claims
+    // ---------------------------------------------------------------------------------------
+
+    function _key() internal view returns (bytes32) {
+        return registry.keyOf(ETH, AAVE_V3_POOL, LIQUIDATION_CALL, 0, bytes32(0));
+    }
+
+    function test_recordFollowsEveryTransition() public {
+        bytes32 key = _key();
+        (uint32 open, uint32 refuted, uint64 ev, uint64 mem, uint32 total) = registry.recordOf(key);
+        assertEq(open + refuted + ev + mem + total, 0);
+
+        // EmptySet, refuted by fx[0]
+        vm.prank(claimant);
+        uint256 lie = registry.assertAbsence{value: 1 ether}(_spans(), AAVE_V3_POOL, LIQUIDATION_CALL, bytes32(0), 0, 1 hours);
+        (open,,,, total) = registry.recordOf(key);
+        assertEq(open, 1);
+        assertEq(total, 1);
+        assertEq(registry.claimUnderKey(key, 0), lie);
+
+        Fixture storage f = fx[fx.length - 1];
+        INativeQueryVerifier.MerkleProofEntry[] memory sib = f.siblings;
+        bytes32 c = registry.commitmentFor(lie, f.height, f.txBytes, sib, "s", refuter);
+        vm.prank(refuter);
+        registry.commitRefutation(c);
+        vm.roll(block.number + 1);
+        vm.prank(refuter);
+        registry.revealRefutation(lie, f.height, f.txBytes, sib, "s");
+        (open, refuted, ev,, total) = registry.recordOf(key);
+        assertEq(open, 0);
+        assertEq(refuted, 1);
+        assertEq(ev, f.height, "evidence height recorded");
+
+        // A second refutation lower down must not lower the recorded maximum.
+        vm.prank(claimant);
+        uint256 lie2 = registry.assertAbsence{value: 1 ether}(_spans(), AAVE_V3_POOL, LIQUIDATION_CALL, bytes32(0), 0, 1 hours);
+        Fixture storage g = fx[0];
+        INativeQueryVerifier.MerkleProofEntry[] memory sib2 = g.siblings;
+        bytes32 c2 = registry.commitmentFor(lie2, g.height, g.txBytes, sib2, "t", refuter);
+        vm.prank(refuter);
+        registry.commitRefutation(c2);
+        vm.roll(block.number + 1);
+        vm.prank(refuter);
+        registry.revealRefutation(lie2, g.height, g.txBytes, sib2, "t");
+        (, refuted, ev,,) = registry.recordOf(key);
+        assertEq(refuted, 2);
+        assertEq(ev, f.height, "maximum, not latest");
+
+        // CompleteSet listing everything: lastMemberAt is the top member; stands; open returns to 0.
+        uint256 full = _assertComplete(claimant, type(uint256).max, 1 ether);
+        (open,,, mem, total) = registry.recordOf(key);
+        assertEq(open, 1);
+        assertEq(mem, fx[fx.length - 1].height);
+        assertEq(total, 3);
+        vm.warp(block.timestamp + 2 hours);
+        registry.finalize(full);
+        (open,,, mem,) = registry.recordOf(key);
+        assertEq(open, 0);
+        assertEq(mem, fx[fx.length - 1].height, "a listed event stays on record after the claim stands");
+    }
+
+    function testFuzz_keyOfSeparatesEveryField(uint64 chainKey, address venue, bytes32 topic0, uint8 rawSlot, bytes32 subject) public view {
+        uint8 slot = uint8(bound(rawSlot, 1, 3));
+        bytes32 k = registry.keyOf(chainKey, venue, topic0, slot, subject);
+        assertTrue(k != registry.keyOf(chainKey ^ 1, venue, topic0, slot, subject));
+        assertTrue(k != registry.keyOf(chainKey, address(uint160(venue) ^ 1), topic0, slot, subject));
+        assertTrue(k != registry.keyOf(chainKey, venue, topic0 ^ bytes32(uint256(1)), slot, subject));
+        assertTrue(k != registry.keyOf(chainKey, venue, topic0, slot == 3 ? 2 : slot + 1, subject));
+        assertTrue(k != registry.keyOf(chainKey, venue, topic0, slot, subject ^ bytes32(uint256(1))));
+        // Slot zero constrains no subject, so every subject is the same key.
+        assertEq(registry.keyOf(chainKey, venue, topic0, 0, subject), registry.keyOf(chainKey, venue, topic0, 0, bytes32(0)));
+    }
+
+    /// A claimant that will not take its bond back cannot keep its claim Open -- which would block
+    /// lending to its subject forever. The claim stands; the bond waits to be withdrawn.
+    function test_claimantRefusingItsBondCannotKeepAClaimOpen() public {
+        StubbornClaimant stubborn = new StubbornClaimant();
+        vm.deal(address(stubborn), 0);
+        uint256 id = stubborn.assertAbsence{value: 1 ether}(registry, _spans(), AAVE_V3_POOL, keccak256("NeverEmitted()"), 15 minutes);
+        vm.warp(block.timestamp + 16 minutes);
+
+        registry.finalize(id);
+        assertTrue(registry.holds(id), "stands despite the refused payment");
+        assertEq(registry.owed(address(stubborn)), 1 ether);
+        (uint32 open,,,,) = registry.recordOf(registry.keyOf(ETH, AAVE_V3_POOL, keccak256("NeverEmitted()"), 0, 0));
+        assertEq(open, 0);
+
+        vm.expectRevert(AbsenceRegistryV3.TransferFailed.selector);
+        stubborn.withdraw(registry);
+
+        stubborn.setAccept(true);
+        stubborn.withdraw(registry);
+        assertEq(address(stubborn).balance, 1 ether);
+        assertEq(registry.owed(address(stubborn)), 0);
+
+        vm.expectRevert(AbsenceRegistryV3.NothingOwed.selector);
+        stubborn.withdraw(registry);
+    }
+
+    /// Nor can it turn finalisation into an out-of-gas trap for whoever calls it.
+    function test_claimantBurningGasCannotBlockFinalize() public {
+        StubbornClaimant hog = new StubbornClaimant();
+        hog.setBurnGas(true);
+        uint256 id = hog.assertAbsence{value: 1 ether}(registry, _spans(), AAVE_V3_POOL, keccak256("NeverEmitted()"), 15 minutes);
+        vm.warp(block.timestamp + 16 minutes);
+
+        uint256 g = gasleft();
+        registry.finalize{gas: 200_000}(id);
+        assertLt(g - gasleft(), 200_000);
+        assertTrue(registry.holds(id));
+        assertEq(registry.owed(address(hog)), 1 ether);
+    }
+
     function test_emptySetStillRefutesWithBurn() public {
         vm.prank(claimant);
         uint256 id = registry.assertAbsence{value: 1 ether}(
