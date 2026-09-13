@@ -808,3 +808,7 @@ blockquote { margin: 1.2rem 0; padding-left: 1rem; border-left: 2px solid var(--
   .instrument > summary { grid-template-columns: 1fr; gap: 0.2rem; }
   .terms > div { grid-template-columns: 1fr; gap: 0.1rem; }
 }
+
+/* /hunt — the job board. A documented lie is a job; the row says so and links to the counterexample's block. */
+.hunt-board td { vertical-align: top; }
+.hunt-board tr.is-job td:first-child { border-left: 2px solid var(--wax); padding-left: 0.5rem; }

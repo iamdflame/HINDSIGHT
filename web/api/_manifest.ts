@@ -728,5 +728,8 @@ export const manifest = {
  },
  "attested": {
   "maxLag": 400
+ },
+ "hunt": {
+  "minOpen": 4
  }
 };

@@ -16,7 +16,7 @@ export const MANDATE_ROUTES = [
   { path: '/mandate/', label: 'Assess', id: 'assess' },
   { path: '/files/', label: 'Files', id: 'files' },
   { path: '/versus/', label: 'Versus', id: 'versus' },
-  { path: '/watch/', label: 'Hunt', id: 'hunt' },
+  { path: '/hunt/', label: 'Hunt', id: 'hunt' },
   { path: '/claims/', label: 'Docs', id: 'docs' },
 ] as const;
 

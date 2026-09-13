@@ -123,6 +123,8 @@ function main() {
     const facts = {
       continuityByAge: (record.measured?.continuityByAge?.rows ?? []).map((r: any) => ({ label: r.label, age: r.age, block: r.block, roots: r.roots })),
       widestCallRoots: record.measured?.chains?.['3']?.widestCall?.roots ?? null,
+      // What a refutation has cost on this board, cheapest and dearest, for the hunt's expected value.
+      refutationGas: record.measured?.board?.refutationGas ?? null,
     };
     const body = JSON.stringify(facts, null, 1) + '\n';
     const url = new URL('web/src/lib/record.generated.json', ROOT);

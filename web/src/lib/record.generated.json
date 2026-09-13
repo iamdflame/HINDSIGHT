@@ -37,5 +37,9 @@
    "roots": 841
   }
  ],
- "widestCallRoots": 901
+ "widestCallRoots": 901,
+ "refutationGas": {
+  "min": 448294,
+  "max": 4046311
+ }
 }

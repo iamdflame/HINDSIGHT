@@ -43,6 +43,7 @@ export default defineConfig({
         mandate: here('./mandate/index.html'),
         versus: here('./versus/index.html'),
         files: here('./files/index.html'),
+        hunt: here('./hunt/index.html'),
       },
     },
   },

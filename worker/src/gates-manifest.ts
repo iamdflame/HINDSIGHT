@@ -102,6 +102,8 @@ function build() {
     // The follower deliberately stays below the attestation head so a window never reaches for an
     // unattested block: HEAD_MARGIN is 200 and a checkpoint is 100, so this is that plus slack.
     attested: { maxLag: 400 },
+    // The hunt's supply side: how many documented lies the board promises to keep open.
+    hunt: { minOpen: 4 },
   };
 }
 

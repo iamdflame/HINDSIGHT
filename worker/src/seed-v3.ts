@@ -5,7 +5,15 @@
  * Usage:
  *   node src/seed-v3.ts --chain 3 --plan                  read-only: spans, subjects, what would be filed
  *   node src/seed-v3.ts --chain 3 --execute [--borrower 0x…]
+ *   node src/seed-v3.ts --chain 3 --replenish 4           file bounties until four documented lies are open
  *   MARKET_KEY=0x…  the claimant wallet (defaults to the deployer key)
+ *
+ * `--replenish N` is the hunt's supply side. A bounty is a lie left open for a week for anyone to
+ * refute; once refuted (or once the house hunter takes it after six days) it stops being a job. The
+ * board promises at least N open at all times, and this mode files exactly enough new ones -- about
+ * subjects not already on the board, spread across the venues -- to keep that true. Each is as real
+ * as the first batch: the scan is exhaustive, two endpoints agree, and the counterexample is recorded
+ * beside the claim before it is filed.
  *
  * WHAT GETS FILED
  * ---------------
@@ -49,6 +57,7 @@ const REGISTRY_ABI = [
   'function assertAbsence(uint256[] spanIds, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 window) payable returns (uint256)',
   'function assertComplete(uint256[] spanIds, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 window, (uint64 height, uint32 logIndex, bytes encodedTransaction, (bytes32 hash, bool isLeft)[] siblings)[] proofs) payable returns (uint256)',
   'function claimCount() view returns (uint256)',
+  'function claimOf(uint256) view returns ((address claimant, address refuter, uint64 chainKey, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 spanFrom, uint64 spanTo, bytes32 spansHash, uint256 bond, uint256 bondStaked, uint64 openUntil, uint8 status, uint8 kind, uint32 members, bytes32 membersHash))',
   'event AbsenceAsserted(uint256 indexed claimId, address indexed claimant, uint8 kind, uint256[] spanIds, address venue, bytes32 topic0, bytes32 subject, uint256 bond, uint64 openUntil, uint64 spanFrom, uint64 spanTo)',
 ];
 const SPAN_ABI = [
@@ -98,10 +107,12 @@ async function sendWithRetry<T>(what: string, f: () => Promise<T>): Promise<T> {
 
 async function main() {
   const chain = Number(get('--chain') ?? 3);
-  const execute = process.argv.includes('--execute');
+  const replenishTo = get('--replenish') !== undefined ? Number(get('--replenish')) : undefined;
+  const execute = process.argv.includes('--execute') || replenishTo !== undefined;
+  const append = process.argv.includes('--append') || replenishTo !== undefined;
   const borrower = get('--borrower');
   if (!CHAINS[chain]) throw new Error(`unknown --chain ${chain}`);
-  if (!execute && !process.argv.includes('--plan')) throw new Error('pass --plan (read-only) or --execute');
+  if (!execute && !process.argv.includes('--plan')) throw new Error('pass --plan (read-only), --execute, or --replenish N');
 
   const d = JSON.parse(readFileSync(new URL('../../deployments.json', import.meta.url), 'utf8'));
   const registryAddr: string = d.contracts.AbsenceRegistryV3;
@@ -112,8 +123,27 @@ async function main() {
   const out = new URL(`../../contracts/test/fixtures/board-v3-${CHAINS[chain].slug}.json`, import.meta.url);
   if (execute && existsSync(out)) {
     const prior = JSON.parse(readFileSync(out, 'utf8'));
-    if (prior.registry?.toLowerCase() === registryAddr.toLowerCase() && prior.claims?.length && !process.argv.includes('--append')) {
+    if (prior.registry?.toLowerCase() === registryAddr.toLowerCase() && prior.claims?.length && !append) {
       throw new Error(`${out.pathname} already records ${prior.claims.length} claims on this registry; pass --append to file more`);
+    }
+  }
+
+  // Replenishment: how many documented lies are open right now, and so how many to file.
+  let bountiesWanted = 0;
+  const onBoard = new Set<string>();
+  if (existsSync(out)) {
+    const prior = JSON.parse(readFileSync(out, 'utf8'));
+    if (prior.registry?.toLowerCase() === registryAddr.toLowerCase()) for (const c of prior.claims ?? []) onBoard.add(String(c.subject).toLowerCase());
+    if (replenishTo !== undefined) {
+      let open = 0;
+      for (const c of prior.claims ?? []) {
+        if (c.role !== 'bounty' && c.role !== 'lie') continue;
+        const status = Number((await registry.claimOf(c.claimId)).status);
+        if (status === 1) open++;
+      }
+      bountiesWanted = Math.max(0, replenishTo - open);
+      console.log(`  open lies: ${open} on the board, ${replenishTo} promised — ${bountiesWanted === 0 ? 'nothing to file' : `filing ${bountiesWanted}`}`);
+      if (bountiesWanted === 0) return;
     }
   }
 
@@ -191,7 +221,9 @@ async function main() {
   };
 
   const plan: Planned[] = [];
-  const used = new Set<string>();
+  // A subject already on the board is not reused: every job is about a different address, and a
+  // subject with a refuted claim against it already has its record.
+  const used = new Set<string>(onBoard);
   const take = (v: Venue, role: Role, count: number, pick: (logs: Log[]) => boolean) => {
     const cands = [...bySubject(v).entries()].filter(([s, logs]) => !used.has(s) && pick(logs));
     // Spread across the range rather than bunching at one end.
@@ -211,7 +243,14 @@ async function main() {
     }
   };
 
-  if (chain === 3) {
+  if (replenishTo !== undefined) {
+    // Bounties only, spread across the venues that have counterexamples, newest history first.
+    const pool = chain === 3 ? venues.filter((v) => v.key !== 'aave-repays') : venues;
+    for (let k = 0; plan.length < bountiesWanted && k < bountiesWanted * pool.length; k++) {
+      take(pool[k % pool.length], 'bounty', 1, (l) => l.length >= 1);
+    }
+    if (plan.length < bountiesWanted) throw new Error(`only ${plan.length} fresh subjects with a counterexample in the window; wanted ${bountiesWanted}`);
+  } else if (chain === 3) {
     const aave = VENUES.find((v) => v.key === 'aave-liquidations')!;
     const morpho = VENUES.find((v) => v.key === 'morpho-liquidates')!;
     const compound = VENUES.find((v) => v.key === 'compound-absorbs')!;
@@ -259,7 +298,7 @@ async function main() {
   if (spanIds.length !== SPANS[chain]) throw new Error('spans missing');
 
   // ---- file --------------------------------------------------------------------------------------
-  const record: any = existsSync(out) && process.argv.includes('--append') ? JSON.parse(readFileSync(out, 'utf8')) : { claims: [] };
+  const record: any = existsSync(out) && append ? JSON.parse(readFileSync(out, 'utf8')) : { claims: [] };
   record.registry = registryAddr;
   record.chainKey = chain;
   record.spanIds = spanIds;
@@ -311,6 +350,10 @@ async function main() {
       assertTx: rc.hash,
       gasUsed: Number(rc.gasUsed),
       matchingLogsInRange: p.logs.length,
+      // Per claim, because a replenished board has claims over more than one window.
+      spanIds,
+      spanFrom,
+      spanTo: top,
     };
     if (p.kind === 0 && p.logs.length) entry.counterexample = { txHash: p.logs[0].transactionHash, block: p.logs[0].blockNumber };
     if (members) entry.members = members;

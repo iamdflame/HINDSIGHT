@@ -311,6 +311,14 @@ async function runGates() {
       return { pass: REFUSAL[Number(reason)] === expected, detail: `${p.subject.slice(0, 8)}… (claim #${p.claimId}, liquidation at ${p.evidenceBlock.toLocaleString('en-US')}, ${inWindow ? 'inside' : 'now below'} the window) → ${REFUSAL[Number(reason)]}, expected ${expected}` };
     }),
 
+    gate('hunt-supply', 'At least four documented lies are open for anyone to refute', async () => {
+      const jobs = manifest.board.roles.filter((c) => ['lie', 'bounty', 'omission'].includes(c.role));
+      const statuses = await Promise.all(jobs.map(async (c) => ({ ...c, status: STATUS[Number((await registry.claimOf(c.claimId)).status)] })));
+      const open = statuses.filter((c) => c.status === 'Open');
+      const pass = open.length >= manifest.hunt.minOpen;
+      return { pass, detail: `${open.length} open of ${jobs.length} documented lies (${open.map((c) => '#' + c.claimId).join(', ') || 'none'}); the board promises ${manifest.hunt.minOpen}${pass ? '' : ' — run seed-v3 --replenish'}` };
+    }),
+
     gate('board', 'Settled claims stay settled; no lie stands and no truth is refuted', async () => {
       const statuses = await Promise.all(manifest.board.roles.map(async (c) => ({ ...c, status: STATUS[Number((await registry.claimOf(c.claimId)).status)] })));
       const moved = statuses.filter((c) => (manifest.board.settled as Record<string, string>)[String(c.claimId)] && (manifest.board.settled as Record<string, string>)[String(c.claimId)] !== c.status);
