@@ -27,6 +27,11 @@ jobs:
       - name: forge test
         run: forge test -vv
         working-directory: contracts
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - name: the public gates compare against this compiled bytecode
+        run: (cd worker && (npm ci || npm install)) && node worker/src/gates-manifest.ts --check
+        working-directory: .
       - name: forge coverage (MirrorLib and the fail-closed paths)
         run: forge coverage --report summary --no-match-coverage "script|test"
         working-directory: contracts

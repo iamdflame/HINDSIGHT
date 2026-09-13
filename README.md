@@ -98,8 +98,9 @@ it than be the reason it is not needed.
 ## Grading
 
 [CLAIMS.md](./CLAIMS.md) grades every statement in this repository by the evidence behind it, including the
-ones that limit the product. It is generated from the same measured record as this file; the checks that
-fail on drift are in `.github/workflows/ci.yml` (see CLAIMS.md for why they currently run by hand).
+ones that limit the product. It is generated from the same measured record as this file. The promises it makes
+about live state are re-checked on a schedule, in public: **[https://hindsight-cache.vercel.app/status/](https://hindsight-cache.vercel.app/status/)** — eleven gates
+against Creditcoin, the result at most five minutes old.
 
 ---
 

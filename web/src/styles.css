@@ -746,3 +746,8 @@ blockquote { margin: 1.2rem 0; padding-left: 1rem; border-left: 2px solid var(--
 .beat-links { list-style: none; padding: 0; display: grid; gap: 0.8rem; margin-top: 1rem; }
 .court-foot { margin-block: 2rem; }
 .enshrine-live { border-block: 2px solid var(--ink); padding-block: 1.2rem; margin-block: 2rem; }
+
+/* /status — the honesty machine. Wax only when a gate is broken, matching REFUTED elsewhere. */
+.status-summary { margin-block: 1.6rem 0.4rem; letter-spacing: 0.06em; }
+.status-summary.is-broken { color: var(--wax); }
+.status-rows { max-width: 64rem; }

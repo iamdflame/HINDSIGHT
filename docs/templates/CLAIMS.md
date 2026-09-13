@@ -135,10 +135,14 @@ the `BondedClean` mechanism, not a vetted stranger.
   jitter their tip so every attempt is distinct; funding them remains an operational duty, and the archive stops
   lengthening — it never shrinks — when it lapses.
 - **The ninety-day check is not free inside a transaction:** 7.03M gas cold in `borrow`. `assess` is a `view`.
-- **The CI gates are written, but GitHub is not running them.** Every job in `.github/workflows/ci.yml` is
-  refused before it starts ("account is locked due to a billing issue"). Until that is resolved, "CI fails on
-  drift" means the same commands run by hand — `forge test`, `claims-doc.ts --check`, `measure.ts --check`,
-  the honesty greps — and a green tick on the repository proves nothing either way.
+- **GitHub will not run this project's CI** (every job is refused: "account is locked due to a billing issue").
+  The promises that do not need a compiler are re-checked instead by [`/api/gates`]({{site}}/api/gates), in public, at
+  [{{site}}/status/]({{site}}/status/): the runtime bytecode of every contract against what this repository compiles
+  to, ninety days of mainnet and thirty of Sepolia held with no gap, the empty block in its sealed span, the second
+  transaction with `0x0FD2` deleted and both controls, the stranger consumer, a differential sample against the live
+  precompile, the desk's depth and its refusal, and the board. Vercel Cron runs it daily, and any visitor at most
+  every five minutes. A broken gate answers `503`. Expectations come from the repository through
+  `worker/src/gates-manifest.ts`, never from the function. `forge test` still runs only where there is a compiler.
 - **Bounties depend on somebody running a hunter.** The house hunter leaves claims younger than six days to humans.
   If nobody hunts and it is not running, a false claim will stand — which is exactly, and only, what `Standing` means.
 

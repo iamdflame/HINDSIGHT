@@ -1,11 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 
 const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
+// The public hostname lives in one place, deployments.json, so moving to a custom domain is one edit:
+// every page's og:url and og:image are filled from it at build time.
+const SITE: string = JSON.parse(readFileSync(new URL('../deployments.json', import.meta.url), 'utf8')).site;
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), { name: 'hindsight-site', transformIndexHtml: (html) => html.replaceAll('%HINDSIGHT_SITE%', SITE) }],
   // The Merkle rebuild runs in a module worker (lib/proof.worker.ts), which needs ES output to share chunks.
   worker: { format: 'es' },
   resolve: {
@@ -33,6 +38,7 @@ export default defineConfig({
         enshrine: here('./enshrine/index.html'),
         integrate: here('./integrate/index.html'),
         independence: here('./independence/index.html'),
+        status: here('./status/index.html'),
       },
     },
   },
