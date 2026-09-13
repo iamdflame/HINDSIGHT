@@ -63,6 +63,8 @@ function build() {
   return {
     generatedFrom: 'deployments.json, contracts/out, contracts/test/fixtures',
     rpc: d.rpc,
+    site: d.site,
+    explorer: d.explorer,
     contracts: {
       EthereumMirror: { address: d.contracts.EthereumMirror, ...runtime('EthereumMirror.sol', 'EthereumMirror') },
       AbsenceRegistryV3: { address: d.contracts.AbsenceRegistryV3, ...runtime('AbsenceRegistryV3.sol', 'AbsenceRegistryV3') },

@@ -2,6 +2,8 @@
 export const manifest = {
  "generatedFrom": "deployments.json, contracts/out, contracts/test/fixtures",
  "rpc": "https://rpc.cc3-testnet.creditcoin.network",
+ "site": "https://hindsight.run",
+ "explorer": "https://creditcoin-testnet.blockscout.com",
  "contracts": {
   "EthereumMirror": {
    "address": "0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118",

@@ -196,6 +196,13 @@ export function Mandate() {
                 })}
               </ul>
 
+              <p className="t-caption">
+                <a className="linkish" href={`/api/certificate?subject=${s.subject}&principal=${encodeURIComponent(amount || '1')}`} target="_blank" rel="noreferrer">
+                  Certificate of this assessment (PDF) →
+                </a>{' '}
+                one page, every fact above with the block it was read at, and the exact call to re-run it. Also{' '}
+                <a className="linkish" href={`/api/assess?subject=${s.subject}`} target="_blank" rel="noreferrer">as JSON</a>.
+              </p>
               <p className="t-caption mandate-foot">
                 The desk holds {tctc(s.book.float)} tCTC and has lent {tctc(s.book.backing.outstanding)}. It may not lend past{' '}
                 {tctc(s.book.backing.cap)} tCTC in total, because that is what the {s.book.backing.attestors} attestors who stand behind
