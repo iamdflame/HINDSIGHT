@@ -781,6 +781,7 @@ export const manifest = {
   "maxLag": 400
  },
  "hunt": {
-  "minOpen": 4
+  "minOpen": 4,
+  "house": "0xc46038c0FB487Bf2072EcBabF084CdB415DC1D6C"
  }
 };

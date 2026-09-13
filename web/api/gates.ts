@@ -35,7 +35,10 @@ const MIRROR_ABI = [
   'function verifyOrRevert(uint64, uint64, bytes, (bytes32 hash, bool isLeft)[]) view returns (uint64)',
   'function tryVerify(uint64, uint64, bytes, (bytes32 hash, bool isLeft)[]) view returns (bool, uint64)',
 ];
-const REGISTRY_ABI = ['function claimOf(uint256) view returns ((address claimant, address refuter, uint64 chainKey, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 spanFrom, uint64 spanTo, bytes32 spansHash, uint256 bond, uint256 bondStaked, uint64 openUntil, uint8 status, uint8 kind, uint32 members, bytes32 membersHash))'];
+const REGISTRY_ABI = [
+  'function claimCount() view returns (uint256)',
+  'function claimOf(uint256) view returns ((address claimant, address refuter, uint64 chainKey, address venue, bytes32 topic0, bytes32 subject, uint8 subjectTopic, uint64 spanFrom, uint64 spanTo, bytes32 spansHash, uint256 bond, uint256 bondStaked, uint64 openUntil, uint8 status, uint8 kind, uint32 members, bytes32 membersHash))',
+];
 const DESK_ABI = [
   'function assess(address, uint256, uint256, uint256[]) view returns (bool ok, uint8 reason)',
   'function securityBudget(uint64) view returns (uint32 attestors, uint128 minBond, uint256 cap)',
@@ -311,12 +314,19 @@ async function runGates() {
       return { pass: REFUSAL[Number(reason)] === expected, detail: `${p.subject.slice(0, 8)}… (claim #${p.claimId}, liquidation at ${p.evidenceBlock.toLocaleString('en-US')}, ${inWindow ? 'inside' : 'now below'} the window) → ${REFUSAL[Number(reason)]}, expected ${expected}` };
     }),
 
-    gate('hunt-supply', 'At least four documented lies are open for anyone to refute', async () => {
-      const jobs = manifest.board.roles.filter((c) => ['lie', 'bounty', 'omission'].includes(c.role));
-      const statuses = await Promise.all(jobs.map(async (c) => ({ ...c, status: STATUS[Number((await registry.claimOf(c.claimId)).status)] })));
-      const open = statuses.filter((c) => c.status === 'Open');
+    gate('hunt-supply', 'At least four bounties filed by the house are open for anyone to refute', async () => {
+      // Read live, not from the manifest: the replenisher files bounties between deploys, and every one it
+      // files is recorded in the board fixture with its counterexample before the transaction is sent.
+      const n = Number(await registry.claimCount());
+      const rows = await Promise.all(Array.from({ length: n }, async (_, id) => ({ id, c: await registry.claimOf(id) })));
+      // A job is an open claim the house filed that the fixture documents as false -- or one the fixture
+      // does not know yet, which can only be a replenisher bounty (that is all the replenisher files).
+      const role = new Map(manifest.board.roles.map((c) => [c.claimId, c.role]));
+      const isJob = (id: number) => !role.has(id) || ['lie', 'bounty', 'omission'].includes(role.get(id)!);
+      const open = rows.filter(({ id, c }) => c.claimant.toLowerCase() === manifest.hunt.house.toLowerCase() && Number(c.status) === 1 && Number(c.kind) === 0 && isJob(id));
+      const sinceDeploy = open.filter(({ id }) => !role.has(id)).map(({ id }) => id);
       const pass = open.length >= manifest.hunt.minOpen;
-      return { pass, detail: `${open.length} open of ${jobs.length} documented lies (${open.map((c) => '#' + c.claimId).join(', ') || 'none'}); the board promises ${manifest.hunt.minOpen}${pass ? '' : ' — run seed-v3 --replenish'}` };
+      return { pass, detail: `${open.length} open (${open.map(({ id }) => '#' + id).join(', ') || 'none'}) of ${n} claims; the board promises ${manifest.hunt.minOpen}${sinceDeploy.length ? `; filed since the last deploy: #${sinceDeploy.join(', #')}` : ''}${pass ? '' : ' — run seed-v3 --replenish'}` };
     }),
 
     gate('board', 'Settled claims stay settled; no lie stands and no truth is refuted', async () => {

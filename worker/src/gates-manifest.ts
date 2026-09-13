@@ -106,7 +106,7 @@ function build() {
     // unattested block: HEAD_MARGIN is 200 and a checkpoint is 100, so this is that plus slack.
     attested: { maxLag: 400 },
     // The hunt's supply side: how many documented lies the board promises to keep open.
-    hunt: { minOpen: 4 },
+    hunt: { minOpen: 4, house: d.house.market },
   };
 }
 

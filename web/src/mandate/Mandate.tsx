@@ -76,7 +76,9 @@ export function Mandate() {
 
   const refuted = s.k === 'ok' && s.verdicts.some((v) => v.reason === 'ProvenLiar');
   const open = s.k === 'ok' ? s.files.filter((f) => f.status === 1).length : 0;
-  const worst = s.k === 'ok' ? (s.verdicts.find((v) => v.reason === 'ProvenLiar') ?? s.verdicts.find((v) => v.reason === 'EventOnRecord') ?? s.verdicts.find((v) => !v.ok) ?? s.verdicts[0]) : null;
+  // The headline: a cryptographic refusal outranks everything; otherwise an instrument that pays outranks
+  // one that merely declines to lend. Same rule as /api/assess, the certificate, the bot and the MCP tool.
+  const worst = s.k === 'ok' ? (s.verdicts.find((v) => v.reason === 'ProvenLiar') ?? s.verdicts.find((v) => v.reason === 'EventOnRecord') ?? s.verdicts.find((v) => v.reason === 'ClaimUnderHunt') ?? s.verdicts.find((v) => v.ok) ?? s.verdicts[0]) : null;
 
   return (
     <MandatePage active="assess" subtitle="underwriting on history nobody here owns">

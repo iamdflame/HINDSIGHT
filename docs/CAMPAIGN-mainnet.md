@@ -960,3 +960,5 @@ a transaction on Creditcoin; the "newly added" column is the count that call's o
 | 2026-09-13 18:34:04 | 25970000 | 25970100 | 101 | 100 | 2436312 | 792001 | [`0x6996ac4b…`](https://creditcoin-testnet.blockscout.com/tx/0x6996ac4bac2139f5b3437764031364903fbf7e883e23ac41e21f56e3296ac949) |
 | 2026-09-13 18:54:32 | 25970100 | 25970200 | 101 | 100 | 2435675 | 792101 | [`0x610c8ae5…`](https://creditcoin-testnet.blockscout.com/tx/0x610c8ae572d9ed39b45c9b49514cdc494162a01408def6f163c77fabed7da823) |
 | 2026-09-13 19:14:18 | 25970200 | 25970300 | 101 | 100 | 2425219 | 793201 | [`0x4abcbce8…`](https://creditcoin-testnet.blockscout.com/tx/0x4abcbce80a244d3b9a57d2f952e6fc2793052814d2c13525631fda200ec9f93d) |
+| 2026-09-13 19:35:02 | 25970300 | 25970400 | 101 | 100 | 2430418 | 793301 | [`0x02419748…`](https://creditcoin-testnet.blockscout.com/tx/0x02419748ef8063747380ed50dee464d1d13ed6815e237964ad764c3cbe3eb8a1) |
+| 2026-09-13 19:55:02 | 25970400 | 25970500 | 101 | 100 | 2443137 | 793401 | [`0x60e50b42…`](https://creditcoin-testnet.blockscout.com/tx/0x60e50b422b97d5c3f6272f7f1106034e18afa8340664981263586fed7d3e25f5) |

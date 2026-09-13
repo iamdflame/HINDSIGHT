@@ -524,6 +524,17 @@ contract UnderwritingDeskTest is Test {
         else assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.ArchiveTooShallow));
     }
 
+    /// `assess` is public and takes any number. It must answer -- with a refusal -- rather than revert
+    /// on an absurd principal, or a view that reverts would look like a desk that is down.
+    function test_assessAnswersOnAnAbsurdPrincipal() public {
+        _standing(cleanBorrower);
+        (bool ok, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, bondedClean, type(uint256).max, _w());
+        assertFalse(ok);
+        assertEq(uint256(why), uint256(UnderwritingDesk.Refusal.DeskOutOfFunds), "the desk does not hold that much, and says so");
+        (bool ok2,) = desk.assess(cleanBorrower, bondedClean, 1 ether, _w());
+        assertTrue(ok2, "and a sane principal still pays");
+    }
+
     /// The budget that made this rewrite necessary. Ninety days used to cost 7.03M gas per `borrow`
     /// because the desk walked 2,532 bitmap words itself. Reading five seals is a handful of slots,
     /// and this test fails the build if that ever stops being true.
