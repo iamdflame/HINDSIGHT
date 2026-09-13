@@ -7,6 +7,8 @@ import {AbsenceRegistryV3} from "../src/AbsenceRegistryV3.sol";
 import {UnderwritingDesk} from "../src/UnderwritingDesk.sol";
 import {IMirror} from "../src/IMirror.sol";
 import {IMirrorSpans} from "../src/IMirrorSpans.sol";
+import {SubjectBinding} from "../src/SubjectBinding.sol";
+import {ISubjectBinding} from "../src/ISubjectBinding.sol";
 import {IAbsence} from "../src/IAbsence.sol";
 import {IAbsenceV3} from "../src/IAbsenceV3.sol";
 import {EvmV1Decoder} from "@gluwa/asc-contracts/contracts/common/EvmV1Decoder.sol";
@@ -53,6 +55,7 @@ contract UnderwritingDeskTest is Test {
     EthereumMirror internal mirror;
     MockStash internal stash;
     AbsenceRegistryV3 internal registry;
+    SubjectBinding internal binding;
     UnderwritingDesk internal desk;
 
     uint64 constant ETH_MAINNET = 3;
@@ -89,7 +92,8 @@ contract UnderwritingDeskTest is Test {
         stash.set(4, 100 ether);
         mirror = new EthereumMirror();
         registry = new AbsenceRegistryV3(mirror);
-        desk = new UnderwritingDesk(IMirrorSpans(address(mirror)), registry);
+        binding = new SubjectBinding(IMirror(address(mirror)));
+        desk = new UnderwritingDesk(IMirrorSpans(address(mirror)), registry, ISubjectBinding(address(binding)));
 
         string memory json = vm.readFile("test/fixtures/liquidation.json");
         blockHeight = uint64(vm.parseJsonUint(json, ".headerNumber"));
@@ -117,7 +121,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 0,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
         bondedClean = desk.createPolicy(
@@ -130,7 +135,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 1 ether,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
 
@@ -296,7 +302,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 0,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
 
@@ -320,7 +327,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 0,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
         (bool ok, UnderwritingDesk.Refusal why) = desk.assess(cleanBorrower, ninety, PRINCIPAL, _w());
@@ -357,7 +365,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 0,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
     }
@@ -375,7 +384,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 0,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
     }
@@ -493,7 +503,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 0,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
         (bool ok,) = desk.assess(cleanBorrower, tolerant, 0, span);
@@ -546,7 +557,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 0,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
 
@@ -725,7 +737,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 1 ether,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
         (bool ok,) = desk.assess(cleanBorrower, wider, PRINCIPAL, _w());
@@ -757,7 +770,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 1 ether,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
         (bool fresh,) = desk.assess(cleanBorrower, tolerant, PRINCIPAL, grown);
@@ -773,7 +787,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 1 ether,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
         (, UnderwritingDesk.Refusal narrow) = desk.assess(cleanBorrower, ninetyish, PRINCIPAL, grown);
@@ -803,7 +818,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 0,
                 minBond: 0,
-                maxPrincipal: 10 ether
+                maxPrincipal: 10 ether,
+                requiresBinding: false
             })
         );
     }
@@ -821,7 +837,8 @@ contract UnderwritingDeskTest is Test {
                 topic0: LIQUIDATION_CALL,
                 subjectTopic: 3,
                 minBond: 0,
-                maxPrincipal: 100 ether
+                maxPrincipal: 100 ether,
+                requiresBinding: false
             })
         );
 

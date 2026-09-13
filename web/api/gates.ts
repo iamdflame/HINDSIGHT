@@ -45,7 +45,7 @@ const CHAIN_INFO_ABI = ['function get_latest_attestation_height_and_hash(uint64)
 const ENFORCEABLE_ABI = ['function enforceableLoss(uint256) view returns (uint256)'];
 const REFUSAL = [
   'None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness',
-  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached',
+  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached', 'UnprovenSubject',
 ];
 const STATUS = ['None', 'Open', 'Refuted', 'Standing'];
 const PRECOMPILE_ABI = ['function verify(uint64 chainKey, uint64 height, bytes encodedTransaction, (bytes32 root, (bytes32 hash, bool isLeft)[] siblings) merkleProof, (bytes32 lowerEndpointDigest, bytes32[] roots) continuityProof) view returns (bool)'];
@@ -280,6 +280,19 @@ async function runGates() {
       ]);
       const pass = inside[0] === true && REFUSAL[Number(outside[1])] === 'NoBondedCleanliness';
       return { pass, detail: `${z.subject.slice(0, 8)}… claim #${z.claimId} puts ${(Number(enforceable) / 1e18).toFixed(3)} tCTC beyond recovery: ${(Number(atLimit) / 1e18).toFixed(3)} tCTC → ${REFUSAL[Number(inside[1])]}, one wei more → ${REFUSAL[Number(outside[1])]}` };
+    }),
+
+    gate('desk-binding', 'Terms that require a proven Ethereum owner refuse a fresh wallet', async () => {
+      const z = manifest.desk;
+      if (z.boundOnly === null || !z.freshWallet || !offer) return { pass: false, detail: 'no binding-required policy or demo wallet recorded' };
+      const [[, fresh], [, sized]] = await Promise.all([
+        desk.assess(z.freshWallet, z.boundOnly, 10n ** 17n, offer.ids),
+        // The same wallet under the otherwise-identical policy that does not require binding: it has a
+        // standing claim about itself, so the *only* thing the binding rule changes is the answer.
+        z.sizedAave === null ? Promise.resolve([false, 0]) : desk.assess(z.freshWallet, z.sizedAave, 10n ** 17n, offer.ids),
+      ]);
+      const pass = REFUSAL[Number(fresh)] === 'UnprovenSubject';
+      return { pass, detail: `${z.freshWallet.slice(0, 8)}…, a Creditcoin wallet with a standing claim about itself: bound-only terms → ${REFUSAL[Number(fresh)]}; the same terms without the binding rule → ${REFUSAL[Number(sized)]}` };
     }),
 
     gate('desk-cap', 'The desk cannot lend past what the attestor quorum has bonded', async () => {

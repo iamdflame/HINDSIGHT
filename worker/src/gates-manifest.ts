@@ -68,6 +68,7 @@ function build() {
       AbsenceRegistryV3: { address: d.contracts.AbsenceRegistryV3, ...runtime('AbsenceRegistryV3.sol', 'AbsenceRegistryV3') },
       UnderwritingDesk: { address: d.contracts.UnderwritingDesk, ...runtime('UnderwritingDesk.sol', 'UnderwritingDesk') },
       MissingHeightBounty: { address: d.contracts.MissingHeightBounty, ...runtime('MissingHeightBounty.sol', 'MissingHeightBounty') },
+      SubjectBinding: { address: d.contracts.SubjectBinding, ...runtime('SubjectBinding.sol', 'SubjectBinding') },
     },
     gate: d.external.hindsightGate.address,
     paidOnEthereum: { address: d.external.paidOnEthereum.address, proven: d.external.paidOnEthereum.proofs[0] },
@@ -90,6 +91,10 @@ function build() {
       priorDesk: priorDesk ?? null,
       gas: { prior: 7_041_373, budget: 1_000_000 },
       sizing: clean ? { subject: clean.subject, claimId: clean.claimId, leverage: 10 } : null,
+      boundOnly: m.desk.ninetyDay.find((x: any) => x.requiresBinding)?.policy ?? null,
+      // The desk's own demo wallet: a fresh Creditcoin key with a standing, trivially true claim about
+      // itself. Exactly what a binding-required policy must refuse.
+      freshWallet: m.board.chains.mainnet.rows.find((r: any) => r.role === 'borrower')?.subject ?? null,
     },
     // The archive as it runs today: the advertised run must stay unbroken end to end, and the heights
     // still missing below it may shrink but never grow.

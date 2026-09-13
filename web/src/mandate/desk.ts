@@ -19,6 +19,8 @@ export type Policy = {
   subjectTopic: number;
   minBond: bigint;
   maxPrincipal: bigint;
+  /** Only addresses somebody has proven control of on the source chain. */
+  requiresBinding: boolean;
 };
 
 export type Offer = { ids: number[]; from: number; to: number };
@@ -57,6 +59,8 @@ export const WHY: Record<string, string> = {
     'Answers, and will not lend. Nothing disqualifies this address — and nothing stands behind it either. Silence is not collateral, so these terms answer the question and stop there.',
   PoolCapReached:
     'Refuses. The desk has already lent as much as the attestors behind this source chain have bonded. Every fact underwritten here rests on them, so the money at risk is held to what they have at stake.',
+  UnprovenSubject:
+    'Refuses. These terms only answer about Ethereum addresses somebody has proven they control, by signing an Ethereum transaction that names their Creditcoin address. Nobody has signed for this one. A fresh wallet with a true-of-everyone claim about itself is exactly what this refusal exists for.',
 };
 
 /** Short label for a policy, from the venue table rather than from the policy id. */
@@ -86,6 +90,7 @@ export async function readBook(): Promise<Book> {
     subjectTopic: Number(p.subjectTopic),
     minBond: BigInt(p.minBond),
     maxPrincipal: BigInt(p.maxPrincipal),
+    requiresBinding: Boolean(p.requiresBinding),
   }));
 
   const spans = new Map<number, Span[]>();

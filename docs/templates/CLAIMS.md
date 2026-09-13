@@ -83,6 +83,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 | The depth check is cheap enough to sit inside `borrow` | `test_gas_ninetyDayDepthCheckUnder80k` fails the build above 80,000 gas cold; it measures **43,325**. On Creditcoin the whole question costs **407,960 gas** ([receipt]({{explorer}}/tx/0x28aca01263d2221f4c135319179bfaa9d1c044f31012b22fd928132c7232b67f)) where the superseded desk spent **7,041,373** ([receipt]({{explorer}}/tx/0x76434cd20d08f7b9dd8d99ba334a46b82342642a2352946d40f857ac5f6e8958)) — same address, same question, same block |
 | Money is capped twice, by rules that are not ours | a loan may not exceed ten times `enforceableLoss` (`test_bondedCleanAcceptsASufficientBond`, and live at `/api/gates` → `desk-sizing`, where 2.5 tCTC is paid and 2.5 tCTC + 1 wei is refused on a real Aave borrower); total lending may not exceed what the attestor quorum for the source chain has bonded, read live from `0x0FD4` (`desk-cap`) |
 | Silence is answered, and never lent against | `test_blankFileAnswersButNeverLends`; `BlankFile` returns `None` to a question and `NeedsBondedCover` to a request for money |
+| An Ethereum address can be underwritten through a Creditcoin key it has signed for | `SubjectBinding`: an Ethereum transaction whose calldata names a Creditcoin address, proven against a held root through the frozen `IMirror`. `test/SubjectBinding.t.sol` (16): anyone may submit anyone's proof and cannot steal it, a reverted or forged or unheld transaction binds nothing, an old proof cannot drag a subject back, one key speaks for one subject, and one *record* gets one loan however many keys it rotates through. Live: `desk-binding` at `/api/gates` shows the desk's own demo wallet — a fresh key with a standing, trivially true claim about itself — refused `UnprovenSubject` under terms that require a proven owner, and paid under the same terms without that rule |
 | The desk cannot be handed a true statement about the wrong thing | `test_claimReadThroughAnotherTopicIsNotCleanliness`, `test_claimOnAnotherChainIsIgnored`, `test_listedLiquidationIsEventOnRecordNotCleanliness`, `test_subjectlessRefutationBrandsNobody` |
 | Nobody can switch the desk off with volume | `test_junkClaimsCannotSwitchOffTheDesk` files 576 claims; `test_buryingABondedClaimFailsClosed` buries one under 64 |
 | A claimant cannot keep its claim open by refusing its bond | `test_claimantRefusingItsBondCannotKeepAClaimOpen`, `test_claimantBurningGasCannotBlockFinalize` |
@@ -156,6 +157,13 @@ the `BondedClean` mechanism, not a vetted stranger.
   precompile deleted. Vercel Cron runs it daily, and any visitor at most
   every five minutes. A broken gate answers `503`. Expectations come from the repository through
   `worker/src/gates-manifest.ts`, never from the function. `forge test` still runs only where there is a compiler.
+- **Nobody has bound an Ethereum address yet.** The binding contract is deployed, its bytecode is checked on every
+  gate run, and `worker/src/bind.ts` builds the proof from a public node and was run against a real mainnet
+  transaction — the deployed mirror accepted the locally built leaf and path, the receipt passed, and the contract
+  refused at the calldata tag, which is the right answer for a transaction that was never a binding. What is missing
+  is an Ethereum transaction signed with that tag, which needs a funded Ethereum wallet; none of this project's
+  wallets holds ETH on mainnet or Sepolia. Until one exists the sixth policy refuses everyone, `UnprovenSubject`,
+  and that is what it is for. "No vetted stranger" stands.
 - **Bounties depend on somebody running a hunter.** The house hunter leaves claims younger than six days to humans.
   If nobody hunts and it is not running, a false claim will stand — which is exactly, and only, what `Standing` means.
 

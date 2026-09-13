@@ -37,7 +37,7 @@ const REGISTRY_ABI = [
 ];
 const DESK_ABI = [
   'function policyCount() view returns (uint256)',
-  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
+  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal, bool requiresBinding))',
   'function assess(address, uint256, uint256, uint256[]) view returns (bool, uint8)',
   'function securityBudget(uint64) view returns (uint32 attestors, uint128 minBond, uint256 cap)',
   'function totalOutstanding() view returns (uint256)',
@@ -46,7 +46,7 @@ import { allSpans, offerFor, NINETY_DAYS } from './spans.ts';
 
 const REFUSAL = [
   'None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness',
-  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached',
+  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached', 'UnprovenSubject',
 ];
 const popcount = (x: bigint) => {
   let n = 0;
@@ -354,7 +354,7 @@ async function main() {
         // policy the only possible refusal is the archive itself, so this is the live form of
         // "the desk is not ArchiveTooShallow".
         const [ok, reason] = await dk.assess('0x000000000000000000000000000000000000c1ea', i, 0, offer.ids);
-        desk.ninetyDay.push({ policy: i, kind: Number(p.kind) === 0 ? 'BlankFile' : 'BondedClean', window: Number(p.window), subject: '0x…c1ea', ok: Boolean(ok), reason: REFUSAL[Number(reason)] });
+        desk.ninetyDay.push({ policy: i, kind: Number(p.kind) === 0 ? 'BlankFile' : 'BondedClean', requiresBinding: Boolean(p.requiresBinding), window: Number(p.window), subject: '0x…c1ea', ok: Boolean(ok), reason: REFUSAL[Number(reason)] });
       }
     }
   }

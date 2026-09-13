@@ -15,8 +15,8 @@ Re-derive every number: `node worker/src/measure.ts --check` (the chain), `forge
 | Claim | Evidence |
 |---|---|
 | One Attestcoin proof carries the roots of many consecutive blocks, and one `mirror()` call keeps all of them | the widest call retained **901** roots — [`0xa9bb…5d70`](https://creditcoin-testnet.blockscout.com/tx/0xa9bb644f31b88e5a71c296b323a799d03ed7083b23b8b81d02cd1b37a3555d70) |
-| Ninety days of Ethereum mainnet are held, with no gap | **782,500** consecutive heights, 25,186,001 – 25,968,500 (≈ 108.7 days), read bit by bit from the mirror's bitmap. 783,401 heights held in all, added by 899 `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
-| Thirty days of Sepolia are held, with no gap | **302,401** consecutive heights (≈ 42.0 days) ending at 11,696,000 |
+| Ninety days of Ethereum mainnet are held, with no gap | **787,600** consecutive heights, 25,182,001 – 25,969,600 (≈ 109.4 days), read bit by bit from the mirror's bitmap. 788,501 heights held in all, added by 899 `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
+| Thirty days of Sepolia are held, with no gap | **303,301** consecutive heights (≈ 42.1 days) ending at 11,696,900 |
 | Keeping a root is cheap and flat | **23,596 gas** per newly held height (median; 23,492–27,232 over 834 calls that each added ≥ 800), from every campaign receipt |
 | An empty Ethereum block is held, and a sealed span crosses it | block **25,300,128** has a transaction root of zero (`rootIsZero: true`), `isMirrored` = **true**, and sealed span 7 (25,288,100 – 25,943,459, 655,360 blocks) covers it: `true`. 243 empty blocks are held on mainnet, 32 on Sepolia |
 | Proving a span gap-free is one read per 256 blocks | sealing **131,072** blocks cost **1,280,230 gas** — [`0x90d9…11a8`](https://creditcoin-testnet.blockscout.com/tx/0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8); 10 spans sealed |
@@ -85,7 +85,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 
 | Claim | Evidence |
 |---|---|
-| The code does what this file says | **150** `forge test` cases, **27** of them fuzz properties at 256 runs each |
+| The code does what this file says | **166** `forge test` cases, **27** of them fuzz properties at 256 runs each |
 | The hosted prover is replaceable for Merkle paths | `worker/src/local-proof.ts` rebuilds a block from a public Ethereum node; root and every sibling with its direction bit are byte-identical to the prover's. The home page does the same in the browser and sends the prover nothing |
 | Empty blocks were the product limit, and are not now | `test_emptyBlockIsMirroredAndSealCrossesIt`, `test_zeroRootHeldDoesNotLookUnheld`, and a fuzz of the word-wise contiguity check against a per-height reference |
 | A listed member must be real, and the omitted one refutes | `testFuzz_completeSetRefutedByOmittedMember` over six real clustered Aave liquidations; fabricated, out-of-order, duplicated and out-of-span members are refused at assertion |
@@ -94,6 +94,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 | The depth check is cheap enough to sit inside `borrow` | `test_gas_ninetyDayDepthCheckUnder80k` fails the build above 80,000 gas cold; it measures **43,325**. On Creditcoin the whole question costs **407,960 gas** ([receipt](https://creditcoin-testnet.blockscout.com/tx/0x28aca01263d2221f4c135319179bfaa9d1c044f31012b22fd928132c7232b67f)) where the superseded desk spent **7,041,373** ([receipt](https://creditcoin-testnet.blockscout.com/tx/0x76434cd20d08f7b9dd8d99ba334a46b82342642a2352946d40f857ac5f6e8958)) — same address, same question, same block |
 | Money is capped twice, by rules that are not ours | a loan may not exceed ten times `enforceableLoss` (`test_bondedCleanAcceptsASufficientBond`, and live at `/api/gates` → `desk-sizing`, where 2.5 tCTC is paid and 2.5 tCTC + 1 wei is refused on a real Aave borrower); total lending may not exceed what the attestor quorum for the source chain has bonded, read live from `0x0FD4` (`desk-cap`) |
 | Silence is answered, and never lent against | `test_blankFileAnswersButNeverLends`; `BlankFile` returns `None` to a question and `NeedsBondedCover` to a request for money |
+| An Ethereum address can be underwritten through a Creditcoin key it has signed for | `SubjectBinding`: an Ethereum transaction whose calldata names a Creditcoin address, proven against a held root through the frozen `IMirror`. `test/SubjectBinding.t.sol` (16): anyone may submit anyone's proof and cannot steal it, a reverted or forged or unheld transaction binds nothing, an old proof cannot drag a subject back, one key speaks for one subject, and one *record* gets one loan however many keys it rotates through. Live: `desk-binding` at `/api/gates` shows the desk's own demo wallet — a fresh key with a standing, trivially true claim about itself — refused `UnprovenSubject` under terms that require a proven owner, and paid under the same terms without that rule |
 | The desk cannot be handed a true statement about the wrong thing | `test_claimReadThroughAnotherTopicIsNotCleanliness`, `test_claimOnAnotherChainIsIgnored`, `test_listedLiquidationIsEventOnRecordNotCleanliness`, `test_subjectlessRefutationBrandsNobody` |
 | Nobody can switch the desk off with volume | `test_junkClaimsCannotSwitchOffTheDesk` files 576 claims; `test_buryingABondedClaimFailsClosed` buries one under 64 |
 | A claimant cannot keep its claim open by refusing its bond | `test_claimantRefusingItsBondCannotKeepAClaimOpen`, `test_claimantBurningGasCannotBlockFinalize` |
@@ -134,7 +135,7 @@ the `BondedClean` mechanism, not a vetted stranger.
   (190 logs against 0).
 - **The prover's archiver would not serve 25,186,001 – 25,187,000.** Every window touching it failed with
   `failed to get roots from archiver`, across strides of 900 and 500. The mainnet archive therefore has one hole,
-  below the unbroken run: 2 runs, 14,000 heights unheld inside the range. Nothing above it is affected.
+  below the unbroken run: 2 runs, 10,000 heights unheld inside the range. Nothing above it is affected.
 - **Unpaced campaign workers congest a shared testnet.** Four workers sending 21M-gas calls pushed CC3's base fee
   from 0.5 to 6.7 gwei. Every worker now pauses above 1.5 gwei.
 - **Counting concurrent writes by before/after totals is wrong.** It credited one call with every other worker's
@@ -167,6 +168,13 @@ the `BondedClean` mechanism, not a vetted stranger.
   precompile deleted. Vercel Cron runs it daily, and any visitor at most
   every five minutes. A broken gate answers `503`. Expectations come from the repository through
   `worker/src/gates-manifest.ts`, never from the function. `forge test` still runs only where there is a compiler.
+- **Nobody has bound an Ethereum address yet.** The binding contract is deployed, its bytecode is checked on every
+  gate run, and `worker/src/bind.ts` builds the proof from a public node and was run against a real mainnet
+  transaction — the deployed mirror accepted the locally built leaf and path, the receipt passed, and the contract
+  refused at the calldata tag, which is the right answer for a transaction that was never a binding. What is missing
+  is an Ethereum transaction signed with that tag, which needs a funded Ethereum wallet; none of this project's
+  wallets holds ETH on mainnet or Sepolia. Until one exists the sixth policy refuses everyone, `UnprovenSubject`,
+  and that is what it is for. "No vetted stranger" stands.
 - **Bounties depend on somebody running a hunter.** The house hunter leaves claims younger than six days to humans.
   If nobody hunts and it is not running, a false claim will stand — which is exactly, and only, what `Standing` means.
 

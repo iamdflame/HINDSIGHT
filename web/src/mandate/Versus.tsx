@@ -65,7 +65,7 @@ function Column({ side, book }: { side: Side; book: Book }) {
             <li key={v.policy.id} className={v.ok ? 'is-pay' : v.reason === 'ProvenLiar' ? 'is-liar' : 'is-refuse'}>
               <span className="t-ui verdict-word">{v.ok ? 'pays' : 'refuses'}</span>
               <div>
-                <p className="t-ui">{v.policy.kind === 0 ? 'Silence accepted' : 'Bond required'} · {nm.event} · {days(v.policy.window)} d</p>
+                <p className="t-ui">{v.policy.kind === 0 ? 'Silence accepted' : v.policy.requiresBinding ? 'Bond + proven owner' : 'Bond required'} · {nm.event} · {days(v.policy.window)} d</p>
                 <p className="t-caption"><code>{v.reason}</code></p>
               </div>
             </li>

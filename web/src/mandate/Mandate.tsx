@@ -183,7 +183,7 @@ export function Mandate() {
                       <div>
                         <p className="t-ui">
                           <a className="linkish" href={`/files/?p=${v.policy.id}`}>
-                            {v.policy.kind === 0 ? 'Silence accepted' : 'Bond required'} · {nm.venue} · {nm.event}
+                            {v.policy.kind === 0 ? 'Silence accepted' : v.policy.requiresBinding ? 'Bond + proven owner' : 'Bond required'} · {nm.venue} · {nm.event}
                           </a>{' '}
                           · looks back {days(v.policy.window)} days · up to {tctc(v.policy.maxPrincipal)} tCTC
                         </p>

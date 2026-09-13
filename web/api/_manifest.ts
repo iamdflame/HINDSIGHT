@@ -35,23 +35,35 @@ export const manifest = {
    ]
   },
   "UnderwritingDesk": {
-   "address": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
-   "codeHash": "0x09bcb0540f69c4c31d34d32a66a2e2ec656beccc94590e7121fb083ef52e4e74",
+   "address": "0xc176b4307315F8494A763773385B455aE0b7f9d2",
+   "codeHash": "0x7c02c3d1d833ba2e060467c75e420045cfec8d09f7240508a75cca5554db0184",
    "immutables": [
     [
-     1320,
+     2061,
      32
     ],
     [
-     4461,
+     5087,
      32
     ],
     [
-     2003,
+     2222,
      32
     ],
     [
-     2987,
+     3449,
+     32
+    ],
+    [
+     2157,
+     32
+    ],
+    [
+     2781,
+     32
+    ],
+    [
+     4846,
      32
     ]
    ]
@@ -77,6 +89,20 @@ export const manifest = {
      32
     ]
    ]
+  },
+  "SubjectBinding": {
+   "address": "0x2d2120Da8877579E4eA58EA6f079d373b71ea7f0",
+   "codeHash": "0xbcbc7f7d5bf9b4daf40b02ab30abfd3075733d2b951547763b37badd53d27e5b",
+   "immutables": [
+    [
+     318,
+     32
+    ],
+    [
+     1737,
+     32
+    ]
+   ]
   }
  },
  "gate": "0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254",
@@ -96,8 +122,8 @@ export const manifest = {
   }
  },
  "held": {
-  "mainnet": 783401,
-  "sepolia": 302401
+  "mainnet": 788501,
+  "sepolia": 303301
  },
  "emptyBlock": {
   "height": 25300128,
@@ -671,7 +697,7 @@ export const manifest = {
   }
  },
  "desk": {
-  "address": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
+  "address": "0xc176b4307315F8494A763773385B455aE0b7f9d2",
   "blankFileAave": 0,
   "bondedAave": 1,
   "sizedAave": 4,
@@ -682,7 +708,7 @@ export const manifest = {
    "evidenceBlock": 25797699,
    "claimId": 2
   },
-  "priorDesk": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
+  "priorDesk": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
   "gas": {
    "prior": 7041373,
    "budget": 1000000
@@ -691,12 +717,14 @@ export const manifest = {
    "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
    "claimId": 13,
    "leverage": 10
-  }
+  },
+  "boundOnly": 5,
+  "freshWallet": "0x30e60eb0300b869d1323cdd75910c6105ada0c97"
  },
  "run": {
-  "from": 25186001,
-  "length": 782500,
-  "unheldInRange": 14000
+  "from": 25182001,
+  "length": 787600,
+  "unheldInRange": 10000
  },
  "attested": {
   "maxLag": 400

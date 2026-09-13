@@ -32,7 +32,7 @@ const DESK_ABI = [
   'function securityBudget(uint64 chainKey) view returns (uint32 attestors, uint128 minBond, uint256 cap)',
   'function totalOutstanding() view returns (uint256)',
   'function policyCount() view returns (uint256)',
-  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
+  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal, bool requiresBinding))',
   'error Rejected(uint8 reason)',
 ];
 const REGISTRY_ABI = [
@@ -41,7 +41,7 @@ const REGISTRY_ABI = [
 ];
 const REFUSAL = [
   'None', 'NoSuchPolicy', 'ArchiveTooShallow', 'ClaimUnderHunt', 'ProvenLiar', 'NoBondedCleanliness',
-  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached',
+  'DeskOutOfFunds', 'EventOnRecord', 'AlreadyLent', 'NeedsBondedCover', 'PoolCapReached', 'UnprovenSubject',
 ];
 const STATUS = ['None', 'Open', 'Refuted', 'Standing'];
 const TRANSCRIPT = new URL('../../docs/transcripts/desk-v4.json', import.meta.url);
@@ -77,7 +77,9 @@ async function main() {
   );
   const policyOfVenue = (venue: string) => policies.findIndex((p: any) => Number(p.kind) === 0 && p.venue.toLowerCase() === venue.toLowerCase() && Number(p.window) === 648_000);
   console.log('the desk —', d.contracts.UnderwritingDesk);
-  console.log(`  policies: BlankFile·Aave #${blankAave}, BondedClean·Aave #${bondedAave}, sized-by-bond #${sizedAave}`);
+  // The policy that refuses any subject nobody has proven control of on Ethereum.
+  const boundOnly = policies.findIndex((p: any) => Number(p.kind) === 1 && p.requiresBinding === true);
+  console.log(`  policies: BlankFile·Aave #${blankAave}, BondedClean·Aave #${bondedAave}, sized-by-bond #${sizedAave}, bound-only #${boundOnly}`);
 
   const mirror = new Contract(d.contracts.EthereumMirror, MIRROR_ABI, cc);
 
@@ -131,6 +133,15 @@ async function main() {
       await assessRow('sized by the bond: 2.5 tCTC is ten times the 0.25 a lie would cost', c.subject, sizedAave, parseEther('2.5'), c);
       await assessRow('one wei more than the bond supports', c.subject, sizedAave, parseEther('2.5') + 1n, c);
     }
+  }
+
+  // Terms that require a proven Ethereum owner. The real Aave borrower has a standing claim and would
+  // be paid under policy 4 -- but nobody has signed for it, so here it is refused; and our own wallet
+  // is refused for the same reason, which is the point: a fresh Creditcoin key with a trivially true
+  // claim about itself is exactly what this policy exists to turn away.
+  if (boundOnly >= 0) {
+    for (const c of role('clean').slice(0, 1)) await assessRow('bound-only terms: nobody has proven control of this address', c.subject, boundOnly, parseEther('1'), c);
+    await assessRow('bound-only terms: our own fresh wallet, with its trivially true claim', mine.subject, boundOnly, parseEther('1'), mine);
   }
 
   if (phase === 'assess') {

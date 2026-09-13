@@ -6,6 +6,7 @@ import {IMirrorSpans} from "./IMirrorSpans.sol";
 import {IAbsence} from "./IAbsence.sol";
 import {IAbsenceV3} from "./IAbsenceV3.sol";
 import {AttestorStash} from "./IAttestorStash.sol";
+import {ISubjectBinding} from "./ISubjectBinding.sol";
 
 /// @title UnderwritingDesk
 /// @notice A lender that reads the archive and the absence market, and refuses.
@@ -24,6 +25,15 @@ import {AttestorStash} from "./IAttestorStash.sol";
 ///      a clean address, collect the loan. The subject of a liquidation is decoded from the log's
 ///      indexed topic by the registry, and the desk asks about the caller. Those two facts have to
 ///      meet at the same address or the money does not move.
+///
+///      The cost of that rule was that the desk could only pay a wallet holding a *Creditcoin* key,
+///      while every record worth underwriting belongs to an *Ethereum* address -- so the only borrower
+///      it ever paid was a fresh wallet whose clean claim was trivially true. `SubjectBinding` closes
+///      that without reopening the hole: an Ethereum address signs a transaction naming a Creditcoin
+///      address, the transaction is proven against a root this chain holds, and the desk underwrites
+///      what `subjectFor(msg.sender)` returns. Still not a parameter -- a liar would need the
+///      stranger's Ethereum key, which is the same barrier as before -- and an unbound caller is
+///      underwritten as itself, exactly as in v4.
 ///
 ///      `assess` exposes exactly the predicate `borrow` gates on, as a `view`, for any address.
 ///      It is not a parallel implementation -- both call `_assess` -- so a judge can run the
@@ -77,6 +87,8 @@ import {AttestorStash} from "./IAttestorStash.sol";
 contract UnderwritingDesk {
     IMirrorSpans public immutable MIRROR;
     IAbsenceV3 public immutable REGISTRY;
+    /// @notice Where a caller proves it speaks for a source-chain address. Read, never written.
+    ISubjectBinding public immutable BINDING;
 
     /// @notice Most claims under one key the desk will examine looking for bonded cleanliness.
     /// @dev Only `BondedClean` walks, newest first, and only to find a *reason to lend*. Refusals
@@ -122,7 +134,12 @@ contract UnderwritingDesk {
         /// bond beneath it to size a loan against.
         NeedsBondedCover,
         /// The desk's outstanding total would exceed what the attestor quorum for this chain has bonded.
-        PoolCapReached
+        PoolCapReached,
+        /// These terms only answer about addresses somebody has proven control of on the source chain.
+        /// A Creditcoin wallet with no Ethereum history behind it has nothing here to underwrite, and a
+        /// bonded claim that it has never been liquidated on Ethereum is true of every address ever
+        /// generated. Requiring the binding is what stops that from being collateral.
+        UnprovenSubject
     }
 
     struct Policy {
@@ -142,6 +159,10 @@ contract UnderwritingDesk {
         /// @dev `BondedClean` only: the least unrecoverable loss a lie must have cost.
         uint256 minBond;
         uint256 maxPrincipal;
+        /// @dev Whether the subject must be a source-chain address somebody has proven control of.
+        ///      Appended, because the frozen-shape rule applies to interfaces and this is a struct the
+        ///      desk owns -- but a policy filed under an older desk cannot be migrated, only re-filed.
+        bool requiresBinding;
     }
 
     Policy[] internal _policies;
@@ -151,6 +172,7 @@ contract UnderwritingDesk {
 
     event PolicyCreated(uint256 indexed policyId, Kind kind, address venue, bytes32 topic0, uint256 minBond);
     event Funded(address indexed from, uint256 amount);
+    /// @dev `borrower` is the subject underwritten, which is the caller unless it proved otherwise.
     event Lent(address indexed borrower, uint256 indexed policyId, uint256 principal);
 
     error NoSuchPolicy();
@@ -160,9 +182,19 @@ contract UnderwritingDesk {
     error Rejected(Refusal reason);
     error TransferFailed();
 
-    constructor(IMirrorSpans mirror_, IAbsenceV3 registry_) {
+    constructor(IMirrorSpans mirror_, IAbsenceV3 registry_, ISubjectBinding binding_) {
         MIRROR = mirror_;
         REGISTRY = registry_;
+        BINDING = binding_;
+    }
+
+    /// @notice The address this desk would underwrite if `caller` asked under `policyId`: the caller,
+    ///         unless it has proven on chain that it speaks for a source-chain address.
+    /// @dev Public because a borrower is entitled to know which record is about to be read about them,
+    ///      and because it is the only place the answer is decided.
+    function subjectOf(address caller, uint256 policyId) public view returns (address) {
+        if (policyId >= _policies.length) return caller;
+        return BINDING.subjectFor(caller, _policies[policyId].chainKey);
     }
 
     /// @notice Anyone may define a policy. There is no admin, and no policy can mark an address
@@ -194,18 +226,22 @@ contract UnderwritingDesk {
         ok = reason == Refusal.None;
     }
 
-    /// @notice Borrow against your own record. Underwrites `msg.sender`, by construction.
+    /// @notice Borrow against your own record. Underwrites `msg.sender`, or the source-chain address
+    ///         `msg.sender` has proven it controls -- never one it merely names.
     function borrow(uint256 policyId, uint256 principal, uint256[] calldata spanIds) external {
         if (policyId >= _policies.length) revert NoSuchPolicy();
         if (principal == 0) revert ZeroPrincipal();
         if (principal > _policies[policyId].maxPrincipal) revert PrincipalTooLarge();
 
-        Refusal reason = _assess(msg.sender, policyId, principal, spanIds);
+        address subject = subjectOf(msg.sender, policyId);
+        Refusal reason = _assess(subject, policyId, principal, spanIds);
         if (reason != Refusal.None) revert Rejected(reason);
 
-        lent[msg.sender][policyId] = true;
+        // Keyed on the *subject*, not the caller: one record, one loan, however many Creditcoin keys
+        // its owner rotates through.
+        lent[subject][policyId] = true;
         totalOutstanding += principal;
-        emit Lent(msg.sender, policyId, principal);
+        emit Lent(subject, policyId, principal);
         (bool sent,) = payable(msg.sender).call{value: principal}("");
         if (!sent) revert TransferFailed();
     }
@@ -251,6 +287,12 @@ contract UnderwritingDesk {
         // the archive does not demonstrably hold the history this policy answers from.
         if (!proven) return Refusal.ArchiveTooShallow;
         uint64 floor = spanTo - p.window;
+
+        // Terms may insist the subject be a real source-chain address rather than a fresh wallet. The
+        // question is asked about the *subject*, not the caller, so the view and the transaction gate
+        // on one predicate: `borrow` resolves the caller to a subject first, and an unbound caller
+        // resolves to itself, which almost never has a controller.
+        if (p.requiresBinding && BINDING.controllerOf(p.chainKey, subject) == address(0)) return Refusal.UnprovenSubject;
 
         bytes32 key = REGISTRY.keyOf(p.chainKey, p.venue, p.topic0, p.subjectTopic, bytes32(uint256(uint160(subject))));
         (uint32 open, uint32 refuted, uint64 lastEvidenceAt, uint64 lastMemberAt, uint32 total) = REGISTRY.recordOf(key);

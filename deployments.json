@@ -20,7 +20,7 @@
   "contracts": {
     "EthereumMirror": "0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118",
     "AbsenceRegistryV3": "0x05844C991993F3d80fAf196e10355B12BE648e40",
-    "UnderwritingDesk": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
+    "UnderwritingDesk": "0xc176b4307315F8494A763773385B455aE0b7f9d2",
     "MissingHeightBounty": "0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d",
     "superseded": {
       "AbsenceRegistryV3@0xf0a24364": {
@@ -37,6 +37,11 @@
         "address": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
         "replacedBy": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
         "reason": "v3.1 proved the policy window by walking the held bitmap: 7.03M gas for ninety days inside borrow, which is a lender nobody can use. v4 reads sealed spans instead (43k gas cold), sizes principal at no more than ten times enforceableLoss, caps total lending by what the attestor quorum for the source chain has bonded (0x0FD4), and stops lending on silence: BlankFile answers and refuses NeedsBondedCover."
+      },
+      "UnderwritingDesk@0x95A5168E": {
+        "address": "0x95A5168E9379b3A580638f113f368d3D7698C74e",
+        "replacedBy": "0xc176b4307315F8494A763773385B455aE0b7f9d2",
+        "reason": "v4 could only pay a wallet holding a Creditcoin key, while every record worth underwriting belongs to an Ethereum address; the only borrower it ever paid was a fresh wallet whose clean claim was trivially true. v5 reads SubjectBinding: an Ethereum address signs a transaction naming a Creditcoin address, the transaction is proven against a held root, and the desk underwrites what subjectFor(msg.sender) returns. Still not a parameter. Policies may require it, which refuses fresh wallets outright."
       }
     },
     "v1": {
@@ -47,7 +52,8 @@
       "UnderwritingDesk_v1": "0x5C5D121C6A4c5bfC7C09eAdD1Fcc04F97F26Cc28",
       "MissingHeightBounty": "0x39c1527866a07E18BbBa889D849515d8E7e30042",
       "deployBlock": 5476398
-    }
+    },
+    "SubjectBinding": "0x2d2120Da8877579E4eA58EA6f079d373b71ea7f0"
   },
   "external": {
     "hindsightGate": {
@@ -200,20 +206,20 @@
     },
     "chains": {
       "1": {
-        "held": 302401,
-        "heldAfterScan": 302401,
-        "bitmapHeld": 302401,
+        "held": 303301,
+        "heldAfterScan": 303301,
+        "bitmapHeld": 303301,
         "bitmapAgrees": true,
         "lowest": 11393600,
-        "highest": 11696000,
+        "highest": 11696900,
         "unheldInRange": 0,
         "runs": 1,
-        "longestRun": 302401,
+        "longestRun": 303301,
         "longestRunFrom": 11393600,
-        "topRun": 302401,
+        "topRun": 303301,
         "topRunFrom": 11393600,
-        "topRunDays": 42,
-        "days": 42,
+        "topRunDays": 42.13,
+        "days": 42.13,
         "emptyBlocks": 32,
         "emptyBlockSample": [
           11416000,
@@ -243,20 +249,20 @@
         }
       },
       "3": {
-        "held": 783401,
-        "heldAfterScan": 783401,
-        "bitmapHeld": 783401,
+        "held": 788501,
+        "heldAfterScan": 788501,
+        "bitmapHeld": 788501,
         "bitmapAgrees": true,
         "lowest": 25171100,
-        "highest": 25968500,
-        "unheldInRange": 14000,
+        "highest": 25969600,
+        "unheldInRange": 10000,
         "runs": 2,
-        "longestRun": 782500,
-        "longestRunFrom": 25186001,
-        "topRun": 782500,
-        "topRunFrom": 25186001,
-        "topRunDays": 108.68,
-        "days": 108.81,
+        "longestRun": 787600,
+        "longestRunFrom": 25182001,
+        "topRun": 787600,
+        "topRunFrom": 25182001,
+        "topRunDays": 109.39,
+        "days": 109.51,
         "emptyBlocks": 243,
         "emptyBlockSample": [
           25171352,
@@ -301,15 +307,15 @@
       "burnedWei": "10000000000000000000"
     },
     "desk": {
-      "policies": 5,
+      "policies": 6,
       "balanceWei": "10000000000000000000",
       "window": {
         "spanIds": [
           8
         ],
         "from": 25288100,
-        "to": 25968500,
-        "heights": 680401
+        "to": 25969600,
+        "heights": 681501
       },
       "securityBudget": {
         "source": "0x0FD4 AttestorStash, read live on every decision",
@@ -322,6 +328,7 @@
         {
           "policy": 0,
           "kind": "BlankFile",
+          "requiresBinding": false,
           "window": 648000,
           "subject": "0x…c1ea",
           "ok": true,
@@ -330,6 +337,7 @@
         {
           "policy": 1,
           "kind": "BondedClean",
+          "requiresBinding": false,
           "window": 648000,
           "subject": "0x…c1ea",
           "ok": true,
@@ -338,6 +346,7 @@
         {
           "policy": 2,
           "kind": "BlankFile",
+          "requiresBinding": false,
           "window": 648000,
           "subject": "0x…c1ea",
           "ok": true,
@@ -346,6 +355,7 @@
         {
           "policy": 3,
           "kind": "BlankFile",
+          "requiresBinding": false,
           "window": 648000,
           "subject": "0x…c1ea",
           "ok": true,
@@ -354,10 +364,20 @@
         {
           "policy": 4,
           "kind": "BondedClean",
+          "requiresBinding": false,
           "window": 648000,
           "subject": "0x…c1ea",
           "ok": true,
           "reason": "None"
+        },
+        {
+          "policy": 5,
+          "kind": "BondedClean",
+          "requiresBinding": true,
+          "window": 648000,
+          "subject": "0x…c1ea",
+          "ok": false,
+          "reason": "UnprovenSubject"
         }
       ],
       "transactions": [],
@@ -466,6 +486,20 @@
           "policyId": 1,
           "reason": "NoBondedCleanliness",
           "claimId": 15
+        },
+        {
+          "label": "sized by the bond: 2.5 tCTC is ten times the 0.25 a lie would cost",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 4,
+          "reason": "None",
+          "claimId": 13
+        },
+        {
+          "label": "one wei more than the bond supports",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 4,
+          "reason": "NoBondedCleanliness",
+          "claimId": 13
         },
         {
           "label": "our own wallet after its loans",
@@ -592,6 +626,20 @@
           "policyId": 4,
           "reason": "NoBondedCleanliness",
           "claimId": 13
+        },
+        {
+          "label": "bound-only terms: nobody has proven control of this address",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 5,
+          "reason": "UnprovenSubject",
+          "claimId": 13
+        },
+        {
+          "label": "bound-only terms: our own fresh wallet, with its trivially true claim",
+          "subject": "0x30e60eb0300b869d1323cdd75910c6105ada0c97",
+          "policyId": 5,
+          "reason": "UnprovenSubject",
+          "claimId": 19
         },
         {
           "label": "our own wallet after its loans",

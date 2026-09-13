@@ -4,12 +4,14 @@
  * Usage:
  *   node src/desk-policies.ts [--fund 10]
  *
- * Five policies, all over ninety days of Ethereum mainnet (648,000 blocks at 12s). `BlankFile` is the
+ * Six policies, all over ninety days of Ethereum mainnet (648,000 blocks at 12s). `BlankFile` is the
  * default and appears first: silence is silence; a refutation or a listed event inside the window
  * blocks, and so does an open claim. It answers questions and never lends -- there is no bond under
  * silence to size a loan against. The two `BondedClean` policies each need a standing no-event claim
  * that covers the whole window, ends within a week of the head, and whose *unrecoverable* half covers
- * the principal -- the expensive kind of clean, and never the default.
+ * the principal -- the expensive kind of clean, and never the default. The sixth adds one more
+ * condition: the subject must be an Ethereum address somebody has proven control of through
+ * `SubjectBinding`, so a fresh Creditcoin wallet with a trivially true claim about itself is refused.
  *
  * Policy creation is permissionless -- a policy only chooses which public facts are read -- so running
  * this again adds nothing if an identical policy already exists.
@@ -19,9 +21,9 @@ import { readFileSync } from 'node:fs';
 import { CC_RPC, CHAIN_KEY_ETH_MAINNET, VENUES, privateKey } from './config.ts';
 
 const DESK_ABI = [
-  'function createPolicy((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal) p) returns (uint256)',
+  'function createPolicy((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal, bool requiresBinding) p) returns (uint256)',
   'function policyCount() view returns (uint256)',
-  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
+  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal, bool requiresBinding))',
   'function fund() payable',
 ];
 
@@ -60,7 +62,16 @@ async function main() {
       maxPrincipal: SIZED_MAX_PRINCIPAL,
       label: 'BondedClean · Aave V3 · sized by enforceable loss',
     },
-  ] as { kind: number; venue: (typeof VENUES)[number]; minBond: bigint; maxStaleness: number; maxPrincipal?: bigint; label: string }[];
+    {
+      kind: 1,
+      venue: v('aave-liquidations'),
+      minBond: SIZED_MIN_BOND,
+      maxStaleness: ONE_WEEK,
+      maxPrincipal: SIZED_MAX_PRINCIPAL,
+      requiresBinding: true,
+      label: 'BondedClean · Aave V3 · bound Ethereum address only',
+    },
+  ] as { kind: number; venue: (typeof VENUES)[number]; minBond: bigint; maxStaleness: number; maxPrincipal?: bigint; requiresBinding?: boolean; label: string }[];
 
   const n = Number(await desk.policyCount());
   const existing = await Promise.all(Array.from({ length: n }, (_, i) => desk.policyOf(i)));
@@ -69,7 +80,8 @@ async function main() {
     const dup = existing.findIndex(
       (p: any) =>
         Number(p.kind) === w.kind && Number(p.window) === NINETY_DAYS && Number(p.maxStaleness) === w.maxStaleness && p.venue.toLowerCase() === w.venue.address.toLowerCase() &&
-        p.topic0 === w.venue.topic0 && BigInt(p.minBond) === w.minBond && BigInt(p.maxPrincipal) === (w.maxPrincipal ?? MAX_PRINCIPAL),
+        p.topic0 === w.venue.topic0 && BigInt(p.minBond) === w.minBond && BigInt(p.maxPrincipal) === (w.maxPrincipal ?? MAX_PRINCIPAL) &&
+        Boolean(p.requiresBinding) === Boolean(w.requiresBinding),
     );
     if (dup >= 0) {
       console.log(`  = policy ${dup} ${w.label} exists`);
@@ -86,6 +98,7 @@ async function main() {
         subjectTopic: w.venue.subjectTopic,
         minBond: w.minBond,
         maxPrincipal: w.maxPrincipal ?? MAX_PRINCIPAL,
+        requiresBinding: Boolean(w.requiresBinding),
       })
     ).wait();
     // Numbered locally: a load-balanced RPC can answer policyCount() from a node a block behind.

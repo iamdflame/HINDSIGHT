@@ -28,7 +28,7 @@ function Instrument({ p, book, open }: { p: Policy; book: Book; open: boolean })
   return (
     <details className="instrument" open={open} id={`p${p.id}`}>
       <summary>
-        <span className="t-ui">{p.kind === 0 ? 'Silence accepted' : 'Bond required'}</span>
+        <span className="t-ui">{p.kind === 0 ? 'Silence accepted' : p.requiresBinding ? 'Bond + proven owner' : 'Bond required'}</span>
         <span className="t-body">{nm.venue} · {nm.event}</span>
         <span className={`t-ui instrument-state ${answerable ? 'is-live' : 'is-shut'}`}>{answerable ? 'answering' : 'refusing'}</span>
       </summary>
@@ -63,6 +63,14 @@ function Instrument({ p, book, open }: { p: Policy; book: Book; open: boolean })
                 and half of any bond goes to whoever breaks it
               </>
             )}
+          </dd>
+        </div>
+        <div>
+          <dt>Who may be underwritten</dt>
+          <dd>
+            {p.requiresBinding
+              ? 'only an Ethereum address somebody has proven control of, by signing an Ethereum transaction naming their Creditcoin address — a fresh wallet is refused'
+              : 'any address; an unbound caller is underwritten as itself'}
           </dd>
         </div>
         <div><dt>Watching</dt><dd>{p.chainKey === 1 ? 'Ethereum Sepolia' : 'Ethereum mainnet'} · <a className="linkish" href={`${EXPLORER}/address/${p.venue}`} target="_blank" rel="noreferrer">{p.venue}</a></dd></div>

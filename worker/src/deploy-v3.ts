@@ -2,13 +2,17 @@
  * Deploy the completeness market and the desk against Mirror v2.
  *
  * Usage:
- *   node src/deploy-v3.ts [--desk-only] [--dry-run]
+ *   node src/deploy-v3.ts [--desk-only] [--with-binding] [--dry-run]
  *
  * `--desk-only` redeploys `UnderwritingDesk` against the registry already on chain. Claims, bonds
  * and spans live in the registry and the mirror; the desk holds nothing but its policies and a
  * float, so replacing it discards nothing a hunter or a claimant owns. The address it replaces is
  * kept under `contracts.superseded` with the reason, because a link in an old transcript should
  * still resolve to something that explains itself.
+ *
+ * `--with-binding` also deploys a fresh `SubjectBinding` and points the desk at it. Bindings are facts
+ * about key custody at an Ethereum height, re-provable from the same transaction by anyone, so nothing
+ * is lost by replacing the contract; the old one stays under `contracts.superseded` all the same.
  *
  * This exists instead of `forge script` because Creditcoin's Substrate EVM does not set
  * `prevrandao` in its block headers, and forge's simulation refuses to run against a chain whose
@@ -63,7 +67,9 @@ async function main() {
   };
 
   const registry = deskOnly ? d.contracts.AbsenceRegistryV3 : await deploy('AbsenceRegistryV3.sol', 'AbsenceRegistryV3', [MIRROR]);
-  await deploy('UnderwritingDesk.sol', 'UnderwritingDesk', [MIRROR, registry]);
+  const withBinding = process.argv.includes('--with-binding') || !d.contracts.SubjectBinding;
+  const binding = withBinding ? await deploy('SubjectBinding.sol', 'SubjectBinding', [MIRROR]) : d.contracts.SubjectBinding;
+  await deploy('UnderwritingDesk.sol', 'UnderwritingDesk', [MIRROR, registry, binding]);
 
   d.contracts.superseded = d.contracts.superseded ?? {};
   for (const [name, addr] of Object.entries(deployed)) {

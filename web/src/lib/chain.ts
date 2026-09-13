@@ -137,7 +137,7 @@ export const REGISTRY_ABI = [
 
 export const DESK_ABI = [
   'function policyCount() view returns (uint256)',
-  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal))',
+  'function policyOf(uint256) view returns ((uint8 kind, uint64 chainKey, uint64 window, uint64 maxStaleness, address venue, bytes32 topic0, uint8 subjectTopic, uint256 minBond, uint256 maxPrincipal, bool requiresBinding))',
   'function assess(address subject, uint256 policyId, uint256 principal, uint256[] spanIds) view returns (bool ok, uint8 reason)',
   'function borrow(uint256 policyId, uint256 principal, uint256[] spanIds)',
   'function lent(address, uint256) view returns (bool)',
@@ -161,6 +161,7 @@ export const REFUSAL = [
   'AlreadyLent',
   'NeedsBondedCover',
   'PoolCapReached',
+  'UnprovenSubject',
 ] as const;
 
 export type Span = { id: number; from: number; to: number };

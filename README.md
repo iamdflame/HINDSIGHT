@@ -24,8 +24,8 @@ Every dApp pays that, every time.
 
 | | Ethereum mainnet (`chainKey 3`) | Sepolia (`chainKey 1`) |
 |---|---|---|
-| Heights held on Creditcoin | **783,401** | **302,401** |
-| Unbroken run ending at the top | **782,500** blocks ≈ **108.7 days** (25,186,001 – 25,968,500) | **302,401** blocks ≈ **42.0 days** |
+| Heights held on Creditcoin | **788,501** | **303,301** |
+| Unbroken run ending at the top | **787,600** blocks ≈ **109.4 days** (25,182,001 – 25,969,600) | **303,301** blocks ≈ **42.1 days** |
 | Empty Ethereum blocks inside, held like any other | 243 | 32 |
 | `mirror()` calls that added heights | 899 | 332 |
 | Gas per newly held height (median) | **23,596** | 23,594 |
@@ -54,7 +54,7 @@ Measured and recorded by `measure.ts`: transaction index **131** of block
 |---|---|---|
 | 30 s | open [https://hindsight.run](https://hindsight.run) | four rows settle — verified, verified with `0x0FD2` deleted, control refused, forged path refused — and the stamp |
 | 1 min | `npx github:iamdflame/HINDSIGHT verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9` | `verified` · `tx index  : 131` · `source : rebuilt locally (no prover)` · `precompile: not called` |
-| 2 min | `cd contracts && forge test` | **150** tests, **27** of them fuzz properties, including the precompile etched to empty |
+| 2 min | `cd contracts && forge test` | **166** tests, **27** of them fuzz properties, including the precompile etched to empty |
 | 5 min | `cd worker && node src/differential.ts --limit 12` | the mirror and the live precompile accept and reject exactly the same inputs |
 
 The full differential: **2,684 checks over 122 real mainnet transactions, 0 divergences** ([transcript](./docs/transcripts/differential-2026-09-13T03-50-16.md)).
@@ -110,7 +110,7 @@ against Creditcoin, the result at most five minutes old.
 |---|---|
 | `EthereumMirror` v2 — `IMirror` | [`0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118`](https://creditcoin-testnet.blockscout.com/address/0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118) |
 | `AbsenceRegistryV3` — `IAbsence`, `IAbsenceV3` | [`0x05844C991993F3d80fAf196e10355B12BE648e40`](https://creditcoin-testnet.blockscout.com/address/0x05844C991993F3d80fAf196e10355B12BE648e40) |
-| `UnderwritingDesk` | [`0x95A5168E9379b3A580638f113f368d3D7698C74e`](https://creditcoin-testnet.blockscout.com/address/0x95A5168E9379b3A580638f113f368d3D7698C74e) |
+| `UnderwritingDesk` | [`0xc176b4307315F8494A763773385B455aE0b7f9d2`](https://creditcoin-testnet.blockscout.com/address/0xc176b4307315F8494A763773385B455aE0b7f9d2) |
 | `MissingHeightBounty` | [`0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d`](https://creditcoin-testnet.blockscout.com/address/0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d) |
 | A consumer in another repository | [`hindsight-gate`](https://github.com/iamdflame/hindsight-gate) at [`0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254) — same GitHub account, interfaces only |
 | A product on the runtime | [`PaidOnEthereum`](https://github.com/davidpraise288-coder/int_hind) at [`0xF2c2e220c34a9048E08A222F7Da546E0d201C85B`](https://creditcoin-testnet.blockscout.com/address/0xF2c2e220c34a9048E08A222F7Da546E0d201C85B) — proves ERC-20 payments on Ethereum without `0x0FD2`; a second GitHub account of the same person |
