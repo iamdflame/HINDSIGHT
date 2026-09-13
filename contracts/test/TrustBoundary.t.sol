@@ -130,6 +130,21 @@ contract TrustBoundaryTest is Test {
         assertTrue(honest != bytes32(0), "terminal digest should not be empty");
     }
 
+    /// The genesis form of the digest -- a first block with no predecessor -- is the other helper
+    /// the mirror never reaches. It is pinned here so that its shape is documented next to the
+    /// reason it is unused: it belongs to the chain walk, and the chain walk belongs to the
+    /// attestation layer.
+    function test_genesisDigestIsTheChainedFormWithNoPredecessor() public pure {
+        bytes32 root = keccak256("root");
+        bytes32 genesis = MirrorLib.digestOf(1, root);
+        assertEq(genesis, keccak256(abi.encodePacked(uint64(1), root)));
+        // Distinct from the chained form even with a zero predecessor: the encoding differs.
+        assertTrue(genesis != MirrorLib.digestOf(1, root, bytes32(0)));
+        // And sensitive to both inputs.
+        assertTrue(genesis != MirrorLib.digestOf(2, root));
+        assertTrue(genesis != MirrorLib.digestOf(1, keccak256("other")));
+    }
+
     /// Corollary, and the reason the delegation is acceptable: a rejecting precompile retains
     /// nothing at all. The mirror never writes on its own authority.
     function test_nothingIsRetainedWhenThePrecompileRefuses() public {
