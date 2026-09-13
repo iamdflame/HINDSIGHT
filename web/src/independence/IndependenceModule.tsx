@@ -61,15 +61,23 @@ export function useIndependence(autoRun = true): IndependenceState {
     const low = Number(await mirror.lowestMirrored(CHAIN_KEY_ETH_MAINNET));
     const eth = ethereum();
     // Only the first block of each mirror() call had one of its own transactions submitted; every
-    // other height arrived as a continuity root. Read which heights those were, and never pick one,
-    // so "a different transaction from the one it was notarised with" is true by construction.
+    // other height arrived as a continuity root. Ask the chain which of the candidate heights were such
+    // a first block -- one log query, filtered by the indexed `fromBlock` -- and never pick one, so
+    // "a different transaction from the one it was notarised with" is true by construction.
+    const candidates: number[] = [];
+    for (let h = high - 3; h > low && h > high - 400; h -= 7) candidates.push(h);
+    const { zeroPadValue, toBeHex } = await import('ethers');
     const head = await cc.getBlockNumber();
-    const submitted = new Set<number>();
-    const recent = await mirror.queryFilter(mirror.filters.BlocksMirrored(CHAIN_KEY_ETH_MAINNET), Math.max(DEPLOY_BLOCK, head - 20_000), head);
-    for (const ev of recent as any[]) submitted.add(Number(ev.args.fromBlock));
+    const submittedLogs = await cc.getLogs({
+      address: await mirror.getAddress(),
+      fromBlock: DEPLOY_BLOCK,
+      toBlock: head,
+      topics: [mirror.interface.getEvent('BlocksMirrored')!.topicHash, zeroPadValue(toBeHex(CHAIN_KEY_ETH_MAINNET), 32), candidates.map((h) => zeroPadValue(toBeHex(h), 32))],
+    });
+    const submitted = new Set<number>(submittedLogs.map((l) => Number(BigInt(l.topics[2]))));
     // Walk back from the top of the archive for a block busy enough that a "second transaction"
     // is unambiguous, and take one from the middle so the Merkle path is full depth.
-    for (let h = high - 3; h > low && h > high - 400; h -= 7) {
+    for (const h of candidates) {
       if (submitted.has(h)) continue;
       if (!(await mirror.isMirrored(CHAIN_KEY_ETH_MAINNET, h))) continue;
       const blk = await eth.getBlock(h);

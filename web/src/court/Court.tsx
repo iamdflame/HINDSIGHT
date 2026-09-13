@@ -35,8 +35,17 @@ export function Court() {
       try {
         const cc = chain.creditcoin();
         const head = await cc.getBlockNumber();
-        const logs = await m.queryFilter(m.filters.BlocksMirrored(chain.CHAIN_KEY_ETH_MAINNET), Math.max(chain.DEPLOY_BLOCK, head - 5_000), head);
-        const last = logs.filter((l: any) => Number(l.args.newlyAdded) > 0).pop() as any;
+        // Walk back in widening windows and stop at the first call that added heights: decoding every
+        // event since deployment on the page's thread cost seconds of blocking for one row.
+        let last: any;
+        for (const [a, b] of [[300, 0], [1_500, 301], [6_000, 1_501], [30_000, 6_001]]) {
+          const from = Math.max(chain.DEPLOY_BLOCK, head - a);
+          const to = head - b;
+          if (to < from) break;
+          const logs = await m.queryFilter(m.filters.BlocksMirrored(chain.CHAIN_KEY_ETH_MAINNET), from, to);
+          last = logs.filter((l: any) => Number(l.args.newlyAdded) > 0).pop();
+          if (last) break;
+        }
         if (last) {
           const [tx, rc] = await Promise.all([cc.getTransaction(last.transactionHash), cc.getTransactionReceipt(last.transactionHash)]);
           const decoded = m.interface.parseTransaction({ data: tx!.data });
