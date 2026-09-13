@@ -9,12 +9,21 @@
     "evmChainId": 1
   },
   "contracts": {
-    "EthereumMirror": "0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB",
+    "EthereumMirror": "0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118",
     "AbsenceRegistry": "0x6CD4398974c464F0D782D0640DADb70d7910682d",
     "AbsenceRegistryV2": "0x32d507DCC049A228831b7C23E4fe22A62db4E7b6",
-    "UnderwritingDesk": "0xb1D213c24ECd39475eC337D29Fb5eB60AF2195AF",
-    "MissingHeightBounty": "0x39c1527866a07E18BbBa889D849515d8E7e30042",
-    "UnderwritingDesk_v1": "0x5C5D121C6A4c5bfC7C09eAdD1Fcc04F97F26Cc28"
+    "UnderwritingDesk": "0xC0B1039C529bAef479D497FAD30DE5fc9321fC44",
+    "MissingHeightBounty": "0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d",
+    "v1": {
+      "EthereumMirror": "0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB",
+      "AbsenceRegistry": "0x6CD4398974c464F0D782D0640DADb70d7910682d",
+      "AbsenceRegistryV2": "0x32d507DCC049A228831b7C23E4fe22A62db4E7b6",
+      "UnderwritingDesk": "0xb1D213c24ECd39475eC337D29Fb5eB60AF2195AF",
+      "UnderwritingDesk_v1": "0x5C5D121C6A4c5bfC7C09eAdD1Fcc04F97F26Cc28",
+      "MissingHeightBounty": "0x39c1527866a07E18BbBa889D849515d8E7e30042",
+      "deployBlock": 5476398
+    },
+    "AbsenceRegistryV3": "0xf0a24364C72dCCfaEfbc3CD10e2a4609De9BCc17"
   },
   "precompiles": {
     "BlockProver": "0x0000000000000000000000000000000000000FD2",
@@ -84,5 +93,6 @@
   "verified": {
     "blockscout": true
   },
-  "deployBlock": 5476398
+  "deployBlock": 5478051,
+  "mirrorVersion": 2
 }

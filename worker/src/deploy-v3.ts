@@ -1,8 +1,8 @@
 /**
- * Deploy the second layer against the existing mirror.
+ * Deploy the market and the desk against the current mirror.
  *
  * Usage:
- *   node src/deploy-v2.ts [--dry-run]
+ *   node src/deploy-v3.ts [--dry-run]
  *
  * The mirror is NOT redeployed. It holds the archive, the archive is the expensive thing, and
  * redeploying it to gain a registry feature would discard every root in it. `AbsenceRegistryV2`,
@@ -54,9 +54,8 @@ async function main() {
     return addr;
   };
 
-  const registry = await deploy('AbsenceRegistryV2.sol', 'AbsenceRegistryV2', [MIRROR]);
+  const registry = await deploy('AbsenceRegistryV3.sol', 'AbsenceRegistryV3', [MIRROR]);
   await deploy('UnderwritingDesk.sol', 'UnderwritingDesk', [MIRROR, registry]);
-  await deploy('MissingHeightBounty.sol', 'MissingHeightBounty', [MIRROR]);
 
   // Record them where every other part of the system reads addresses from.
   const d = JSON.parse(readFileSync(DEPLOYMENTS, 'utf8'));

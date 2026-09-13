@@ -7,6 +7,32 @@ export const PROVER = process.env.PROVER ?? 'https://prover.cc3-testnet.creditco
 export const CHAIN_KEY_ETH_MAINNET = 3;
 export const CHAIN_KEY_SEPOLIA = 1;
 
+/** Source chains the archive holds, keyed by Attestcoin chainKey. */
+export const CHAINS: Record<number, { name: string; slug: string; ethRpcs: string[]; blockSeconds: number }> = {
+  3: {
+    name: 'Ethereum mainnet',
+    slug: 'mainnet',
+    ethRpcs: [
+      'https://gateway.tenderly.co/public/mainnet',
+      'https://rpc.mevblocker.io',
+      'https://eth.drpc.org',
+      'https://rpc.flashbots.net',
+      ETH_RPC,
+    ],
+    blockSeconds: 12,
+  },
+  1: {
+    name: 'Sepolia',
+    slug: 'sepolia',
+    ethRpcs: [
+      'https://ethereum-sepolia-rpc.publicnode.com',
+      'https://sepolia.drpc.org',
+      'https://gateway.tenderly.co/public/sepolia',
+    ],
+    blockSeconds: 12,
+  },
+};
+
 /** Addresses come from the deployment record, never hardcoded, so worker, tests and frontend
  *  can never disagree about which contracts they are talking to. */
 const deployments = JSON.parse(
@@ -103,9 +129,17 @@ export function venueByKey(key: string): Venue {
 export const ETH_LOG_RPCS = [
   'https://gateway.tenderly.co/public/mainnet',
   'https://rpc.mevblocker.io',
-  'https://eth.drpc.org',
   'https://rpc.flashbots.net',
+  'https://ethereum-rpc.publicnode.com',
 ];
+
+/** Sepolia log endpoints, ordered by measured range. */
+export const SEPOLIA_LOG_RPCS = [
+  'https://gateway.tenderly.co/public/sepolia',
+  'https://ethereum-sepolia-rpc.publicnode.com',
+];
+
+export const LOG_RPCS: Record<number, string[]> = { 3: ETH_LOG_RPCS, 1: SEPOLIA_LOG_RPCS };
 
 /** Signing key for write operations. Taken from PRIVATE_KEY, or from a local, git-ignored
  *  `.secrets/deployer.json` as produced by `cast wallet new --json`. Never committed. */
@@ -132,6 +166,7 @@ export const MIRROR_ABI = [
   'function highestMirrored(uint64) view returns (uint64)',
   'function lowestMirrored(uint64) view returns (uint64)',
   'function isMirrored(uint64, uint64) view returns (bool)',
+  'function heldWord(uint64 chainKey, uint64 wordIndex) view returns (uint256)',
   'function contiguousFrom(uint64 chainKey, uint64 fromBlock, uint64 maxScan) view returns (uint64)',
   'function sealSpan(uint64 chainKey, uint64 fromBlock, uint64 toBlock) returns (uint256)',
   'function spanCount() view returns (uint256)',
@@ -218,78 +253,95 @@ export async function fetchBatchProof(chainKey: number, txHashes: string[]) {
 }
 
 /**
- * `eth_getLogs` over a wide range, chunked, and corroborated.
+ * `eth_getLogs` over a wide range, adaptively split, and corroborated.
  *
- * Two separate failure modes of public endpoints matter here, and they matter more for this project
- * than for most, because a negative log result is the evidence an absence claim stands on.
+ * Two failure modes of public endpoints matter here more than for most projects, because a negative
+ * log result is the evidence an absence claim stands on.
  *
- *   1. Refusal. Every free tier rejects wide windows -- measured: 400 at 40,000 blocks -- and each
- *      refuses a different size. A window nobody serves must raise, never be counted as empty.
+ *   1. Refusal. Each endpoint refuses a different width. Measured for a filtered mainnet query:
+ *      Tenderly served 648,000 blocks in one request (703ms); mevblocker and flashbots cap at 10,000;
+ *      drpc refuses outright; publicnode caps at 1,000. On Sepolia, Tenderly served 216,000 and
+ *      publicnode 50,000. So each endpoint is asked for the whole range first and the range is halved
+ *      on refusal, down to a floor -- never a fixed chunk that is wasteful on one endpoint and
+ *      refused on another. A window no endpoint serves raises; it is never counted as empty.
  *
- *   2. Quiet wrongness. Measured against a known Aave log: `rpc.flashbots.net` returned **0 logs**
- *      for a query that `gateway.tenderly.co` and `rpc.mevblocker.io` both answered with 1. No
- *      error, no warning -- just a wrong empty array.
+ *   2. Quiet wrongness. Measured against a known Aave log: `rpc.flashbots.net` returned 0 logs for a
+ *      query that two other endpoints answered with 1. No error. A single endpoint saying "nothing
+ *      here" is not evidence that nothing is there.
  *
- * The second is the dangerous one. A single endpoint saying "nothing here" is not evidence that
- * nothing is there, and treating it as such would let an indexing gap manufacture a false economic
- * fact: a claim would stand because nobody could see the transaction that refutes it.
- *
- * So the asymmetry this whole project is built on reappears one layer down, and is handled the same
- * way. A **positive** result is self-verifying: the transaction it names either reproduces the
- * notarised Merkle root or it does not, and a lying endpoint is caught immediately. A **negative**
- * result proves nothing on its own, so it must be corroborated by a second, independent endpoint
- * before it is believed. Results are unioned, because a found log beats a missed one.
+ * So the asymmetry the whole project is built on reappears one layer down and is handled the same
+ * way. A positive is self-verifying downstream -- the transaction it names either reproduces the
+ * notarised root or it does not -- so one endpoint's positive is acted on. A negative must be
+ * covered by `corroboration` independent endpoints across the *entire* range before it is believed.
+ * Results from every endpoint that answered are unioned, because a found log beats a missed one.
  */
-export async function getLogsChunked(
-  provider: { getLogs: (f: any) => Promise<any[]> },
+export async function getLogsAdaptive(
+  urls: string[],
   filter: { address: string; topics: (string | null)[] },
   fromBlock: number,
   toBlock: number,
-  chunk = 800,
-  corroboration = 2,
+  opts: { corroboration?: number; minChunk?: number; timeoutMs?: number; onProgress?: (m: string) => void } = {},
 ): Promise<any[]> {
   const { JsonRpcProvider } = await import('ethers');
-  const pool = [provider, ...ETH_LOG_RPCS.map((u) => new JsonRpcProvider(u) as any)];
-  const out: any[] = [];
-  const seen = new Set<string>();
+  const corroboration = opts.corroboration ?? 2;
+  const minChunk = opts.minChunk ?? 500;
+  const timeoutMs = opts.timeoutMs ?? 25_000;
 
-  for (let from = fromBlock; from <= toBlock; from += chunk) {
-    const to = Math.min(from + chunk - 1, toBlock);
-    let answered = 0;
-    let found = false;
-    let lastError: unknown = null;
+  const withTimeout = <T,>(p: Promise<T>) =>
+    Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))]);
 
-    for (const p of pool) {
+  /** Cover [from, to] with one endpoint, halving on refusal. Throws if any sub-window fails at the floor. */
+  async function cover(url: string, from: number, to: number): Promise<any[]> {
+    const p = new JsonRpcProvider(url, undefined, { staticNetwork: true, batchMaxCount: 1 });
+    const out: any[] = [];
+    const stack: [number, number][] = [[from, to]];
+    while (stack.length) {
+      const [a, b] = stack.pop()!;
       try {
-        const logs = await p.getLogs({ ...filter, fromBlock: from, toBlock: to });
-        answered++;
-        for (const l of logs) {
-          const key = `${l.transactionHash}:${l.index ?? l.logIndex}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            out.push(l);
-          }
-          found = true;
-        }
-        // A positive is self-verifying downstream, so one endpoint is enough to act on it.
-        // A negative needs a second opinion before it counts as silence.
-        if (found || answered >= corroboration) break;
+        out.push(...(await withTimeout(p.getLogs({ ...filter, fromBlock: a, toBlock: b }))));
       } catch (e) {
-        lastError = e;
+        if (b - a + 1 <= minChunk) throw new Error(`${new URL(url).host} refused ${a}..${b}: ${String((e as Error).message).slice(0, 80)}`);
+        const mid = Math.floor((a + b) / 2);
+        stack.push([mid + 1, b], [a, mid]);
       }
     }
+    return out;
+  }
 
-    if (answered === 0) {
-      throw new Error(
-        `no endpoint served logs for ${from}..${to}: ${String((lastError as Error)?.message ?? lastError).slice(0, 120)}`,
-      );
-    }
-    if (!found && answered < corroboration) {
-      throw new Error(
-        `only ${answered} endpoint(s) answered for ${from}..${to} and none found a log; ` +
-          `refusing to report that as silence`,
-      );
+  const seen = new Map<string, any>();
+  let covered = 0;
+  const failures: string[] = [];
+
+  for (const url of urls) {
+    try {
+      opts.onProgress?.(`scanning ${fromBlock}..${toBlock} on ${new URL(url).host}`);
+      const logs = await cover(url, fromBlock, toBlock);
+      covered++;
+      for (const l of logs) seen.set(`${l.transactionHash}:${l.index ?? l.logIndex}`, l);
+      // A positive is verified cryptographically downstream; act on it.
+      if (seen.size > 0) break;
+      // A negative needs `corroboration` endpoints that each covered the whole range.
+      if (covered >= corroboration) break;
+    } catch (e) {
+      failures.push((e as Error).message);
     }
   }
-  return out.sort((a, b) => a.blockNumber - b.blockNumber || (a.index ?? 0) - (b.index ?? 0));
+
+  if (seen.size === 0 && covered < corroboration) {
+    throw new Error(
+      `only ${covered} endpoint(s) covered ${fromBlock}..${toBlock} and none found a log; ` +
+        `refusing to report that as silence (${failures.join(' | ').slice(0, 200)})`,
+    );
+  }
+  return [...seen.values()].sort((a, b) => a.blockNumber - b.blockNumber || (a.index ?? 0) - (b.index ?? 0));
+}
+
+/** Back-compatible wrapper used by the corpus and older scripts. Mainnet endpoints. */
+export async function getLogsChunked(
+  _provider: unknown,
+  filter: { address: string; topics: (string | null)[] },
+  fromBlock: number,
+  toBlock: number,
+): Promise<any[]> {
+  return getLogsAdaptive(ETH_LOG_RPCS, filter, fromBlock, toBlock);
 }
