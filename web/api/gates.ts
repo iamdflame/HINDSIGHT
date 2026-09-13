@@ -129,6 +129,26 @@ async function runGates() {
       return { pass, detail: `Gate ${manifest.gate.slice(0, 6)}…${manifest.gate.slice(-4)} (same GitHub owner): plain → ${idx(plain)}, precompile deleted → ${idx(killed)}, mirror deleted → ${control.ok ? 'answered' : 'refused'}` };
     }),
 
+    gate('second-consumer', 'A product in another repository proves a real payment without 0x0FD2', async () => {
+      const p = manifest.paidOnEthereum;
+      const f = manifest.secondTransaction;
+      const c = new Contract(p.address, ['function paidAtLeast(address, address, address, uint256) view returns (bool)', 'function prove(uint64, bytes, (bytes32 hash, bool isLeft)[], uint32) returns (uint256)', 'error AlreadyCounted(uint64 height, uint64 txIndex, uint32 logIndex)'], cc);
+      const paid: boolean = await c.paidAtLeast(p.proven.token, p.proven.from, p.proven.to, BigInt(p.proven.amount));
+      // Re-submitting the proven transfer, simulated: it can only reach AlreadyCounted if the mirror verified
+      // it first. With 0x0FD2 deleted it must still get there; with the mirror deleted it must not.
+      const data = c.interface.encodeFunctionData('prove', [f.height, f.txBytes, f.siblings.map((s) => ({ hash: s.hash, isLeft: s.isLeft })), p.proven.logIndex]);
+      const selector = c.interface.getError('AlreadyCounted')!.selector;
+      const revertData = async (override?: Record<string, { code: string }>) => {
+        const res = await fetch(manifest.rpc, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: override ? [{ to: p.address, data }, 'latest', override] : [{ to: p.address, data }, 'latest'] }) });
+        const j: any = await res.json();
+        return String(j.error?.data ?? '');
+      };
+      const [killed, control] = await Promise.all([revertData({ [PRECOMPILE]: { code: '0x' } }), revertData({ [mirrorAddr]: { code: '0x' } })]);
+      const verifiedWithout = killed.startsWith(selector);
+      const controlFailed = !control.startsWith(selector);
+      return { pass: paid && verifiedWithout && controlFailed, detail: `PaidOnEthereum ${p.address.slice(0, 6)}…${p.address.slice(-4)} (second account, same person): paidAtLeast → ${paid}; re-proving with precompile deleted → ${verifiedWithout ? 'verified, then AlreadyCounted' : 'did not verify'}; with mirror deleted → ${controlFailed ? 'refused before verification' : 'verified'}` };
+    }),
+
     gate('differential', 'The mirror and the live precompile agree, including on forgeries', async () => {
       const pre = new Contract(PRECOMPILE, PRECOMPILE_ABI, cc);
       let checks = 0;

@@ -99,7 +99,7 @@ it than be the reason it is not needed.
 
 [CLAIMS.md](./CLAIMS.md) grades every statement in this repository by the evidence behind it, including the
 ones that limit the product. It is generated from the same measured record as this file. The promises it makes
-about live state are re-checked on a schedule, in public: **[https://hindsight-cache.vercel.app/status/](https://hindsight-cache.vercel.app/status/)** — eleven gates
+about live state are re-checked on a schedule, in public: **[https://hindsight-cache.vercel.app/status/](https://hindsight-cache.vercel.app/status/)** — twelve gates
 against Creditcoin, the result at most five minutes old.
 
 ---
@@ -112,7 +112,8 @@ against Creditcoin, the result at most five minutes old.
 | `AbsenceRegistryV3` — `IAbsence`, `IAbsenceV3` | [`0x05844C991993F3d80fAf196e10355B12BE648e40`](https://creditcoin-testnet.blockscout.com/address/0x05844C991993F3d80fAf196e10355B12BE648e40) |
 | `UnderwritingDesk` | [`0xC576E330400ce4D031daB3b9c2dA2423211B6e25`](https://creditcoin-testnet.blockscout.com/address/0xC576E330400ce4D031daB3b9c2dA2423211B6e25) |
 | `MissingHeightBounty` | [`0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d`](https://creditcoin-testnet.blockscout.com/address/0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d) |
-| A consumer in another repository | [`hindsight-gate`](https://github.com/iamdflame/hindsight-gate) at [`0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254) — same GitHub owner, interfaces only |
+| A consumer in another repository | [`hindsight-gate`](https://github.com/iamdflame/hindsight-gate) at [`0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254) — same GitHub account, interfaces only |
+| A product on the runtime | [`PaidOnEthereum`](https://github.com/davidpraise288-coder/int_hind) at [`0xF2c2e220c34a9048E08A222F7Da546E0d201C85B`](https://creditcoin-testnet.blockscout.com/address/0xF2c2e220c34a9048E08A222F7Da546E0d201C85B) — proves ERC-20 payments on Ethereum without `0x0FD2`; a second GitHub account of the same person |
 
 Superseded deployments, and why each was replaced, are kept in `deployments.json`.
 

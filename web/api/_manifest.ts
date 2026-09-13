@@ -80,6 +80,21 @@ export const manifest = {
   }
  },
  "gate": "0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254",
+ "paidOnEthereum": {
+  "address": "0xF2c2e220c34a9048E08A222F7Da546E0d201C85B",
+  "proven": {
+   "tx": "0x803a8294c887e09a49fc0d5cba8c33c8dd21b85e85bfab768d0a3c374f99bfa8",
+   "gasUsed": 212212,
+   "token": "0x7deF4573628021500c3207994935a51801fB56bE",
+   "from": "0x58edF78281334335EfFa23101bBe3371b6a36A51",
+   "to": "0xb8F937b7BCfe9dA01Ad616544F149324A9a40a5f",
+   "amount": "44663200000000000000000",
+   "height": 25954574,
+   "txIndex": 131,
+   "logIndex": 0,
+   "ethereumTx": "0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9"
+  }
+ },
  "held": {
   "mainnet": 780302,
   "sepolia": 300601

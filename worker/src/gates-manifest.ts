@@ -62,6 +62,7 @@ function build() {
       MissingHeightBounty: { address: d.contracts.MissingHeightBounty, ...runtime('MissingHeightBounty.sol', 'MissingHeightBounty') },
     },
     gate: d.external.hindsightGate.address,
+    paidOnEthereum: { address: d.external.paidOnEthereum.address, proven: d.external.paidOnEthereum.proofs[0] },
     held: { mainnet: m.chains['3'].held, sepolia: m.chains['1'].held },
     emptyBlock: m.acceptance.emptyBlockInSealedSpan,
     secondTransaction: fixture('contracts/test/fixtures/mainnet/random-block-second-tx/0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9.json'),

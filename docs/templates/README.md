@@ -99,7 +99,7 @@ it than be the reason it is not needed.
 
 [CLAIMS.md](./CLAIMS.md) grades every statement in this repository by the evidence behind it, including the
 ones that limit the product. It is generated from the same measured record as this file. The promises it makes
-about live state are re-checked on a schedule, in public: **[{{site}}/status/]({{site}}/status/)** — eleven gates
+about live state are re-checked on a schedule, in public: **[{{site}}/status/]({{site}}/status/)** — twelve gates
 against Creditcoin, the result at most five minutes old.
 
 ---
@@ -112,7 +112,8 @@ against Creditcoin, the result at most five minutes old.
 | `AbsenceRegistryV3` — `IAbsence`, `IAbsenceV3` | [`{{contracts.AbsenceRegistryV3}}`](https://creditcoin-testnet.blockscout.com/address/{{contracts.AbsenceRegistryV3}}) |
 | `UnderwritingDesk` | [`{{contracts.UnderwritingDesk}}`](https://creditcoin-testnet.blockscout.com/address/{{contracts.UnderwritingDesk}}) |
 | `MissingHeightBounty` | [`{{contracts.MissingHeightBounty}}`](https://creditcoin-testnet.blockscout.com/address/{{contracts.MissingHeightBounty}}) |
-| A consumer in another repository | [`hindsight-gate`]({{external.hindsightGate.repository}}) at [`{{external.hindsightGate.address}}`](https://creditcoin-testnet.blockscout.com/address/{{external.hindsightGate.address}}) — same GitHub owner, interfaces only |
+| A consumer in another repository | [`hindsight-gate`]({{external.hindsightGate.repository}}) at [`{{external.hindsightGate.address}}`](https://creditcoin-testnet.blockscout.com/address/{{external.hindsightGate.address}}) — same GitHub account, interfaces only |
+| A product on the runtime | [`PaidOnEthereum`]({{external.paidOnEthereum.repository}}) at [`{{external.paidOnEthereum.address}}`](https://creditcoin-testnet.blockscout.com/address/{{external.paidOnEthereum.address}}) — proves ERC-20 payments on Ethereum without `0x0FD2`; a second GitHub account of the same person |
 
 Superseded deployments, and why each was replaced, are kept in `deployments.json`.
 

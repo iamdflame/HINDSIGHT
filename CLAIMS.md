@@ -23,6 +23,7 @@ Re-derive every number: `node worker/src/measure.ts --check` (the chain), `forge
 | A **second** transaction in a notarised block verifies with the precompile gone, and the control fails | transaction index 131 of block 25,954,574 (the block was notarised through index 263): `verifyOrRevert` as a plain `eth_call` → **131**; with `0x0FD2` blanked by a state override → **131**; with the mirror blanked instead → `ok: false`. The home page runs the same three calls live on a block picked as it loads |
 | The mirror reaches the same verdict as the precompile, and fails the same way | **2,684 checks over 122 real mainnet transactions × 22 adversarial mutations, 0 divergences**, against the live precompile — [transcript](./docs/transcripts/differential-2026-09-13T03-50-16.md) |
 | A contract in another repository uses the frozen interfaces and never calls `0x0FD2` | `Gate` at [`0xeeFa…a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254): `happened()` returns **263** for a real Aave liquidation plainly and **263** with the precompile blanked; with the mirror blanked it fails (`ok: false`). **Same GitHub owner as Hindsight** — it proves the interfaces are sufficient, not that a stranger chose to integrate |
+| A different product runs on the interface alone | [`PaidOnEthereum`](https://github.com/davidpraise288-coder/int_hind) at [`0xF2c2…C85B`](https://creditcoin-testnet.blockscout.com/address/0xF2c2e220c34a9048E08A222F7Da546E0d201C85B) proves ERC-20 transfers on Ethereum against held roots: 44,663.20 of the 18-decimal token `0x7deF…56bE` in [`0x803a…bfa8`](https://creditcoin-testnet.blockscout.com/tx/0x803a8294c887e09a49fc0d5cba8c33c8dd21b85e85bfab768d0a3c374f99bfa8) (212,212 gas) and WETH from Morpho Blue in [`0xbc11…8547`](https://creditcoin-testnet.blockscout.com/tx/0xbc1161ff45cbfa17897ef68d20bab284cac3090fbf6841b992e5736e10958547) — neither Ethereum transaction ever submitted to Attestcoin. **A second GitHub account of the same person, and its deployer was funded from Hindsight's.** It shows a product can be built on `IMirror` alone; it does not show a stranger chose to |
 | False negative claims die on-chain, and half of every bond burns | 10 refutations on the v3 board, **10.00 tCTC** paid to the hunter and **10.00 tCTC** burned to `0x…dEaD`. Listed below |
 | A completeness claim is refuted by the member it left out | the `omission` rows below: each listed every liquidation of its borrower but one; each was refuted by exactly that one, with the burn |
 | The desk's ninety-day policy answers — the archive is not too shallow | BlankFile policy 0 (window 648,000 blocks) returns `None` for an address with nothing on file. It reads `contiguousFrom` over every height of the window, not two endpoints |
@@ -155,7 +156,8 @@ the `BondedClean` mechanism, not a vetted stranger.
   [https://hindsight-cache.vercel.app/status/](https://hindsight-cache.vercel.app/status/): the runtime bytecode of every contract against what this repository compiles
   to, ninety days of mainnet and thirty of Sepolia held with no gap, the empty block in its sealed span, the second
   transaction with `0x0FD2` deleted and both controls, the stranger consumer, a differential sample against the live
-  precompile, the desk's depth and its refusal, and the board. Vercel Cron runs it daily, and any visitor at most
+  precompile, the desk's depth and its refusal, the board, and `PaidOnEthereum` re-verifying its payment with the
+  precompile deleted. Vercel Cron runs it daily, and any visitor at most
   every five minutes. A broken gate answers `503`. Expectations come from the repository through
   `worker/src/gates-manifest.ts`, never from the function. `forge test` still runs only where there is a compiler.
 - **Bounties depend on somebody running a hunter.** The house hunter leaves claims younger than six days to humans.
@@ -175,7 +177,8 @@ contract stays on-chain; nothing was migrated in place.
 - That a `Standing` claim stays true afterwards, or was true: it is scoped to one range and one window.
 - That the contracts are audited.
 - That the archive starts at genesis. It covers the stated ranges and says where each stops.
-- That `hindsight-gate` is a third party. It has the same GitHub owner.
+- That `hindsight-gate` or `PaidOnEthereum` is a third party. The first has the same GitHub account; the second, a
+  second account of the same person. No independent team has integrated Hindsight yet.
 - That other projects' gas figures are ours. `docs/MIGRATION.md` quotes their READMEs, row by row, with links.
 - That writability (Creditcoin → Ethereum) is used. It is not released on testnet.
 - Any figure about Creditcoin's lending history. The $100M in `docs/SUBMISSION.md` is Creditcoin's own public statement ([creditcoin.org/Credal](https://creditcoin.org/Credal)), quoted, not measured here.

@@ -65,6 +65,16 @@ same call reverts.
 It has the same GitHub owner as Hindsight. That is stated rather than hidden: what it proves is that the
 published interfaces are sufficient, not that a stranger chose to integrate.
 
+## A product, not a demo: PaidOnEthereum
+
+[`davidpraise288-coder/int_hind`](https://github.com/davidpraise288-coder/int_hind) builds something else on the same
+interface: proof, on Creditcoin, that an ERC-20 transfer happened on Ethereum. `prove(height, txBytes, path, logIndex)`
+asks `IMirror.verifyOrRevert`, decodes the receipt with Gluwa's decoder, requires success and a real `Transfer` log,
+and counts it once; `paidAtLeast(token, from, to, amount)` is what a merchant or lender reads. Deployed and verified at
+[`0xF2c2e220c34a9048E08A222F7Da546E0d201C85B`](https://creditcoin-testnet.blockscout.com/address/0xF2c2e220c34a9048E08A222F7Da546E0d201C85B),
+with two real mainnet transfers already proven. It is a second GitHub account of the same person who built Hindsight,
+and says so in its README.
+
 ## Negative facts
 
 Inclusion proofs cannot say that something did not happen, or that a list is complete. The registry lets

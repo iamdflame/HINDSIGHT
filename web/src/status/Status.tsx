@@ -37,7 +37,7 @@ export function Status() {
       <section className="pane status">
         <h1 className="t-title pane-title">The promises, re-checked.</h1>
         <p className="t-body pane-lead">
-          Eleven gates run against live Creditcoin state: once a day by Vercel Cron, and whenever someone opens this page. No key, no transaction. A result is at most five minutes old. If any gate
+          Every gate below runs against live Creditcoin state: once a day by Vercel Cron, and whenever someone opens this page. No key, no transaction. A result is at most five minutes old. If any gate
           fails, the endpoint answers <code>503</code> and the schedulers raise the alarm.
         </p>
 
