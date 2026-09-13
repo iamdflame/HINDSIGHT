@@ -1,19 +1,28 @@
 # @hindsight/mirror
 
-Ask whether an Ethereum mainnet transaction happened — from Creditcoin, with no key, no gas and no
+Ask whether an Ethereum transaction happened — from Creditcoin, with no key, no gas, no `.env` and no
 proving service.
 
 ```bash
-npx hindsight verify 0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61
+npx @hindsight/mirror verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9
+# or, straight from the repository:
+npx github:iamdflame/HINDSIGHT verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9
 ```
 
 ```
 verified
+  chain     : Ethereum mainnet (chainKey 3)
   block     : 25954574
-  tx index  : 263
+  tx index  : 131
   path      : 9 siblings
   source    : rebuilt locally (no prover)
+  precompile: not called
 ```
+
+That transaction was never submitted to anyone: its block was notarised through a different transaction
+(index 263), and this one verifies against the root that notarisation stored. `--chain 1` asks about Sepolia.
+
+The unscoped npm name `hindsight` belongs to an unrelated project — `npx hindsight` will not run this.
 
 ## Why this is not just an Attestcoin wrapper
 
@@ -26,7 +35,7 @@ Merkle path against stored state — a `view` call, at a fixed cost, however old
 
 | | Attestcoin query | Against a held root |
 |---|---|---|
-| Continuity roots | 1 fresh, 11 at a day old, 711 at 180 days *(measured on CC3)* | none |
+| Continuity roots | 1 fresh, 41 from a day to ninety days old, 841 at 180 days *(measured on CC3, 2026-09-13)* | none |
 | Proving service | required | not contacted |
 | Block-prover precompile | required | not called |
 | Call type | transaction | `view` |
