@@ -53,7 +53,7 @@
   "standing": 9,
   "burnedWei": "13500000000000000000",
   "policies": 8,
-  "forgeTests": 176,
+  "forgeTests": 177,
   "fuzzTests": 27,
   "differentialChecks": 2684,
   "differentialDivergences": 0,

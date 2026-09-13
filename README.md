@@ -56,7 +56,7 @@ Measured and recorded by `measure.ts`: transaction index **131** of block
 |---|---|---|
 | 30 s | open [https://hindsight.run](https://hindsight.run) | four rows settle — verified, verified with `0x0FD2` deleted, control refused, forged path refused — and the stamp |
 | 1 min | `npx github:iamdflame/HINDSIGHT verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9` | `verified` · `tx index  : 131` · `source : rebuilt locally (no prover)` · `precompile: not called` |
-| 2 min | `cd contracts && forge test` | **176** tests, **27** of them fuzz properties, including the precompile etched to empty |
+| 2 min | `cd contracts && forge test` | **177** tests, **27** of them fuzz properties, including the precompile etched to empty |
 | 5 min | `cd worker && node src/differential.ts --limit 12` | the mirror and the live precompile accept and reject exactly the same inputs |
 
 The full differential: **2,684 checks over 122 real mainnet transactions, 0 divergences** ([transcript](./docs/transcripts/differential-2026-09-13T03-50-16.md)).

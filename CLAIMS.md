@@ -91,7 +91,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 
 | Claim | Evidence |
 |---|---|
-| The code does what this file says | **176** `forge test` cases, **27** of them fuzz properties at 256 runs each |
+| The code does what this file says | **177** `forge test` cases, **27** of them fuzz properties at 256 runs each |
 | The hosted prover is replaceable for Merkle paths | `worker/src/local-proof.ts` rebuilds a block from a public Ethereum node; root and every sibling with its direction bit are byte-identical to the prover's. The home page does the same in the browser and sends the prover nothing |
 | Empty blocks were the product limit, and are not now | `test_emptyBlockIsMirroredAndSealCrossesIt`, `test_zeroRootHeldDoesNotLookUnheld`, and a fuzz of the word-wise contiguity check against a per-height reference |
 | A listed member must be real, and the omitted one refutes | `testFuzz_completeSetRefutedByOmittedMember` over six real clustered Aave liquidations; fabricated, out-of-order, duplicated and out-of-span members are refused at assertion |
@@ -182,7 +182,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 - **The cover cycle above was run by the house against itself.** Buyer, underwriter and hunter are all this
   project's wallets, and the hunter was told to take the claim early so the transcript could be made. What it shows
   is that the contract settles the way the claim settles; it does not show that anyone wants to buy cover.
-- **The Korean is machine-assisted and unreviewed.** `README.ko.md` and the Korean column of `/ceip` were written
+- **The Korean is machine-assisted and unreviewed.** `README.ko.md`, the Korean column of `/ceip` and the Korean toggle on `/judge` were written
   by a language model and no native speaker has read them. They are labelled so at the top. Where they disagree
   with the English, the English is right. This is not localisation quality and is not presented as such.
 - **Nobody has bound an Ethereum address yet.** The binding contract is deployed, its bytecode is checked on every
