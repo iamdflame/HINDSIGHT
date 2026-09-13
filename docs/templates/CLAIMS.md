@@ -14,70 +14,55 @@ Re-derive every number: `node worker/src/measure.ts --check` (the chain), `forge
 
 | Claim | Evidence |
 |---|---|
-| One Attestcoin proof carries the roots of many consecutive blocks, and one `mirror()` call keeps all of them | the widest call retained **901** roots — [`0xa9bb…5d70`](https://creditcoin-testnet.blockscout.com/tx/0xa9bb644f31b88e5a71c296b323a799d03ed7083b23b8b81d02cd1b37a3555d70) |
-| Ninety days of Ethereum mainnet are held, with no gap | **779,401** consecutive heights, 25,187,300 – 25,966,700 (≈ 108.3 days), read bit by bit from the mirror's bitmap. 780,302 heights held in all, added by 899 `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
-| Thirty days of Sepolia are held, with no gap | **298,801** consecutive heights (≈ 41.5 days) ending at 11,692,400 |
-| Keeping a root is cheap and flat | **23,596 gas** per newly held height (median; 23,492–27,232 over 834 calls that each added ≥ 800), from every campaign receipt |
-| An empty Ethereum block is held, and a sealed span crosses it | block **25,354,534** has a transaction root of zero (`rootIsZero: true`), `isMirrored` = **true**, and sealed span 0 (25,309,541 – 25,440,612, 131,072 blocks) covers it: `true`. 243 empty blocks are held on mainnet, 32 on Sepolia |
-| Proving a span gap-free is one read per 256 blocks | sealing **131,072** blocks cost **1,280,230 gas** — [`0x90d9…11a8`](https://creditcoin-testnet.blockscout.com/tx/0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8); 7 spans sealed |
-| A **second** transaction in a notarised block verifies with the precompile gone, and the control fails | transaction index 131 of block 25,954,574 (the block was notarised through index 263): `verifyOrRevert` as a plain `eth_call` → **131**; with `0x0FD2` blanked by a state override → **131**; with the mirror blanked instead → `ok: false`. The home page runs the same three calls live on a block picked as it loads |
-| The mirror reaches the same verdict as the precompile, and fails the same way | **2,684 checks over 122 real mainnet transactions × 22 adversarial mutations, 0 divergences**, against the live precompile — [transcript](./docs/transcripts/differential-2026-09-13T03-50-16.md) |
-| A contract in another repository uses the frozen interfaces and never calls `0x0FD2` | `Gate` at [`0xeeFa…a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254): `happened()` returns **263** for a real Aave liquidation plainly and **263** with the precompile blanked; with the mirror blanked it fails (`ok: false`). **Same GitHub owner as Hindsight** — it proves the interfaces are sufficient, not that a stranger chose to integrate |
-| False negative claims die on-chain, and half of every bond burns | 10 refutations on the v3 board, **10.00 tCTC** paid to the hunter and **10.00 tCTC** burned to `0x…dEaD`. Listed below |
+| One Attestcoin proof carries the roots of many consecutive blocks, and one `mirror()` call keeps all of them | the widest call retained **{{measured.chains.3.widestCall.roots|n}}** roots — [`{{measured.chains.3.widestCall.tx|short}}`](https://creditcoin-testnet.blockscout.com/tx/{{measured.chains.3.widestCall.tx}}) |
+| Ninety days of Ethereum mainnet are held, with no gap | **{{measured.chains.3.topRun|n}}** consecutive heights, {{measured.chains.3.topRunFrom|n}} – {{measured.chains.3.highest|n}} (≈ {{measured.chains.3.topRunDays|days}} days), read bit by bit from the mirror's bitmap. {{measured.chains.3.held|n}} heights held in all, added by {{measured.chains.3.mirrorCalls|n}} `mirror()` calls ([every call](./docs/CAMPAIGN-mainnet.md)) |
+| Thirty days of Sepolia are held, with no gap | **{{measured.chains.1.topRun|n}}** consecutive heights (≈ {{measured.chains.1.topRunDays|days}} days) ending at {{measured.chains.1.highest|n}} |
+| Keeping a root is cheap and flat | **{{measured.chains.3.gasPerNewRoot.median|n}} gas** per newly held height (median; {{measured.chains.3.gasPerNewRoot.min|n}}–{{measured.chains.3.gasPerNewRoot.max|n}} over {{measured.chains.3.gasPerNewRoot.calls|n}} calls that each added ≥ 800), from every campaign receipt |
+| An empty Ethereum block is held, and a sealed span crosses it | block **{{measured.acceptance.emptyBlockInSealedSpan.height|n}}** has a transaction root of zero (`rootIsZero: {{measured.acceptance.emptyBlockInSealedSpan.rootIsZero}}`), `isMirrored` = **{{measured.acceptance.emptyBlockInSealedSpan.isMirrored}}**, and sealed span {{measured.acceptance.emptyBlockInSealedSpan.spanId}} ({{measured.acceptance.emptyBlockInSealedSpan.spanFrom|n}} – {{measured.acceptance.emptyBlockInSealedSpan.spanTo|n}}, {{measured.acceptance.emptyBlockInSealedSpan.spanBlocks|n}} blocks) covers it: `{{measured.acceptance.emptyBlockInSealedSpan.spanCovers}}`. {{measured.chains.3.emptyBlocks|n}} empty blocks are held on mainnet, {{measured.chains.1.emptyBlocks|n}} on Sepolia |
+| Proving a span gap-free is one read per 256 blocks | sealing **{{measured.acceptance.sealing.widest|n}}** blocks cost **{{measured.acceptance.sealing.gasForWidest|n}} gas** — [`{{measured.acceptance.sealing.tx|short}}`](https://creditcoin-testnet.blockscout.com/tx/{{measured.acceptance.sealing.tx}}); {{measured.acceptance.sealing.spans}} spans sealed |
+| A **second** transaction in a notarised block verifies with the precompile gone, and the control fails | transaction index {{measured.acceptance.secondTransaction.expectedIndex}} of block {{measured.acceptance.secondTransaction.block|n}} (the block was notarised through index {{measured.acceptance.secondTransaction.notarisedWithIndex}}): `verifyOrRevert` as a plain `eth_call` → **{{measured.acceptance.secondTransaction.plain.txIndex}}**; with `0x0FD2` blanked by a state override → **{{measured.acceptance.secondTransaction.precompileBlanked.txIndex}}**; with the mirror blanked instead → `ok: {{measured.acceptance.secondTransaction.mirrorBlanked.ok}}`. The home page runs the same three calls live on a block picked as it loads |
+| The mirror reaches the same verdict as the precompile, and fails the same way | **{{measured.differential.checks|n}} checks over {{measured.differential.fixtures}} real mainnet transactions × 22 adversarial mutations, {{measured.differential.divergences}} divergences**, against the live precompile — [transcript](./{{measured.differential.transcript}}) |
+| A contract in another repository uses the frozen interfaces and never calls `0x0FD2` | `Gate` at [`{{measured.acceptance.strangerConsumer.address|short}}`](https://creditcoin-testnet.blockscout.com/address/{{measured.acceptance.strangerConsumer.address}}): `happened()` returns **{{measured.acceptance.strangerConsumer.plain.txIndex}}** for a real Aave liquidation plainly and **{{measured.acceptance.strangerConsumer.precompileBlanked.txIndex}}** with the precompile blanked; with the mirror blanked it fails (`ok: {{measured.acceptance.strangerConsumer.mirrorBlanked.ok}}`). **Same GitHub owner as Hindsight** — it proves the interfaces are sufficient, not that a stranger chose to integrate |
+| False negative claims die on-chain, and half of every bond burns | {{measured.board.refutations}} refutations on the v3 board, **{{measured.board.paidWei|tctc}} tCTC** paid to the hunter and **{{measured.board.burnedWei|tctc}} tCTC** burned to `0x…dEaD`. Listed below |
 | A completeness claim is refuted by the member it left out | the `omission` rows below: each listed every liquidation of its borrower but one; each was refuted by exactly that one, with the burn |
-| The desk's ninety-day policy answers — the archive is not too shallow | BlankFile policy 0 (window 648,000 blocks) returns `None` for an address with nothing on file. It reads `contiguousFrom` over every height of the window, not two endpoints |
+| The desk's ninety-day policy answers — the archive is not too shallow | {{measured.desk.ninetyDay.0.kind}} policy {{measured.desk.ninetyDay.0.policy}} (window {{measured.desk.ninetyDay.0.window|n}} blocks) returns `{{measured.desk.ninetyDay.0.reason}}` for an address with nothing on file. It reads `contiguousFrom` over every height of the window, not two endpoints |
 | The desk lends and refuses on facts nobody in this system authored | the transactions below, and `docs/transcripts/desk-v3.json` |
 
-### The mainnet board (25,309,541 – 25,964,900, five sealed spans)
+### The mainnet board ({{measured.board.chains.mainnet.spanFrom|n}} – {{measured.board.chains.mainnet.spanTo|n}}, five sealed spans)
 
 | # | Role | Kind | Venue | Status | Refutation |
 |---|---|---|---|---|---|
-| 0 | lie | EmptySet | Aave V3 · LiquidationCall | **Refuted** | [`0x9273…20ab`](https://creditcoin-testnet.blockscout.com/tx/0x92734f9067d1d99f4a3e65b44c40b3edbf99ee76216bdb14a659eb7ee91c20ab) · paid 1.00 · burned 1.00 |
-| 1 | lie | EmptySet | Aave V3 · LiquidationCall | **Refuted** | [`0x448d…38ac`](https://creditcoin-testnet.blockscout.com/tx/0x448d99cf388549fb0610db0c01640941a47b2133b80693ad7b7fc8d534e438ac) · paid 1.00 · burned 1.00 |
-| 2 | lie | EmptySet | Aave V3 · LiquidationCall | **Refuted** | [`0xbf4e…a32d`](https://creditcoin-testnet.blockscout.com/tx/0xbf4e9e8ee8d7588a00c56a1d0a153ec1a5ab94988f475c1a443f410c0bbba32d) · paid 1.00 · burned 1.00 |
-| 3 | lie | EmptySet | Morpho Blue · Liquidate | **Refuted** | [`0x2642…dce1`](https://creditcoin-testnet.blockscout.com/tx/0x26429c2cc0f3e938694c3aaa87cdbdfdb0a782a6f25860234ebc611e2ce5dce1) · paid 1.00 · burned 1.00 |
-| 4 | lie | EmptySet | Morpho Blue · Liquidate | **Refuted** | [`0xd8dd…7392`](https://creditcoin-testnet.blockscout.com/tx/0xd8dd3b5f0006c2032862d73d8b1af6abf3e292a96fe656b23ccdfa3b80b57392) · paid 1.00 · burned 1.00 |
-| 5 | lie | EmptySet | Compound V3 · AbsorbDebt | **Refuted** | [`0xbb3c…f8da`](https://creditcoin-testnet.blockscout.com/tx/0xbb3cd9447f4de56f68942d2122b38d2c4e812705c0a44da39e870763548ef8da) · paid 1.00 · burned 1.00 |
-| 10 | omission | CompleteSet | Aave V3 · LiquidationCall | **Refuted** | [`0x1c8f…e85c`](https://creditcoin-testnet.blockscout.com/tx/0x1c8fffdcb6f2a72b316c588f791d37732bcd514c70c8cf55aefe6a6cb8b0e85c) · paid 1.00 · burned 1.00 |
-| 11 | omission | CompleteSet | Morpho Blue · Liquidate | **Refuted** | [`0x77ea…bd38`](https://creditcoin-testnet.blockscout.com/tx/0x77eae26ffd592d63314dc0c360fd1f6b7f31c382b721207dddabe754e6febd38) · paid 1.00 · burned 1.00 |
-| 6 | bounty | EmptySet | Aave V3 · LiquidationCall | Open | left open for anyone; the house hunter waits six days |
-| 7 | bounty | EmptySet | Aave V3 · LiquidationCall | Open | left open for anyone; the house hunter waits six days |
-| 8 | bounty | EmptySet | Morpho Blue · Liquidate | Open | left open for anyone; the house hunter waits six days |
-| 9 | bounty | EmptySet | Compound V3 · AbsorbDebt | Open | left open for anyone; the house hunter waits six days |
-| 12 | complete | CompleteSet | Aave V3 · LiquidationCall | Standing | — |
-| 13 | clean | EmptySet | Aave V3 · LiquidationCall | Standing | — |
-| 14 | clean | EmptySet | Aave V3 · LiquidationCall | Standing | — |
-| 15 | clean | EmptySet | Aave V3 · LiquidationCall | Standing | — |
-| 16 | clean | EmptySet | Aave V3 · LiquidationCall | Standing | — |
-| 17 | clean | EmptySet | Aave V3 · LiquidationCall | Standing | — |
-| 18 | clean | EmptySet | Aave V3 · LiquidationCall | Standing | — |
-| 19 | borrower | EmptySet | Aave V3 · LiquidationCall | Standing | — |
+{{#each measured.board.chains.mainnet.rows where role=lie,omission}}| {{.claimId}} | {{.role}} | {{.kind}} | {{.venue}} | **{{.status}}** | [`{{.refutation.tx|short}}`](https://creditcoin-testnet.blockscout.com/tx/{{.refutation.tx}}) · paid {{.refutation.paidWei|tctc}} · burned {{.refutation.burnedWei|tctc}} |
+{{/each}}
+{{#each measured.board.chains.mainnet.rows where role=bounty}}| {{.claimId}} | bounty | {{.kind}} | {{.venue}} | {{.status}} | left open for anyone; the house hunter waits six days |
+{{/each}}
+{{#each measured.board.chains.mainnet.rows where role=complete,clean,borrower}}| {{.claimId}} | {{.role}} | {{.kind}} | {{.venue}} | {{.status}} | — |
+{{/each}}
 
-Lies left standing: **0**. True claims refuted: **0**. Every false claim is recorded with the
+Lies left standing: **{{measured.board.chains.mainnet.liesStanding}}**. True claims refuted: **{{measured.board.chains.mainnet.truthsRefuted}}**. Every false claim is recorded with the
 transaction that makes it false in [`board-v3-mainnet.json`](./contracts/test/fixtures/board-v3-mainnet.json), filed from a separate wallet
 from the hunter's. `node worker/src/hunter.ts --audit` re-scans every settled claim: a refuted one must still
 have a counterexample and a standing one must not.
 
-### The Sepolia board (11,430,257 – 11,692,400, two sealed spans)
+### The Sepolia board ({{measured.board.chains.sepolia.spanFrom|n}} – {{measured.board.chains.sepolia.spanTo|n}}, two sealed spans)
 
 The same event at Sepolia's own Aave V3 pool: a different file from any mainnet claim, because a claim's key includes its chain.
 
 | # | Role | Kind | Status | Refutation |
 |---|---|---|---|---|
-| 20 | lie | EmptySet | **Refuted** | [`0x85cf…120c`](https://creditcoin-testnet.blockscout.com/tx/0x85cf5d96567370f099ac6864868d02edee5ef04df9644e657974ce2b748c120c) · paid 1.00 · burned 1.00 |
-| 21 | lie | EmptySet | **Refuted** | [`0x07bf…c419`](https://creditcoin-testnet.blockscout.com/tx/0x07bf40fd7c8351a44e9228366b3027e2492decb41367fea9bb180da5ec5bc419) · paid 1.00 · burned 1.00 |
-| 22 | complete | CompleteSet, 5 members | Open | — |
+{{#each measured.board.chains.sepolia.rows where role=lie}}| {{.claimId}} | {{.role}} | {{.kind}} | **{{.status}}** | [`{{.refutation.tx|short}}`](https://creditcoin-testnet.blockscout.com/tx/{{.refutation.tx}}) · paid {{.refutation.paidWei|tctc}} · burned {{.refutation.burnedWei|tctc}} |
+{{/each}}
+{{#each measured.board.chains.sepolia.rows where role=complete}}| {{.claimId}} | {{.role}} | {{.kind}}, {{.members}} members | {{.status}} | — |
+{{/each}}
 
-The last audit (2026-09-13T08:02:41.259Z) re-scanned **20** claims, 16 of them settled: **0** inconsistent, 0 unscannable.
+The last audit ({{measured.board.audit.at}}) re-scanned **{{measured.board.audit.claims}}** claims, {{measured.board.audit.settled}} of them settled: **{{measured.board.audit.inconsistent}}** inconsistent, {{measured.board.audit.unscannable}} unscannable.
 
 ### The desk's transactions
 
 | What | Policy | Outcome | Gas | Transaction |
 |---|---|---|---|---|
-| own claim still open | 1 | `ClaimUnderHunt` · receipt status 0 | 7,041,506 | [`0x77f6…a0ff`](https://creditcoin-testnet.blockscout.com/tx/0x77f6188007a9d59e585db1a25954bd369be2f8e2c35fe8a474b262212dcda0ff) |
-| bonded-clean: a standing 4 tCTC claim covering 91 days | 1 | `Lent` · receipt status 1 | 7,089,575 | [`0x37e2…a07b`](https://creditcoin-testnet.blockscout.com/tx/0x37e22fb0e1467799e7def88a9c1c39508eaf630b3652b76b9dab4b965bd4a07b) |
-| blank file | 0 | `Lent` · receipt status 1 | 7,070,489 | [`0x9935…8e16`](https://creditcoin-testnet.blockscout.com/tx/0x993526fda92b018fcd55337fc5692d6b2edb0363d73c6eaae404f592cb318e16) |
-| a second loan under the same policy | 1 | `AlreadyLent` · receipt status 0 | 78,582 | [`0x4137…56ce`](https://creditcoin-testnet.blockscout.com/tx/0x4137262d863081baa55434a77d2a41597ae61d847ebf38a1f94d1ad0c70656ce) |
+{{#each measured.desk.transactions where kind=borrow}}| {{.label}} | {{.policyId}} | `{{.reason}}` · receipt status {{.status}} | {{.gasUsed|n}} | [`{{.tx|short}}`](https://creditcoin-testnet.blockscout.com/tx/{{.tx}}) |
+{{/each}}
 
 A refusal about a real liquidated borrower is shown by `assess(subject, …)`, the same predicate `borrow()` gates
 on, because the desk only ever pays `msg.sender` and nobody here holds those borrowers' keys. The wallet that
@@ -88,7 +73,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 
 | Claim | Evidence |
 |---|---|
-| The code does what this file says | **147** `forge test` cases, **27** of them fuzz properties at 256 runs each |
+| The code does what this file says | **{{static.forgeTests}}** `forge test` cases, **{{static.fuzzTests}}** of them fuzz properties at 256 runs each |
 | The hosted prover is replaceable for Merkle paths | `worker/src/local-proof.ts` rebuilds a block from a public Ethereum node; root and every sibling with its direction bit are byte-identical to the prover's. The home page does the same in the browser and sends the prover nothing |
 | Empty blocks were the product limit, and are not now | `test_emptyBlockIsMirroredAndSealCrossesIt`, `test_zeroRootHeldDoesNotLookUnheld`, and a fuzz of the word-wise contiguity check against a per-height reference |
 | A listed member must be real, and the omitted one refutes | `testFuzz_completeSetRefutedByOmittedMember` over six real clustered Aave liquidations; fabricated, out-of-order, duplicated and out-of-span members are refused at assertion |
@@ -106,7 +91,7 @@ the `BondedClean` mechanism, not a vetted stranger.
 | A claim in **`Standing`** | Nobody refuted it within its window, over a gap-free sealed range, while `enforceableLoss` was at risk. **Not** that the event never happened |
 | `isUsable(claimId, exposure)` | Standing, and the burned half of the bond is at least `exposure`. Size reliance against what a liar cannot recover, not the headline bond |
 | The desk's refusal | `ProvenLiar` and `EventOnRecord` rest on transactions verified against held roots inside the policy's window. `ClaimUnderHunt` means an open claim exists. `BlankFile` is the default and does not treat silence as innocence; `BondedClean` needs a standing no-event claim covering the whole window, ending within a week of the head |
-| Bounties are worth hunting | refutations on this board cost **448,294–4,046,311 gas** each, against bonds of 2–3 tCTC of which half is paid out. An incentive argument, not a proof |
+| Bounties are worth hunting | refutations on this board cost **{{measured.board.refutationGas.min|n}}–{{measured.board.refutationGas.max|n}} gas** each, against bonds of 2–3 tCTC of which half is paid out. An incentive argument, not a proof |
 | Commit–reveal defeats bounty theft | the commitment binds `msg.sender`. Not audited, and not proof against a validator who reorders or censors |
 
 ## Trust assumptions we keep, deliberately
@@ -132,7 +117,7 @@ the `BondedClean` mechanism, not a vetted stranger.
   (190 logs against 0).
 - **The prover's archiver would not serve 25,186,001 – 25,187,000.** Every window touching it failed with
   `failed to get roots from archiver`, across strides of 900 and 500. The mainnet archive therefore has one hole,
-  below the unbroken run: 2 runs, 15,299 heights unheld inside the range. Nothing above it is affected.
+  below the unbroken run: {{measured.chains.3.runs}} runs, {{measured.chains.3.unheldInRange|n}} heights unheld inside the range. Nothing above it is affected.
 - **Unpaced campaign workers congest a shared testnet.** Four workers sending 21M-gas calls pushed CC3's base fee
   from 0.5 to 6.7 gwei. Every worker now pauses above 1.5 gwei.
 - **Counting concurrent writes by before/after totals is wrong.** It credited one call with every other worker's
@@ -155,10 +140,10 @@ the `BondedClean` mechanism, not a vetted stranger.
 
 ## v1, kept as history
 
-The first mirror, [`0x4Bc1…e2AB`](https://creditcoin-testnet.blockscout.com/address/0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB), held
-**100,801** heights of which **100,777** were answerable: its zero-root sentinel could not tell an empty block from a
-missing one, cutting the archive into **25** runs with a longest of **18,443** blocks. Its registry held
-36 claims, 10 of them refuted by the hunter. Mirror v2 exists because of those numbers. Every v1
+The first mirror, [`{{contracts.v1.EthereumMirror|short}}`](https://creditcoin-testnet.blockscout.com/address/{{contracts.v1.EthereumMirror}}), held
+**{{measured.v1.heightsRetained|n}}** heights of which **{{measured.v1.heightsAnswerable|n}}** were answerable: its zero-root sentinel could not tell an empty block from a
+missing one, cutting the archive into **{{measured.v1.contiguousRuns}}** runs with a longest of **{{measured.v1.longestRunBlocks|n}}** blocks. Its registry held
+{{measured.v1.claimsTotal}} claims, {{measured.v1.claimsRefuted}} of them refuted by the hunter. Mirror v2 exists because of those numbers. Every v1
 contract stays on-chain; nothing was migrated in place.
 
 ## Not claimed

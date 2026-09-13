@@ -1,0 +1,431 @@
+{
+ "claims": [
+  {
+   "claimId": 0,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789358340,
+   "assertTx": "0xf50261c7bfd2fb62bd508ed8d225345c473b1a0b684a45142dd02e0bda05288d",
+   "gasUsed": 376766,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0xfcdbe42aab031f78bbd55ab554d994139b34196a26eda941bfebb086153cf34b",
+    "block": 25318249
+   }
+  },
+  {
+   "claimId": 1,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789358355,
+   "assertTx": "0x087cf45f279f30c73a94f4e1ff6b3439b3a7eda71fe3f515d18d8d3a6f20cc28",
+   "gasUsed": 362466,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0xcd86dc678e71628d47d010f91d2a9125600384b21d121d21adb5916558676c32",
+    "block": 25422803
+   }
+  },
+  {
+   "claimId": 2,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789358370,
+   "assertTx": "0x3ee308e3f7c4feaaf5e5769988ff45c55b419df09cf2181aac1e09c5853c4ff6",
+   "gasUsed": 362466,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0x0b72a88d608eef24709baca41c724402e1b47c7e37e49cc764b5b2d2868c950b",
+    "block": 25797699
+   }
+  },
+  {
+   "claimId": 3,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+   "venueLabel": "Morpho Blue · Liquidate",
+   "topic0": "0xa4946ede45d0c6f06a0f5ce92c9ad3b4751452d2fe0e25010783bcab57a67e41",
+   "subjectTopic": 3,
+   "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789358385,
+   "assertTx": "0xb0184985a5097ac02423e4ba0d6eb0eed71437f2b3e8a9f9dcd305adb3c4ef35",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0x1fbed6b69ddfba67a86ceeef89e077e0bcd7b1968ccb952c68620fe78a9910e7",
+    "block": 25314767
+   }
+  },
+  {
+   "claimId": 4,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+   "venueLabel": "Morpho Blue · Liquidate",
+   "topic0": "0xa4946ede45d0c6f06a0f5ce92c9ad3b4751452d2fe0e25010783bcab57a67e41",
+   "subjectTopic": 3,
+   "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789358400,
+   "assertTx": "0x0d1bce7fa40248ccd1e345e852876713b9a978cf37c66952849c44ef5a3d1c4e",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0xb3ccde9da9c9e36c2d03df8bf53d7964912761e55b2709257a90cae395d7a9c3",
+    "block": 25397982
+   }
+  },
+  {
+   "claimId": 5,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+   "venueLabel": "Compound V3 · AbsorbDebt",
+   "topic0": "0x1547a878dc89ad3c367b6338b4be6a65a5dd74fb77ae044da1e8747ef1f4f62f",
+   "subjectTopic": 2,
+   "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789358415,
+   "assertTx": "0xfab69deed519a662074a1a7ef3ac14921c76d26390150e605b0ca9d96eae679e",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0x57bc46e6db661e06c09969151c194aa09da7057bbbf08a44f58d8cf95b269bfb",
+    "block": 25389054
+   }
+  },
+  {
+   "claimId": 6,
+   "role": "bounty",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0xf330b5fe72e91d1a3782e65eed876cf3624c7802",
+   "bond": "3000000000000000000",
+   "windowSeconds": 604800,
+   "openUntil": 1789876830,
+   "assertTx": "0xf0f66073b1d0b8684e23d38663ea8a1dcabbc5b52c9e5cbf6361e20cf24fe311",
+   "gasUsed": 362466,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0xfcdbe42aab031f78bbd55ab554d994139b34196a26eda941bfebb086153cf34b",
+    "block": 25318249
+   }
+  },
+  {
+   "claimId": 7,
+   "role": "bounty",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x494fe899f16a71391be9ebc6a5146a132f963806",
+   "bond": "3000000000000000000",
+   "windowSeconds": 604800,
+   "openUntil": 1789876845,
+   "assertTx": "0x775b4c1f1a716e78ce7b1b195a7a4859a4a127e2051cb909c77c61991c57f3fc",
+   "gasUsed": 362466,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0x4c9cc1d7023b4835a588df6e928058ff7fc939890d2d118bccd521836d7cc70b",
+    "block": 25521512
+   }
+  },
+  {
+   "claimId": 8,
+   "role": "bounty",
+   "kind": "EmptySet",
+   "venue": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+   "venueLabel": "Morpho Blue · Liquidate",
+   "topic0": "0xa4946ede45d0c6f06a0f5ce92c9ad3b4751452d2fe0e25010783bcab57a67e41",
+   "subjectTopic": 3,
+   "subject": "0x537ab709b03c5c7623dbc2e92b632018e05f57d4",
+   "bond": "3000000000000000000",
+   "windowSeconds": 604800,
+   "openUntil": 1789876860,
+   "assertTx": "0x08167629655f3df718c451674914440eaacf2bf4a263ec5ebfb99471c91930e5",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0xecf941d02f7f443ef9556fbc7766b905b47e778641dac0b7e9f5e1db5483556a",
+    "block": 25318057
+   }
+  },
+  {
+   "claimId": 9,
+   "role": "bounty",
+   "kind": "EmptySet",
+   "venue": "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+   "venueLabel": "Compound V3 · AbsorbDebt",
+   "topic0": "0x1547a878dc89ad3c367b6338b4be6a65a5dd74fb77ae044da1e8747ef1f4f62f",
+   "subjectTopic": 2,
+   "subject": "0x6aaa5ea1953418cd8eac45b8fdf179e0a783fa7c",
+   "bond": "3000000000000000000",
+   "windowSeconds": 604800,
+   "openUntil": 1789876875,
+   "assertTx": "0xf56143238603d7a8d15979a2e5d3a42192a14f9e178c9ee0360f91e1aa600c33",
+   "gasUsed": 362478,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0x84ba430544c34243d5ca55a8e6724d1992b4287dd7e798db38641c0d462339fd",
+    "block": 25395068
+   }
+  },
+  {
+   "claimId": 10,
+   "role": "omission",
+   "kind": "CompleteSet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789358535,
+   "assertTx": "0xdedb89c5afde6031a0168b9551c181378a9decd9f22f9b93a1bd1e0ce78f4c72",
+   "gasUsed": 1359468,
+   "matchingLogsInRange": 4,
+   "members": [
+    {
+     "height": 25345424,
+     "txIndex": 1,
+     "logIndex": 14,
+     "txHash": "0x9cccdc8606b67a12bd5b4b05bbca7f7bd8c3ce8d4d5f5c720e4f6be06a18c9f1"
+    },
+    {
+     "height": 25378496,
+     "txIndex": 1,
+     "logIndex": 13,
+     "txHash": "0xd96307d5c6f5b50ac51a49a440641ae21530a207e77728c9a5bc2e32924fc38e"
+    },
+    {
+     "height": 25398749,
+     "txIndex": 44,
+     "logIndex": 15,
+     "txHash": "0xc26255e081ba9a1ada3914a408120f7ac89e0b22d6728a15705084782289c5dd"
+    }
+   ],
+   "omitted": {
+    "txHash": "0xcf3561378997180976045c1e0347e319daf51bb34353d2ba6df657745edd9d0c",
+    "block": 25395050
+   }
+  },
+  {
+   "claimId": 11,
+   "role": "omission",
+   "kind": "CompleteSet",
+   "venue": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+   "venueLabel": "Morpho Blue · Liquidate",
+   "topic0": "0xa4946ede45d0c6f06a0f5ce92c9ad3b4751452d2fe0e25010783bcab57a67e41",
+   "subjectTopic": 3,
+   "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789358565,
+   "assertTx": "0x0c0e9b07c8f0b514d74198a633c19ecec394436c756afd779765351f8d182c70",
+   "gasUsed": 590073,
+   "matchingLogsInRange": 2,
+   "members": [
+    {
+     "height": 25318908,
+     "txIndex": 247,
+     "logIndex": 4,
+     "txHash": "0x6b4f66b7942d658b57ef25890fd751a9c4e20c740f5b9c2facbc24d0f87c6014"
+    }
+   ],
+   "omitted": {
+    "txHash": "0x35b324e15067e80e793de5b31d1edc104f627ce80f5a515e6c97473d9b530795",
+    "block": 25436138
+   }
+  },
+  {
+   "claimId": 12,
+   "role": "complete",
+   "kind": "CompleteSet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
+   "bond": "1000000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789275810,
+   "assertTx": "0x4cb41bb2c506981f5af821cf3cd67edaac315bc4d7a969d928114a1e8113e905",
+   "gasUsed": 929448,
+   "matchingLogsInRange": 2,
+   "members": [
+    {
+     "height": 25320161,
+     "txIndex": 151,
+     "logIndex": 13,
+     "txHash": "0x097b932ef819fd67a0c0b64787680b79aec420f0b0df6fdfe32ca3beab4225f9"
+    },
+    {
+     "height": 25868099,
+     "txIndex": 197,
+     "logIndex": 14,
+     "txHash": "0x738c332fdc9b7024868036b70b1abf9004dece0585516da3388d5d1703dffbde"
+    }
+   ]
+  },
+  {
+   "claimId": 13,
+   "role": "clean",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+   "bond": "500000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789275825,
+   "assertTx": "0x399a4f1e8d2e53023828bfeba2197acf53ac6b9a4a10a016004213f8bfa26b48",
+   "gasUsed": 362454,
+   "matchingLogsInRange": 0
+  },
+  {
+   "claimId": 14,
+   "role": "clean",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+   "bond": "500000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789275840,
+   "assertTx": "0xffcb5b67164831b20581599f912fa79b3099547d868c76a01ab27a52e8e63ad6",
+   "gasUsed": 362454,
+   "matchingLogsInRange": 0
+  },
+  {
+   "claimId": 15,
+   "role": "clean",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+   "bond": "500000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789275855,
+   "assertTx": "0xbb0e6df4356c2c737067da4ce41ee3460dd46e42f0b9f9ffcd833c6cca9b9b49",
+   "gasUsed": 362454,
+   "matchingLogsInRange": 0
+  },
+  {
+   "claimId": 16,
+   "role": "clean",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x23eac85727069d0d3e43bd4c03d9235d81f9b387",
+   "bond": "500000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789275870,
+   "assertTx": "0x5c28151fb23d26e19bfd1efdf27a9925a3f6831699534e60196dddbcadcd4a24",
+   "gasUsed": 362454,
+   "matchingLogsInRange": 0
+  },
+  {
+   "claimId": 17,
+   "role": "clean",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x5d91aea302976d2a405e872638eda95b373e788f",
+   "bond": "500000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789275885,
+   "assertTx": "0x550bfadaddc080d5730b57079f494718d4a7afc3662901a82d9d699125e2bde3",
+   "gasUsed": 362454,
+   "matchingLogsInRange": 0
+  },
+  {
+   "claimId": 18,
+   "role": "clean",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x76f30e3f75437fb862b8d2c4d80a671bceba5b1a",
+   "bond": "500000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789275900,
+   "assertTx": "0x460e220fc875b1ba075a67818acc6585f34509a82df5a85990a622aa2e606503",
+   "gasUsed": 362454,
+   "matchingLogsInRange": 0
+  },
+  {
+   "claimId": 19,
+   "role": "borrower",
+   "kind": "EmptySet",
+   "venue": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+   "venueLabel": "Aave V3 · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x30e60eb0300b869d1323cdd75910c6105ada0c97",
+   "bond": "4000000000000000000",
+   "windowSeconds": 900,
+   "openUntil": 1789273215,
+   "assertTx": "0x737b5b29e6822f52f0ed389a97c030687b2999ac660c3e6e49d1daee3bc1c418",
+   "gasUsed": 362454,
+   "matchingLogsInRange": 0
+  }
+ ],
+ "registry": "0x05844C991993F3d80fAf196e10355B12BE648e40",
+ "chainKey": 3,
+ "spanIds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "spanFrom": 25309541,
+ "spanTo": 25964900,
+ "scannedWith": [
+  "gateway.tenderly.co",
+  "rpc.mevblocker.io",
+  "rpc.flashbots.net",
+  "ethereum-rpc.publicnode.com"
+ ]
+}

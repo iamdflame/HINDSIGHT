@@ -7,7 +7,7 @@ Every Attestcoin query already proves a run of Ethereum block roots — the cont
 throws them away. Hindsight keeps them. After that, proving any other transaction in those blocks is a
 `view` call on Creditcoin: no prover, no `0x0FD2`, no wallet.
 
-**Live: [https://hindsight-cache.vercel.app](https://hindsight-cache.vercel.app)** · the grading of every claim below: [CLAIMS.md](./CLAIMS.md)
+**Live: [{{site}}]({{site}})** · the grading of every claim below: [CLAIMS.md](./CLAIMS.md)
 
 ---
 
@@ -17,19 +17,19 @@ A continuity proof is the chain of transaction roots from the block you ask abou
 height. The precompile verifies the whole chain — so its acceptance binds *every* root in it — and the
 call returns, and the roots are gone. The next contract that asks about a different transaction in the
 same block pays for the same continuity again. The deeper the block, the longer the chain: measured on
-the live prover, 1 root for a fresh block, 41 for a day-old one, **841** for a block 180 days old.
+the live prover, {{measured.continuityByAge.rows.0.roots}} root for a fresh block, {{measured.continuityByAge.rows.1.roots}} for a day-old one, **{{measured.continuityByAge.rows.5.roots}}** for a block 180 days old.
 Every dApp pays that, every time.
 
 ## The number
 
 | | Ethereum mainnet (`chainKey 3`) | Sepolia (`chainKey 1`) |
 |---|---|---|
-| Heights held on Creditcoin | **780,302** | **298,801** |
-| Unbroken run ending at the top | **779,401** blocks ≈ **108.3 days** (25,187,300 – 25,966,700) | **298,801** blocks ≈ **41.5 days** |
-| Empty Ethereum blocks inside, held like any other | 243 | 32 |
-| `mirror()` calls that added heights | 899 | 332 |
-| Gas per newly held height (median) | **23,596** | 23,594 |
-| Most roots retained by one call | **901** | 901 |
+| Heights held on Creditcoin | **{{measured.chains.3.held|n}}** | **{{measured.chains.1.held|n}}** |
+| Unbroken run ending at the top | **{{measured.chains.3.topRun|n}}** blocks ≈ **{{measured.chains.3.topRunDays|days}} days** ({{measured.chains.3.topRunFrom|n}} – {{measured.chains.3.highest|n}}) | **{{measured.chains.1.topRun|n}}** blocks ≈ **{{measured.chains.1.topRunDays|days}} days** |
+| Empty Ethereum blocks inside, held like any other | {{measured.chains.3.emptyBlocks|n}} | {{measured.chains.1.emptyBlocks|n}} |
+| `mirror()` calls that added heights | {{measured.chains.3.mirrorCalls|n}} | {{measured.chains.1.mirrorCalls|n}} |
+| Gas per newly held height (median) | **{{measured.chains.3.gasPerNewRoot.median|n}}** | {{measured.chains.1.gasPerNewRoot.median|n}} |
+| Most roots retained by one call | **{{measured.chains.3.widestCall.roots|n}}** | {{measured.chains.1.widestCall.roots|n}} |
 
 Verifying a second transaction in any of those blocks: a `view` call. Zero gas off-chain.
 
@@ -44,20 +44,20 @@ archive — never one whose own transaction was submitted to notarise it:
 3. The control: the same call with the **mirror** deleted instead. It fails — so the node really applies
    overrides, and the answer really came from roots Creditcoin holds.
 
-Measured and recorded by `measure.ts`: transaction index **131** of block
-25,954,574 — a block notarised through index 263 — verifies as
-**131** plainly and **131** with the precompile gone.
+Measured and recorded by `measure.ts`: transaction index **{{measured.acceptance.secondTransaction.expectedIndex}}** of block
+{{measured.acceptance.secondTransaction.block|n}} — a block notarised through index {{measured.acceptance.secondTransaction.notarisedWithIndex}} — verifies as
+**{{measured.acceptance.secondTransaction.plain.txIndex}}** plainly and **{{measured.acceptance.secondTransaction.precompileBlanked.txIndex}}** with the precompile gone.
 
 **Five minutes, no key, no `.env`:**
 
 | Time | Do this | You should see |
 |---|---|---|
-| 30 s | open [https://hindsight-cache.vercel.app](https://hindsight-cache.vercel.app) | four rows settle — verified, verified with `0x0FD2` deleted, control refused, forged path refused — and the stamp |
+| 30 s | open [{{site}}]({{site}}) | four rows settle — verified, verified with `0x0FD2` deleted, control refused, forged path refused — and the stamp |
 | 1 min | `npx github:iamdflame/HINDSIGHT verify 0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9` | `verified` · `tx index  : 131` · `source : rebuilt locally (no prover)` · `precompile: not called` |
-| 2 min | `cd contracts && forge test` | **147** tests, **27** of them fuzz properties, including the precompile etched to empty |
+| 2 min | `cd contracts && forge test` | **{{static.forgeTests}}** tests, **{{static.fuzzTests}}** of them fuzz properties, including the precompile etched to empty |
 | 5 min | `cd worker && node src/differential.ts --limit 12` | the mirror and the live precompile accept and reject exactly the same inputs |
 
-The full differential: **2,684 checks over 122 real mainnet transactions, 0 divergences** ([transcript](./docs/transcripts/differential-2026-09-13T03-50-16.md)).
+The full differential: **{{measured.differential.checks|n}} checks over {{measured.differential.fixtures}} real mainnet transactions, {{measured.differential.divergences}} divergences** ([transcript](./{{measured.differential.transcript}})).
 
 ## Negatives — economic, and labelled so
 
@@ -73,10 +73,10 @@ Refutation is commit–reveal, bound to the refuter's address. **Half the bond g
 is burned**, so a liar who refutes themselves from a second wallet still loses half. Consumers size against
 `enforceableLoss` — that burned half — through `isUsable(claimId, exposure)`.
 
-The board on mainnet covers **25,309,541 – 25,964,900**, five sealed spans, ninety-one days.
-It holds 20 claims about real Aave V3, Morpho Blue and Compound V3 borrowers; the ones that are
+The board on mainnet covers **{{measured.board.chains.mainnet.spanFrom|n}} – {{measured.board.chains.mainnet.spanTo|n}}**, five sealed spans, ninety-one days.
+It holds {{measured.board.chains.mainnet.claims}} claims about real Aave V3, Morpho Blue and Compound V3 borrowers; the ones that are
 false are recorded in [`board-v3-mainnet.json`](./contracts/test/fixtures/board-v3-mainnet.json) with the transaction that makes each false.
-10 refutations so far, **10.00 tCTC burned**. A standing claim means nobody refuted it in its window while
+{{measured.board.refutations}} refutations so far, **{{measured.board.burnedWei|tctc}} tCTC burned**. A standing claim means nobody refuted it in its window while
 that much was at risk — never that it is true.
 
 ## The desk — a refusal, not a score
@@ -84,10 +84,10 @@ that much was at risk — never that it is true.
 `UnderwritingDesk` reads the archive and the board and either pays or refuses with a reason: `ArchiveTooShallow`,
 `ProvenLiar`, `EventOnRecord`, `ClaimUnderHunt`, `NoBondedCleanliness`, `AlreadyLent`. Its policies look
 back **648,000 blocks — ninety days — and refuse outright unless every one of those heights is held.** On
-the live desk that check passes today: BlankFile policy 0 answers `None` for an address nothing is on file about.
+the live desk that check passes today: {{measured.desk.ninetyDay.0.kind}} policy {{measured.desk.ninetyDay.0.policy}} answers `{{measured.desk.ninetyDay.0.reason}}` for an address nothing is on file about.
 
 Nothing is minted, nothing is transferable, and there is no number. Assess any address, no wallet:
-[https://hindsight-cache.vercel.app/assess/](https://hindsight-cache.vercel.app/assess/).
+[{{site}}/assess/]({{site}}/assess/).
 
 ## Enshrine it
 
@@ -107,11 +107,11 @@ either drifts from the chain.
 
 | | |
 |---|---|
-| `EthereumMirror` v2 — `IMirror` | [`0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118`](https://creditcoin-testnet.blockscout.com/address/0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118) |
-| `AbsenceRegistryV3` — `IAbsence`, `IAbsenceV3` | [`0x05844C991993F3d80fAf196e10355B12BE648e40`](https://creditcoin-testnet.blockscout.com/address/0x05844C991993F3d80fAf196e10355B12BE648e40) |
-| `UnderwritingDesk` | [`0xC576E330400ce4D031daB3b9c2dA2423211B6e25`](https://creditcoin-testnet.blockscout.com/address/0xC576E330400ce4D031daB3b9c2dA2423211B6e25) |
-| `MissingHeightBounty` | [`0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d`](https://creditcoin-testnet.blockscout.com/address/0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d) |
-| A consumer in another repository | [`hindsight-gate`](https://github.com/iamdflame/hindsight-gate) at [`0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254) — same GitHub owner, interfaces only |
+| `EthereumMirror` v2 — `IMirror` | [`{{contracts.EthereumMirror}}`](https://creditcoin-testnet.blockscout.com/address/{{contracts.EthereumMirror}}) |
+| `AbsenceRegistryV3` — `IAbsence`, `IAbsenceV3` | [`{{contracts.AbsenceRegistryV3}}`](https://creditcoin-testnet.blockscout.com/address/{{contracts.AbsenceRegistryV3}}) |
+| `UnderwritingDesk` | [`{{contracts.UnderwritingDesk}}`](https://creditcoin-testnet.blockscout.com/address/{{contracts.UnderwritingDesk}}) |
+| `MissingHeightBounty` | [`{{contracts.MissingHeightBounty}}`](https://creditcoin-testnet.blockscout.com/address/{{contracts.MissingHeightBounty}}) |
+| A consumer in another repository | [`hindsight-gate`]({{external.hindsightGate.repository}}) at [`{{external.hindsightGate.address}}`](https://creditcoin-testnet.blockscout.com/address/{{external.hindsightGate.address}}) — same GitHub owner, interfaces only |
 
 Superseded deployments, and why each was replaced, are kept in `deployments.json`.
 

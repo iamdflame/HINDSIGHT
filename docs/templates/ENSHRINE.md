@@ -25,16 +25,12 @@ re-verify the same continuity all over again.
 
 ## 2. What it costs today
 
-Measured against the live CC3 testnet prover's single-transaction endpoint, 2026-09-13T08:05:44.642Z, `chainKey 3`:
+Measured against the live CC3 testnet prover's single-transaction endpoint, {{measured.continuityByAge.at}}, `chainKey 3`:
 
 | Age of the queried block | Continuity roots returned |
 |---|---|
-| fresh (head − 50) | **1** |
-| 24 hours | **41** |
-| 7 days | **41** |
-| 30 days | **41** |
-| 90 days | **41** |
-| 180 days | **841** |
+{{#each measured.continuityByAge.rows}}| {{.label}} | **{{.roots}}** |
+{{/each}}
 
 The count is the distance from the queried height up to the next endpoint above it, and endpoints thin out
 with depth — so a block half a year old costs hundreds of hashes of continuity to ask one question, and that
@@ -66,11 +62,11 @@ Measured on CC3 testnet (every figure read from chain state by `worker/src/measu
 
 | | Value |
 |---|---|
-| Gas per newly held height | **23,596** median (23,492–27,232) |
-| Roots kept by one `mirror()` call | up to **901** |
-| Mainnet heights held | **780,302**; the unbroken run ending at the top is 779,401 blocks ≈ 108.3 days |
-| Sepolia heights held | **298,801**, one unbroken run |
-| Empty blocks held among them | 243 mainnet, 32 Sepolia |
+| Gas per newly held height | **{{measured.chains.3.gasPerNewRoot.median|n}}** median ({{measured.chains.3.gasPerNewRoot.min|n}}–{{measured.chains.3.gasPerNewRoot.max|n}}) |
+| Roots kept by one `mirror()` call | up to **{{measured.chains.3.widestCall.roots|n}}** |
+| Mainnet heights held | **{{measured.chains.3.held|n}}**; the unbroken run ending at the top is {{measured.chains.3.topRun|n}} blocks ≈ {{measured.chains.3.topRunDays|days}} days |
+| Sepolia heights held | **{{measured.chains.1.held|n}}**, one unbroken run |
+| Empty blocks held among them | {{measured.chains.3.emptyBlocks|n}} mainnet, {{measured.chains.1.emptyBlocks|n}} Sepolia |
 | Verifying a transaction against a held root | `view` call, no continuity, no prover, no `0x0FD2` |
 
 ## 4. The part worth your attention
@@ -82,14 +78,14 @@ against live chain state, because your RPC honours `eth_call` state overrides:
 ```bash
 # verifyOrRevert against a held root, with the block-prover precompile deleted for the call
 curl -s $CC_RPC -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[
-  {"to":"0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118","data":"0x…"},
+  {"to":"{{contracts.EthereumMirror}}","data":"0x…"},
   "latest",
   {"0x0000000000000000000000000000000000000FD2":{"code":"0x"}}]}'
 ```
 
 It returns the transaction index. Blanking the *mirror* instead makes the same call return empty,
 which is how we know the override is applied rather than ignored. Both run on the home page of
-[https://hindsight-cache.vercel.app](https://hindsight-cache.vercel.app) as it loads, against a block no transaction of which was submitted to notarise it.
+[{{site}}]({{site}}) as it loads, against a block no transaction of which was submitted to notarise it.
 
 ## 5. What we think the protocol should do
 
@@ -134,7 +130,7 @@ No `.env` beyond public RPC URLs is needed for anything that does not spend gas.
 
 ---
 
-*Contracts on CC3 testnet — `EthereumMirror` `0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118`, `AbsenceRegistryV3`
-`0x05844C991993F3d80fAf196e10355B12BE648e40`. Both ownerless and verified on Blockscout.*
+*Contracts on CC3 testnet — `EthereumMirror` `{{contracts.EthereumMirror}}`, `AbsenceRegistryV3`
+`{{contracts.AbsenceRegistryV3}}`. Both ownerless and verified on Blockscout.*
 
 We would rather help you build B than be the reason it is not needed.

@@ -13,17 +13,13 @@ An Attestcoin query pays for continuity: the chain of block roots from the queri
 attested or checkpointed height above it. A query against an already-notarised height pays for none of it.
 
 Continuity roots returned by the live prover's single-transaction endpoint — the one every integration
-uses — for the first transaction of a block at each age (**measured** 2026-09-13T08:05:44.642Z, attested head
-25,967,160):
+uses — for the first transaction of a block at each age (**measured** {{measured.continuityByAge.at}}, attested head
+{{measured.continuityByAge.attestedHead|n}}):
 
 | Age of block | Block | Roots in the continuity proof |
 |---|---|---|
-| fresh (head − 50) | 25,967,110 | **1** |
-| 24 hours | 25,959,960 | **41** |
-| 7 days | 25,916,760 | **41** |
-| 30 days | 25,751,160 | **41** |
-| 90 days | 25,319,160 | **41** |
-| 180 days | 24,671,160 | **841** |
+{{#each measured.continuityByAge.rows}}| {{.label}} | {{.block|n}} | **{{.roots}}** |
+{{/each}}
 
 The count is the distance to the next endpoint above the block, so it depends on where the block sits
 between checkpoints as well as on its age — and endpoints thin out with depth. Every asker pays it again.
@@ -33,14 +29,14 @@ Against a held root it is zero, permanently.
 
 | | Value | How we know |
 |---|---|---|
-| Gas per newly held height | 23,492 – 27,232, median 23,596 | measured from 834 mainnet `mirror()` receipts |
-| Roots retained in one `mirror()` call | up to 901 | measured on-chain |
-| Proving 131,072 heights gap-free | 1,280,230 gas | measured on-chain |
-| Merkle hashing only, verifying against a held root | 6,228 | measured in Foundry against Mirror v1; v2's verification path differs by one bitmap read |
-| A real on-chain `verifyOrRevert` for a 7.6 KB transaction | 217,664 | measured on-chain against Mirror v1 — **calldata dominates** |
+| Gas per newly held height | {{measured.chains.3.gasPerNewRoot.min|n}} – {{measured.chains.3.gasPerNewRoot.max|n}}, median {{measured.chains.3.gasPerNewRoot.median|n}} | measured from {{measured.chains.3.gasPerNewRoot.calls|n}} mainnet `mirror()` receipts |
+| Roots retained in one `mirror()` call | up to {{measured.chains.3.widestCall.roots|n}} | measured on-chain |
+| Proving {{measured.acceptance.sealing.widest|n}} heights gap-free | {{measured.acceptance.sealing.gasForWidest|n}} gas | measured on-chain |
+| Merkle hashing only, verifying against a held root | {{measured.v1.gasMerkleHashingOnly|n}} | measured in Foundry against Mirror v1; v2's verification path differs by one bitmap read |
+| A real on-chain `verifyOrRevert` for a 7.6 KB transaction | {{measured.v1.gasVerifyOnChainCall_7_6KB_tx|n}} | measured on-chain against Mirror v1 — **calldata dominates** |
 | Reading via `eth_call` (no transaction) | free | `view` |
 
-**The last three belong together.** Quoting 6,228 alone is misleading: it is the hashing, not the call.
+**The last three belong together.** Quoting {{measured.v1.gasMerkleHashingOnly|n}} alone is misleading: it is the hashing, not the call.
 For a large transaction submitted on-chain, calldata is the real cost. For the ordinary case — a dApp
 reading through `eth_call` — there is no gas at all.
 

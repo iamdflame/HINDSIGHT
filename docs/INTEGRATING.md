@@ -44,14 +44,23 @@ contract Gate {
     function wouldRely(uint256 claimId, uint256 exposure) external view returns (bool) {
         return ABSENCE.isUsable(claimId, exposure);
     }
+
+    function provenSince(address venue, bytes32 topic0, uint8 slot, address subject, uint64 sinceHeight)
+        external view returns (bool)
+    {
+        bytes32 key = ABSENCE.keyOf(ETHEREUM, venue, topic0, slot, bytes32(uint256(uint160(subject))));
+        (, uint32 refuted, uint64 lastEvidenceAt, uint64 lastMemberAt,) = ABSENCE.recordOf(key);
+        return (refuted != 0 && lastEvidenceAt >= sinceHeight) || (lastMemberAt != 0 && lastMemberAt >= sinceHeight);
+    }
 }
 ```
 
 Deployed from a fresh address at
-[`0x2363930C993cbF3449997cDCdF85007F9041F9dB`](https://creditcoin-testnet.blockscout.com/address/0x2363930C993cbF3449997cDCdF85007F9041F9dB)
+[`0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254`](https://creditcoin-testnet.blockscout.com/address/0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254)
 and verified on Blockscout. Its tests fork live CC3, verify a real Aave V3 liquidation, delete the
 precompile on the fork, and verify it again. Called on-chain with `0x0FD2` blanked by an `eth_call`
-state override, it returns position `263` for that liquidation.
+state override, it returns position `263` for that liquidation; with the mirror blanked instead, the
+same call reverts.
 
 It has the same GitHub owner as Hindsight. That is stated rather than hidden: what it proves is that the
 published interfaces are sufficient, not that a stranger chose to integrate.
@@ -73,6 +82,14 @@ if (!IAbsenceV3(REGISTRY).isUsable(claimId, principal)) revert NotEnoughAtStake(
 your exposure. A `Standing` claim is not a proof. It means nobody refuted it, in its window, while that
 much was at risk.
 
+**Read a claim through its whole key, never its subject alone.** A claim is about one chain, one venue,
+one event, one topic slot and one subject. "No `LiquidationCall` whose topic-1 is `0xabc`" is true of
+every borrower — topic 1 is the collateral asset — and a consumer that matched on the subject would
+accept it as a clean record. `keyOf(chainKey, venue, topic0, slot, subject)` names the file, and
+`recordOf(key)` returns its running totals: open claims, refutations and the highest height any
+refutation or listed event sits at. That is one read, whatever else is on the board; do not walk
+`claimCount()`, which anyone can inflate for a cent a claim.
+
 ## From a script or a server
 
 ```bash
@@ -92,8 +109,8 @@ const { mirrored, verified, txIndex } = await verify(txHash);
 | | CC3 testnet |
 |---|---|
 | `EthereumMirror` v2 (`IMirror`) | `0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118` |
-| `AbsenceRegistryV3` (`IAbsence`, `IAbsenceV3`) | `0xf0a24364C72dCCfaEfbc3CD10e2a4609De9BCc17` |
-| `UnderwritingDesk` | `0xC0B1039C529bAef479D497FAD30DE5fc9321fC44` |
+| `AbsenceRegistryV3` (`IAbsence`, `IAbsenceV3`) | `0x05844C991993F3d80fAf196e10355B12BE648e40` |
+| `UnderwritingDesk` | `0xC576E330400ce4D031daB3b9c2dA2423211B6e25` |
 | `MissingHeightBounty` | `0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d` |
 
 All ownerless. No pause. No upgrade path. The interface files never change; additions arrive as new

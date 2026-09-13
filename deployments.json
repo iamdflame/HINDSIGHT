@@ -3,17 +3,37 @@
   "chainId": 102031,
   "rpc": "https://rpc.cc3-testnet.creditcoin.network",
   "explorer": "https://creditcoin-testnet.blockscout.com",
-  "sourceChain": {
-    "name": "Ethereum Mainnet",
-    "attestcoinChainKey": 3,
-    "evmChainId": 1
-  },
+  "site": "https://hindsight-cache.vercel.app",
+  "repository": "https://github.com/iamdflame/HINDSIGHT",
+  "sourceChains": [
+    {
+      "name": "Ethereum Mainnet",
+      "attestcoinChainKey": 3,
+      "evmChainId": 1
+    },
+    {
+      "name": "Sepolia",
+      "attestcoinChainKey": 1,
+      "evmChainId": 11155111
+    }
+  ],
   "contracts": {
     "EthereumMirror": "0x2d8A4d5A34120FF9742d7a4dad37F4ff6335c118",
-    "AbsenceRegistry": "0x6CD4398974c464F0D782D0640DADb70d7910682d",
-    "AbsenceRegistryV2": "0x32d507DCC049A228831b7C23E4fe22A62db4E7b6",
-    "UnderwritingDesk": "0xC0B1039C529bAef479D497FAD30DE5fc9321fC44",
+    "AbsenceRegistryV3": "0x05844C991993F3d80fAf196e10355B12BE648e40",
+    "UnderwritingDesk": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
     "MissingHeightBounty": "0xdb2A1eEEbDEEfe35AA43D22a03B06Eda140f238d",
+    "superseded": {
+      "AbsenceRegistryV3@0xf0a24364": {
+        "address": "0xf0a24364C72dCCfaEfbc3CD10e2a4609De9BCc17",
+        "replacedBy": "0x05844C991993F3d80fAf196e10355B12BE648e40",
+        "reason": "v3.0 desk read claims by subject alone (a true claim about another topic slot, chain or kind counted as a clean record), walked every claim ever filed (512 junk claims switched it off), and checked archive depth by endpoints; v3.0 registry had no per-subject index and pushed bonds (a claimant rejecting payment kept its claim Open forever). Both had zero claims when replaced."
+      },
+      "UnderwritingDesk@0xC0B1039C": {
+        "address": "0xC0B1039C529bAef479D497FAD30DE5fc9321fC44",
+        "replacedBy": "0xC576E330400ce4D031daB3b9c2dA2423211B6e25",
+        "reason": "v3.0 desk read claims by subject alone (a true claim about another topic slot, chain or kind counted as a clean record), walked every claim ever filed (512 junk claims switched it off), and checked archive depth by endpoints; v3.0 registry had no per-subject index and pushed bonds (a claimant rejecting payment kept its claim Open forever). Both had zero claims when replaced."
+      }
+    },
     "v1": {
       "EthereumMirror": "0x4Bc16e89Beb350859aec04A55A5c2E197C06e2AB",
       "AbsenceRegistry": "0x6CD4398974c464F0D782D0640DADb70d7910682d",
@@ -22,77 +42,1184 @@
       "UnderwritingDesk_v1": "0x5C5D121C6A4c5bfC7C09eAdD1Fcc04F97F26Cc28",
       "MissingHeightBounty": "0x39c1527866a07E18BbBa889D849515d8E7e30042",
       "deployBlock": 5476398
-    },
-    "AbsenceRegistryV3": "0xf0a24364C72dCCfaEfbc3CD10e2a4609De9BCc17"
+    }
+  },
+  "external": {
+    "hindsightGate": {
+      "address": "0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254",
+      "repository": "https://github.com/iamdflame/hindsight-gate",
+      "deployer": "0x7fE23D93bDA4780e0596D7e64E7C54088d48BE85",
+      "note": "same GitHub owner as Hindsight; written against IMirror and IAbsenceV3 only"
+    }
   },
   "precompiles": {
     "BlockProver": "0x0000000000000000000000000000000000000FD2",
     "ChainInfo": "0x0000000000000000000000000000000000000FD3"
   },
-  "liveTransactions": {
-    "notarise99Blocks": "0xec14f91ab8ff517fd221aa383d0dde2eec19d2c05ca5b55e7a5cc150568a39e7",
-    "notarise27Blocks": "0x321635dc82c8246d9a6542c48ae6bca433d8023e3500349d8e7bc9bc8398c43d",
-    "refuteReveal": "0x39870a3e6ff0ff1a67b68ff5ae6f37bafb004749b2aaaf06e56c6cedf422a769"
-  },
-  "evidence": {
-    "aaveV3Pool": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
-    "liquidationTx": "0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61",
-    "liquidatedBorrower": "0xa63f5B1AcE5Ef4BcE91d3f12f31B8F2eA110B980",
-    "ethereumBlock": 25954574
-  },
-  "measured": {
-    "blocksRetainedPerProof_max_onChain": 99,
-    "gasPerBlockRetained_onChain": 24799,
-    "gasNotarise99Blocks_onChain": 2455145,
-    "gasRevealRefutation_onChain": 338156,
-    "gasMerkleHashingOnly": 6228,
-    "gasVerifyOnChainCall_7_6KB_tx": 217664,
-    "creditcoinBlockGasLimit": 75000000,
-    "differentialChecks": 34,
-    "differentialDivergences": 0,
-    "heightsRetained": 100801,
-    "heightsAnswerable": 100777,
-    "emptyBlocksInRange": 24,
-    "archiveFrom": 25863300,
-    "archiveTo": 25964100,
-    "contiguousRuns": 25,
-    "longestRunBlocks": 18443,
-    "longestRunFrom": 25903243,
-    "claimsTotal": 36,
-    "claimsOpen": 26,
-    "claimsRefuted": 10,
-    "claimsStanding": 0,
-    "emptyBlockHeights": [
-      25869534,
-      25870868,
-      25871161,
-      25872319,
-      25876124,
-      25879830,
-      25882944,
-      25886693,
-      25886933,
-      25887823,
-      25888423,
-      25891190,
-      25891714,
-      25892916,
-      25902413,
-      25903242,
-      25921686,
-      25922233,
-      25927263,
-      25931228,
-      25935025,
-      25939372,
-      25948788,
-      25952297
-    ]
-  },
-  "contracts_note": "span bounds snapshotted at assertion; verifyOrRevert/tryVerify split; commit-reveal refutation",
+  "mirrorVersion": 2,
+  "deployBlock": 5478051,
+  "registryDeployBlock": 5478535,
   "verified": {
     "blockscout": true
   },
-  "deployBlock": 5478051,
-  "mirrorVersion": 2
+  "measured": {
+    "continuityByAge": {
+      "at": "2026-09-13T08:05:44.642Z",
+      "attestedHead": 25967160,
+      "rows": [
+        {
+          "label": "fresh (head \u2212 50)",
+          "age": 50,
+          "block": 25967110,
+          "tx": "0x1352b22b37565f263a3786d46ea589b0493759782c909284ad5b340dc1a1c016",
+          "roots": 1
+        },
+        {
+          "label": "24 hours",
+          "age": 7200,
+          "block": 25959960,
+          "tx": "0x2835adebc14c230020d3b7ef9fdbfc520ba890eba7a1f4f8d2ac3b5446deca51",
+          "roots": 41
+        },
+        {
+          "label": "7 days",
+          "age": 50400,
+          "block": 25916760,
+          "tx": "0x99009de72691443ffaea7ae7dbe354f30736d8d34044b073eca953d04ae46dff",
+          "roots": 41
+        },
+        {
+          "label": "30 days",
+          "age": 216000,
+          "block": 25751160,
+          "tx": "0x63e48a0ce1e286e95556a7c2586cb3d7cdbd8644702cf53261cecc0941af4d6e",
+          "roots": 41
+        },
+        {
+          "label": "90 days",
+          "age": 648000,
+          "block": 25319160,
+          "tx": "0x6653d2272d6021a591938ca7c97bbba6743b29f6bb96e410287497a38e6f3a24",
+          "roots": 41
+        },
+        {
+          "label": "180 days",
+          "age": 1296000,
+          "block": 24671160,
+          "tx": "0x4a6f021c683e8837712f147fef0eaba103b63f3ad3e33d4abf6110151a2cced7",
+          "roots": 841
+        }
+      ]
+    },
+    "v1": {
+      "blocksRetainedPerProof_max_onChain": 99,
+      "gasPerBlockRetained_onChain": 24799,
+      "gasNotarise99Blocks_onChain": 2455145,
+      "gasRevealRefutation_onChain": 338156,
+      "gasMerkleHashingOnly": 6228,
+      "gasVerifyOnChainCall_7_6KB_tx": 217664,
+      "creditcoinBlockGasLimit": 75000000,
+      "differentialChecks": 34,
+      "differentialDivergences": 0,
+      "heightsRetained": 100801,
+      "heightsAnswerable": 100777,
+      "emptyBlocksInRange": 24,
+      "archiveFrom": 25863300,
+      "archiveTo": 25964100,
+      "contiguousRuns": 25,
+      "longestRunBlocks": 18443,
+      "longestRunFrom": 25903243,
+      "claimsTotal": 36,
+      "claimsOpen": 26,
+      "claimsRefuted": 10,
+      "claimsStanding": 0,
+      "emptyBlockHeights": [
+        25869534,
+        25870868,
+        25871161,
+        25872319,
+        25876124,
+        25879830,
+        25882944,
+        25886693,
+        25886933,
+        25887823,
+        25888423,
+        25891190,
+        25891714,
+        25892916,
+        25902413,
+        25903242,
+        25921686,
+        25922233,
+        25927263,
+        25931228,
+        25935025,
+        25939372,
+        25948788,
+        25952297
+      ]
+    },
+    "chains": {
+      "1": {
+        "held": 298801,
+        "heldAfterScan": 298801,
+        "bitmapHeld": 298801,
+        "bitmapAgrees": true,
+        "lowest": 11393600,
+        "highest": 11692400,
+        "unheldInRange": 0,
+        "runs": 1,
+        "longestRun": 298801,
+        "longestRunFrom": 11393600,
+        "topRun": 298801,
+        "topRunFrom": 11393600,
+        "topRunDays": 41.5,
+        "days": 41.5,
+        "emptyBlocks": 32,
+        "emptyBlockSample": [
+          11416000,
+          11430440,
+          11430690,
+          11501407,
+          11555313,
+          11572475,
+          11574397,
+          11591040,
+          11595479,
+          11599206,
+          11601367,
+          11601998
+        ],
+        "mirrorCalls": 332,
+        "campaignGas": "7050435518",
+        "widestCall": {
+          "roots": 901,
+          "tx": "0xd33c2b380011a774148c0ca1672723c648c9150cb472c761c27c2f11c9b8bf2e"
+        },
+        "gasPerNewRoot": {
+          "min": 23510,
+          "median": 23594,
+          "max": 24097,
+          "calls": 332
+        }
+      },
+      "3": {
+        "held": 780302,
+        "heldAfterScan": 780302,
+        "bitmapHeld": 780302,
+        "bitmapAgrees": true,
+        "lowest": 25171100,
+        "highest": 25966700,
+        "unheldInRange": 15299,
+        "runs": 2,
+        "longestRun": 779401,
+        "longestRunFrom": 25187300,
+        "topRun": 779401,
+        "topRunFrom": 25187300,
+        "topRunDays": 108.25,
+        "days": 108.38,
+        "emptyBlocks": 243,
+        "emptyBlockSample": [
+          25171352,
+          25261413,
+          25300128,
+          25354534,
+          25414133,
+          25491114,
+          25547616,
+          25604714,
+          25649336,
+          25713903,
+          25811827,
+          25872319
+        ],
+        "mirrorCalls": 899,
+        "campaignGas": "18533447514",
+        "widestCall": {
+          "roots": 901,
+          "tx": "0xa9bb644f31b88e5a71c296b323a799d03ed7083b23b8b81d02cd1b37a3555d70"
+        },
+        "gasPerNewRoot": {
+          "min": 23492,
+          "median": 23596,
+          "max": 27232,
+          "calls": 834
+        }
+      }
+    },
+    "claims": {
+      "total": 23,
+      "byStatus": {
+        "open": 5,
+        "refuted": 10,
+        "standing": 8
+      },
+      "byKind": {
+        "emptySet": 19,
+        "completeSet": 4
+      },
+      "bondStakedWei": "41000000000000000000",
+      "burnedWei": "10000000000000000000"
+    },
+    "desk": {
+      "policies": 4,
+      "balanceWei": "8900000000000000000",
+      "ninetyDay": [
+        {
+          "policy": 0,
+          "kind": "BlankFile",
+          "window": 648000,
+          "subject": "0x\u2026c1ea",
+          "ok": true,
+          "reason": "None"
+        },
+        {
+          "policy": 1,
+          "kind": "BondedClean",
+          "window": 648000,
+          "subject": "0x\u2026c1ea",
+          "ok": false,
+          "reason": "NoBondedCleanliness"
+        },
+        {
+          "policy": 2,
+          "kind": "BlankFile",
+          "window": 648000,
+          "subject": "0x\u2026c1ea",
+          "ok": true,
+          "reason": "None"
+        },
+        {
+          "policy": 3,
+          "kind": "BlankFile",
+          "window": 648000,
+          "subject": "0x\u2026c1ea",
+          "ok": true,
+          "reason": "None"
+        }
+      ],
+      "transactions": [
+        {
+          "kind": "borrow",
+          "label": "own claim still open",
+          "policyId": 1,
+          "reason": "ClaimUnderHunt",
+          "ok": false,
+          "tx": "0x77f6188007a9d59e585db1a25954bd369be2f8e2c35fe8a474b262212dcda0ff",
+          "status": 0,
+          "gasUsed": 7041506
+        },
+        {
+          "kind": "finalize",
+          "tx": "0x27c966094f90734a2fd1902e51291af3710210397292b29667c40686e1dd735f",
+          "status": 1,
+          "gasUsed": 223202
+        },
+        {
+          "kind": "borrow",
+          "label": "bonded-clean: a standing 4 tCTC claim covering 91 days",
+          "policyId": 1,
+          "ok": true,
+          "tx": "0x37e22fb0e1467799e7def88a9c1c39508eaf630b3652b76b9dab4b965bd4a07b",
+          "status": 1,
+          "gasUsed": 7089575,
+          "reason": "Lent"
+        },
+        {
+          "kind": "borrow",
+          "label": "blank file",
+          "policyId": 0,
+          "ok": true,
+          "tx": "0x993526fda92b018fcd55337fc5692d6b2edb0363d73c6eaae404f592cb318e16",
+          "status": 1,
+          "gasUsed": 7070489,
+          "reason": "Lent"
+        },
+        {
+          "kind": "borrow",
+          "label": "a second loan under the same policy",
+          "policyId": 1,
+          "reason": "AlreadyLent",
+          "ok": false,
+          "tx": "0x4137262d863081baa55434a77d2a41597ae61d847ebf38a1f94d1ad0c70656ce",
+          "status": 0,
+          "gasUsed": 78582
+        }
+      ],
+      "assessedAtDemo": [
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 0
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 1
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 2
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
+          "policyId": 2,
+          "reason": "ClaimUnderHunt",
+          "claimId": 3
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
+          "policyId": 2,
+          "reason": "ClaimUnderHunt",
+          "claimId": 4
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
+          "policyId": 3,
+          "reason": "ClaimUnderHunt",
+          "claimId": 5
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
+          "policyId": 0,
+          "reason": "EventOnRecord",
+          "claimId": 10
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
+          "policyId": 2,
+          "reason": "EventOnRecord",
+          "claimId": 11
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
+          "policyId": 0,
+          "reason": "EventOnRecord",
+          "claimId": 12
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 13
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 1,
+          "reason": "ClaimUnderHunt",
+          "claimId": 13
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 14
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+          "policyId": 1,
+          "reason": "ClaimUnderHunt",
+          "claimId": 14
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 15
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+          "policyId": 1,
+          "reason": "ClaimUnderHunt",
+          "claimId": 15
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
+          "policyId": 0,
+          "reason": "None",
+          "claimId": 0
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 1
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 2
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
+          "policyId": 2,
+          "reason": "None",
+          "claimId": 3
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
+          "policyId": 2,
+          "reason": "ProvenLiar",
+          "claimId": 4
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
+          "policyId": 3,
+          "reason": "ProvenLiar",
+          "claimId": 5
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 10
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
+          "policyId": 2,
+          "reason": "ProvenLiar",
+          "claimId": 11
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
+          "policyId": 0,
+          "reason": "EventOnRecord",
+          "claimId": 12
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 13
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 1,
+          "reason": "ClaimUnderHunt",
+          "claimId": 13
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 14
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+          "policyId": 1,
+          "reason": "ClaimUnderHunt",
+          "claimId": 14
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+          "policyId": 0,
+          "reason": "ClaimUnderHunt",
+          "claimId": 15
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+          "policyId": 1,
+          "reason": "ClaimUnderHunt",
+          "claimId": 15
+        },
+        {
+          "label": "our own wallet, bonded-clean over the whole window",
+          "subject": "0x30E60eb0300B869d1323CDD75910c6105aDA0C97",
+          "policyId": 1,
+          "reason": "None",
+          "claimId": 19
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
+          "policyId": 0,
+          "reason": "None",
+          "claimId": 0
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 1
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 2
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
+          "policyId": 2,
+          "reason": "None",
+          "claimId": 3
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
+          "policyId": 2,
+          "reason": "ProvenLiar",
+          "claimId": 4
+        },
+        {
+          "label": "liquidated; a claim said otherwise",
+          "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
+          "policyId": 3,
+          "reason": "ProvenLiar",
+          "claimId": 5
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
+          "policyId": 0,
+          "reason": "ProvenLiar",
+          "claimId": 10
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
+          "policyId": 2,
+          "reason": "ProvenLiar",
+          "claimId": 11
+        },
+        {
+          "label": "its liquidations are listed on the board",
+          "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
+          "policyId": 0,
+          "reason": "EventOnRecord",
+          "claimId": 12
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 0,
+          "reason": "None",
+          "claimId": 13
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+          "policyId": 1,
+          "reason": "NoBondedCleanliness",
+          "claimId": 13
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+          "policyId": 0,
+          "reason": "None",
+          "claimId": 14
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+          "policyId": 1,
+          "reason": "NoBondedCleanliness",
+          "claimId": 14
+        },
+        {
+          "label": "real Aave borrower, nothing against it",
+          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+          "policyId": 0,
+          "reason": "None",
+          "claimId": 15
+        },
+        {
+          "label": "same borrower, bonded-clean policy (0.5 tCTC claim covers 0.25)",
+          "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+          "policyId": 1,
+          "reason": "NoBondedCleanliness",
+          "claimId": 15
+        },
+        {
+          "label": "our own wallet after its loans",
+          "subject": "0x30e60eb0300b869d1323cdd75910c6105ada0c97",
+          "policyId": 1,
+          "reason": "AlreadyLent",
+          "claimId": 19
+        }
+      ]
+    },
+    "acceptance": {
+      "emptyBlockInSealedSpan": {
+        "height": 25354534,
+        "spanId": 0,
+        "spanFrom": 25309541,
+        "spanTo": 25440612,
+        "isMirrored": true,
+        "rootIsZero": true,
+        "spanCovers": true,
+        "spanBlocks": 131072
+      },
+      "sealing": {
+        "spans": 7,
+        "widest": 131072,
+        "gasForWidest": 1280230,
+        "tx": "0x90d928710400454b263208f6ee194cc4dd1a60a18fe37316acfac84f6c8a11a8"
+      },
+      "strangerConsumer": {
+        "address": "0xeeFa14CA77cEe451Df6474c9dCcBce38A691a254",
+        "tx": "0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61",
+        "block": 25954574,
+        "plain": {
+          "ok": true,
+          "txIndex": 263
+        },
+        "precompileBlanked": {
+          "ok": true,
+          "txIndex": 263
+        },
+        "mirrorBlanked": {
+          "ok": false
+        }
+      },
+      "secondTransaction": {
+        "block": 25954574,
+        "txHash": "0x861c1a91cb194cbc804e21f3b55a07c8ac76362fba49c1037278776db8d1efc9",
+        "expectedIndex": 131,
+        "notarisedWithIndex": 263,
+        "plain": {
+          "ok": true,
+          "txIndex": 131
+        },
+        "precompileBlanked": {
+          "ok": true,
+          "txIndex": 131
+        },
+        "mirrorBlanked": {
+          "ok": false,
+          "error": "Cannot convert 0x to a BigInt"
+        }
+      }
+    },
+    "board": {
+      "chains": {
+        "mainnet": {
+          "spanFrom": 25309541,
+          "spanTo": 25964900,
+          "spanIds": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "claims": 20,
+          "byRole": {
+            "lie": {
+              "total": 6,
+              "Open": 0,
+              "Refuted": 6,
+              "Standing": 0
+            },
+            "bounty": {
+              "total": 4,
+              "Open": 4,
+              "Refuted": 0,
+              "Standing": 0
+            },
+            "omission": {
+              "total": 2,
+              "Open": 0,
+              "Refuted": 2,
+              "Standing": 0
+            },
+            "complete": {
+              "total": 1,
+              "Open": 0,
+              "Refuted": 0,
+              "Standing": 1
+            },
+            "clean": {
+              "total": 6,
+              "Open": 0,
+              "Refuted": 0,
+              "Standing": 6
+            },
+            "borrower": {
+              "total": 1,
+              "Open": 0,
+              "Refuted": 0,
+              "Standing": 1
+            }
+          },
+          "liesStanding": 0,
+          "truthsRefuted": 0,
+          "rows": [
+            {
+              "claimId": 0,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0xb2619b382647abd381e752958945baa141a1a8e7",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0xf50261c7bfd2fb62bd508ed8d225345c473b1a0b684a45142dd02e0bda05288d",
+              "refutation": {
+                "tx": "0x92734f9067d1d99f4a3e65b44c40b3edbf99ee76216bdb14a659eb7ee91c20ab",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25318249,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 578242
+              },
+              "openUntil": 1789358340
+            },
+            {
+              "claimId": 1,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x171e9954b25fc0da21ae4ef0d9c7edb6ffb77dd7",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0x087cf45f279f30c73a94f4e1ff6b3439b3a7eda71fe3f515d18d8d3a6f20cc28",
+              "refutation": {
+                "tx": "0x448d99cf388549fb0610db0c01640941a47b2133b80693ad7b7fc8d534e438ac",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25422803,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 496230
+              },
+              "openUntil": 1789358355
+            },
+            {
+              "claimId": 2,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x7562be2022d31a75f9887b7b932256c704f0c8e7",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0x3ee308e3f7c4feaaf5e5769988ff45c55b419df09cf2181aac1e09c5853c4ff6",
+              "refutation": {
+                "tx": "0xbf4e9e8ee8d7588a00c56a1d0a153ec1a5ab94988f475c1a443f410c0bbba32d",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25797699,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 497126
+              },
+              "openUntil": 1789358370
+            },
+            {
+              "claimId": 3,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Morpho Blue \u00b7 Liquidate",
+              "subject": "0x1024f09cc1e21f6964d70deb40af366b83b6eab7",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0xb0184985a5097ac02423e4ba0d6eb0eed71437f2b3e8a9f9dcd305adb3c4ef35",
+              "refutation": {
+                "tx": "0x26429c2cc0f3e938694c3aaa87cdbdfdb0a782a6f25860234ebc611e2ce5dce1",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25314767,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 562982
+              },
+              "openUntil": 1789358385
+            },
+            {
+              "claimId": 4,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Morpho Blue \u00b7 Liquidate",
+              "subject": "0x225f99aaaa914d0481ef3a0bedd8aabf1b9c4d1d",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0x0d1bce7fa40248ccd1e345e852876713b9a978cf37c66952849c44ef5a3d1c4e",
+              "refutation": {
+                "tx": "0xd8dd3b5f0006c2032862d73d8b1af6abf3e292a96fe656b23ccdfa3b80b57392",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25397982,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 539686
+              },
+              "openUntil": 1789358400
+            },
+            {
+              "claimId": 5,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Compound V3 \u00b7 AbsorbDebt",
+              "subject": "0xd8f99930426bfd583cb7a594ebe10d07ff8ff527",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0xfab69deed519a662074a1a7ef3ac14921c76d26390150e605b0ca9d96eae679e",
+              "refutation": {
+                "tx": "0xbb3cd9447f4de56f68942d2122b38d2c4e812705c0a44da39e870763548ef8da",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25389054,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 1004290
+              },
+              "openUntil": 1789358415
+            },
+            {
+              "claimId": 6,
+              "role": "bounty",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0xf330b5fe72e91d1a3782e65eed876cf3624c7802",
+              "bondWei": "3000000000000000000",
+              "status": "Open",
+              "members": 0,
+              "assertTx": "0xf0f66073b1d0b8684e23d38663ea8a1dcabbc5b52c9e5cbf6361e20cf24fe311",
+              "refutation": null,
+              "openUntil": 1789876830
+            },
+            {
+              "claimId": 7,
+              "role": "bounty",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x494fe899f16a71391be9ebc6a5146a132f963806",
+              "bondWei": "3000000000000000000",
+              "status": "Open",
+              "members": 0,
+              "assertTx": "0x775b4c1f1a716e78ce7b1b195a7a4859a4a127e2051cb909c77c61991c57f3fc",
+              "refutation": null,
+              "openUntil": 1789876845
+            },
+            {
+              "claimId": 8,
+              "role": "bounty",
+              "kind": "EmptySet",
+              "venue": "Morpho Blue \u00b7 Liquidate",
+              "subject": "0x537ab709b03c5c7623dbc2e92b632018e05f57d4",
+              "bondWei": "3000000000000000000",
+              "status": "Open",
+              "members": 0,
+              "assertTx": "0x08167629655f3df718c451674914440eaacf2bf4a263ec5ebfb99471c91930e5",
+              "refutation": null,
+              "openUntil": 1789876860
+            },
+            {
+              "claimId": 9,
+              "role": "bounty",
+              "kind": "EmptySet",
+              "venue": "Compound V3 \u00b7 AbsorbDebt",
+              "subject": "0x6aaa5ea1953418cd8eac45b8fdf179e0a783fa7c",
+              "bondWei": "3000000000000000000",
+              "status": "Open",
+              "members": 0,
+              "assertTx": "0xf56143238603d7a8d15979a2e5d3a42192a14f9e178c9ee0360f91e1aa600c33",
+              "refutation": null,
+              "openUntil": 1789876875
+            },
+            {
+              "claimId": 10,
+              "role": "omission",
+              "kind": "CompleteSet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x19a1989b0b0d3f019e09d4ba3d0900cd29d35dfb",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 3,
+              "assertTx": "0xdedb89c5afde6031a0168b9551c181378a9decd9f22f9b93a1bd1e0ce78f4c72",
+              "refutation": {
+                "tx": "0x1c8fffdcb6f2a72b316c588f791d37732bcd514c70c8cf55aefe6a6cb8b0e85c",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25395050,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 658714
+              },
+              "openUntil": 1789358535
+            },
+            {
+              "claimId": 11,
+              "role": "omission",
+              "kind": "CompleteSet",
+              "venue": "Morpho Blue \u00b7 Liquidate",
+              "subject": "0x201051ae0fddac0ce47b299e4673caa39f32a961",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 1,
+              "assertTx": "0x0c0e9b07c8f0b514d74198a633c19ecec394436c756afd779765351f8d182c70",
+              "refutation": {
+                "tx": "0x77eae26ffd592d63314dc0c360fd1f6b7f31c382b721207dddabe754e6febd38",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 25436138,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 511742
+              },
+              "openUntil": 1789358565
+            },
+            {
+              "claimId": 12,
+              "role": "complete",
+              "kind": "CompleteSet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x6c59f64be01617f4979ec9a75834a9c4ca915ff1",
+              "bondWei": "1000000000000000000",
+              "status": "Standing",
+              "members": 2,
+              "assertTx": "0x4cb41bb2c506981f5af821cf3cd67edaac315bc4d7a969d928114a1e8113e905",
+              "refutation": null,
+              "openUntil": 1789275810
+            },
+            {
+              "claimId": 13,
+              "role": "clean",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0xa631a3ad3e715bd15191fb135cdd0b9e1263dc35",
+              "bondWei": "500000000000000000",
+              "status": "Standing",
+              "members": 0,
+              "assertTx": "0x399a4f1e8d2e53023828bfeba2197acf53ac6b9a4a10a016004213f8bfa26b48",
+              "refutation": null,
+              "openUntil": 1789275825
+            },
+            {
+              "claimId": 14,
+              "role": "clean",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x09c46f5e6dfb2b35b3cc1fc061202faa3819b4ad",
+              "bondWei": "500000000000000000",
+              "status": "Standing",
+              "members": 0,
+              "assertTx": "0xffcb5b67164831b20581599f912fa79b3099547d868c76a01ab27a52e8e63ad6",
+              "refutation": null,
+              "openUntil": 1789275840
+            },
+            {
+              "claimId": 15,
+              "role": "clean",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x742244baca85cdd2dc810e0202c8fd6ebbd8766c",
+              "bondWei": "500000000000000000",
+              "status": "Standing",
+              "members": 0,
+              "assertTx": "0xbb0e6df4356c2c737067da4ce41ee3460dd46e42f0b9f9ffcd833c6cca9b9b49",
+              "refutation": null,
+              "openUntil": 1789275855
+            },
+            {
+              "claimId": 16,
+              "role": "clean",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x23eac85727069d0d3e43bd4c03d9235d81f9b387",
+              "bondWei": "500000000000000000",
+              "status": "Standing",
+              "members": 0,
+              "assertTx": "0x5c28151fb23d26e19bfd1efdf27a9925a3f6831699534e60196dddbcadcd4a24",
+              "refutation": null,
+              "openUntil": 1789275870
+            },
+            {
+              "claimId": 17,
+              "role": "clean",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x5d91aea302976d2a405e872638eda95b373e788f",
+              "bondWei": "500000000000000000",
+              "status": "Standing",
+              "members": 0,
+              "assertTx": "0x550bfadaddc080d5730b57079f494718d4a7afc3662901a82d9d699125e2bde3",
+              "refutation": null,
+              "openUntil": 1789275885
+            },
+            {
+              "claimId": 18,
+              "role": "clean",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x76f30e3f75437fb862b8d2c4d80a671bceba5b1a",
+              "bondWei": "500000000000000000",
+              "status": "Standing",
+              "members": 0,
+              "assertTx": "0x460e220fc875b1ba075a67818acc6585f34509a82df5a85990a622aa2e606503",
+              "refutation": null,
+              "openUntil": 1789275900
+            },
+            {
+              "claimId": 19,
+              "role": "borrower",
+              "kind": "EmptySet",
+              "venue": "Aave V3 \u00b7 LiquidationCall",
+              "subject": "0x30e60eb0300b869d1323cdd75910c6105ada0c97",
+              "bondWei": "4000000000000000000",
+              "status": "Standing",
+              "members": 0,
+              "assertTx": "0x737b5b29e6822f52f0ed389a97c030687b2999ac660c3e6e49d1daee3bc1c418",
+              "refutation": null,
+              "openUntil": 1789273215
+            }
+          ]
+        },
+        "sepolia": {
+          "spanFrom": 11430257,
+          "spanTo": 11692400,
+          "spanIds": [
+            5,
+            6
+          ],
+          "claims": 3,
+          "byRole": {
+            "lie": {
+              "total": 2,
+              "Open": 0,
+              "Refuted": 2,
+              "Standing": 0
+            },
+            "complete": {
+              "total": 1,
+              "Open": 1,
+              "Refuted": 0,
+              "Standing": 0
+            }
+          },
+          "liesStanding": 0,
+          "truthsRefuted": 0,
+          "rows": [
+            {
+              "claimId": 20,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Aave V3 (Sepolia) \u00b7 LiquidationCall",
+              "subject": "0x22b7437086bdcb911fe1777c6edf25d16cc60a18",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0x1a74b6fc6f6987f0f2df6afa4c0c0c395d7aad873e91c76488811e662e4b0b24",
+              "refutation": {
+                "tx": "0x85cf5d96567370f099ac6864868d02edee5ef04df9644e657974ce2b748c120c",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 11460759,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 448294
+              },
+              "openUntil": 1789372725
+            },
+            {
+              "claimId": 21,
+              "role": "lie",
+              "kind": "EmptySet",
+              "venue": "Aave V3 (Sepolia) \u00b7 LiquidationCall",
+              "subject": "0xe21b479de26a32d3643b485f573d8e7b615bc1f6",
+              "bondWei": "2000000000000000000",
+              "status": "Refuted",
+              "members": 0,
+              "assertTx": "0x9364eacdf396e0677b1c0c77263f8b2752bd1bb71a222c5880ee09cdf86218b4",
+              "refutation": {
+                "tx": "0x07bf40fd7c8351a44e9228366b3027e2492decb41367fea9bb180da5ec5bc419",
+                "refuter": "0x44c1CF8cb4BCEFC9C398FE245f4bCCFE077400E2",
+                "evidenceBlock": 11676870,
+                "paidWei": "1000000000000000000",
+                "burnedWei": "1000000000000000000",
+                "gasUsed": 4046311
+              },
+              "openUntil": 1789372740
+            },
+            {
+              "claimId": 22,
+              "role": "complete",
+              "kind": "CompleteSet",
+              "venue": "Aave V3 (Sepolia) \u00b7 LiquidationCall",
+              "subject": "0x2d2ddd7bfe3a372d7238484d2780bdad589d0467",
+              "bondWei": "1000000000000000000",
+              "status": "Open",
+              "members": 5,
+              "assertTx": "0xd40f3fd068869661251e16adb1a49c551ab5249e10f32ecf7a7190ac2ae2af9c",
+              "refutation": null,
+              "openUntil": 1789289985
+            }
+          ]
+        }
+      },
+      "refutations": 10,
+      "burnedWei": "10000000000000000000",
+      "paidWei": "10000000000000000000",
+      "audit": {
+        "at": "2026-09-13T08:02:41.259Z",
+        "claims": 20,
+        "settled": 16,
+        "inconsistent": 0,
+        "unscannable": 0
+      },
+      "refutationGas": {
+        "min": 448294,
+        "max": 4046311
+      }
+    },
+    "differential": {
+      "transcript": "docs/transcripts/differential-2026-09-13T03-50-16.md",
+      "fixtures": 122,
+      "checks": 2684,
+      "divergences": 0
+    }
+  },
+  "history": {
+    "v1": {
+      "liveTransactions": {
+        "notarise99Blocks": "0xec14f91ab8ff517fd221aa383d0dde2eec19d2c05ca5b55e7a5cc150568a39e7",
+        "notarise27Blocks": "0x321635dc82c8246d9a6542c48ae6bca433d8023e3500349d8e7bc9bc8398c43d",
+        "refuteReveal": "0x39870a3e6ff0ff1a67b68ff5ae6f37bafb004749b2aaaf06e56c6cedf422a769"
+      },
+      "evidence": {
+        "aaveV3Pool": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+        "liquidationTx": "0x3a4b8bcfd53d78187c3ba6f03b7ae4cbff473cbf270362f8de4e9f9b9610df61",
+        "liquidatedBorrower": "0xa63f5B1AcE5Ef4BcE91d3f12f31B8F2eA110B980",
+        "ethereumBlock": 25954574
+      },
+      "note": "span bounds snapshotted at assertion; verifyOrRevert/tryVerify split; commit-reveal refutation"
+    }
+  }
 }

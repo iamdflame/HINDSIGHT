@@ -1,0 +1,105 @@
+{
+ "claims": [
+  {
+   "claimId": 20,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
+   "venueLabel": "Aave V3 (Sepolia) · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x22b7437086bdcb911fe1777c6edf25d16cc60a18",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789372725,
+   "assertTx": "0x1a74b6fc6f6987f0f2df6afa4c0c0c395d7aad873e91c76488811e662e4b0b24",
+   "gasUsed": 347568,
+   "matchingLogsInRange": 6,
+   "counterexample": {
+    "txHash": "0xf62ad3115eb3dd89e28813ac59a9d1cc850048a9c064e79b2d6ae8f83eae10cb",
+    "block": 11460759
+   }
+  },
+  {
+   "claimId": 21,
+   "role": "lie",
+   "kind": "EmptySet",
+   "venue": "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
+   "venueLabel": "Aave V3 (Sepolia) · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0xe21b479de26a32d3643b485f573d8e7b615bc1f6",
+   "bond": "2000000000000000000",
+   "windowSeconds": 86400,
+   "openUntil": 1789372740,
+   "assertTx": "0x9364eacdf396e0677b1c0c77263f8b2752bd1bb71a222c5880ee09cdf86218b4",
+   "gasUsed": 347568,
+   "matchingLogsInRange": 1,
+   "counterexample": {
+    "txHash": "0xfb888d46ea01bda0e6eaf576f7f724bdb59051313d707e7f5f22328fa534584c",
+    "block": 11676870
+   }
+  },
+  {
+   "claimId": 22,
+   "role": "complete",
+   "kind": "CompleteSet",
+   "venue": "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
+   "venueLabel": "Aave V3 (Sepolia) · LiquidationCall",
+   "topic0": "0xe413a321e8681d831f4dbccbca790d2952b56f977908e45be37335533e005286",
+   "subjectTopic": 3,
+   "subject": "0x2d2ddd7bfe3a372d7238484d2780bdad589d0467",
+   "bond": "1000000000000000000",
+   "windowSeconds": 3600,
+   "openUntil": 1789289985,
+   "assertTx": "0xd40f3fd068869661251e16adb1a49c551ab5249e10f32ecf7a7190ac2ae2af9c",
+   "gasUsed": 4259569,
+   "matchingLogsInRange": 5,
+   "members": [
+    {
+     "height": 11629693,
+     "txIndex": 89,
+     "logIndex": 16,
+     "txHash": "0x626ebbf78b0dfe8989e282e6134c241bbfa7417c30510aa76d16c46f62f9ed26"
+    },
+    {
+     "height": 11629974,
+     "txIndex": 70,
+     "logIndex": 12,
+     "txHash": "0x5852a630aba9df014ff9a6743449b422c572d26b0c5f8b23223949e62b349784"
+    },
+    {
+     "height": 11630287,
+     "txIndex": 72,
+     "logIndex": 12,
+     "txHash": "0x3341abab529632b00f3936e210423d53f44efd6a5f6705e2ea003907e2527130"
+    },
+    {
+     "height": 11630633,
+     "txIndex": 60,
+     "logIndex": 12,
+     "txHash": "0x7e702f823ef27268e1b347c9321e40dd32966f0d428f9605034b0d40c4804788"
+    },
+    {
+     "height": 11631004,
+     "txIndex": 104,
+     "logIndex": 12,
+     "txHash": "0xdb3f9a004a4e204a927a9d8047628d8d5838d742b3bc23f030fd7011e81f0ed0"
+    }
+   ]
+  }
+ ],
+ "registry": "0x05844C991993F3d80fAf196e10355B12BE648e40",
+ "chainKey": 1,
+ "spanIds": [
+  5,
+  6
+ ],
+ "spanFrom": 11430257,
+ "spanTo": 11692400,
+ "scannedWith": [
+  "gateway.tenderly.co",
+  "eth-sepolia.api.onfinality.io",
+  "ethereum-sepolia-public.nodies.app"
+ ]
+}

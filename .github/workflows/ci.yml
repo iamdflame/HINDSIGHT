@@ -48,6 +48,20 @@ jobs:
             echo "::error::fabricated or stubbed data outside tests"; exit 1
           fi
           echo "clean"
+      - name: no score, no passport, no credit rating
+        # The desk pays or refuses and says why. Anything that turns a bond into an attribute is out of
+        # scope, and saying so ("not a credit score") is the only way these words may appear.
+        run: |
+          hits=$(grep -rniE "credit[ -]?scor|\\bFICO\\b|\\b300 ?[-–] ?850\\b|\\bpassport\\b|soulbound|credit[ -]?rating|creditworthiness|reputation score|trust score" \
+               --include="*.ts" --include="*.tsx" --include="*.sol" --include="*.md" --include="*.html" --include="*.js" \
+               web/src web/index.html web/*/index.html worker/src packages/mirror/src packages/mirror/README.md contracts/src README.md CLAIMS.md docs 2>/dev/null \
+               | grep -viE "\\bnot an? |\\bno (credit|score|passport)|\\bnever an? |\\bnothing (here|on this)|isn.t an? " || true)
+          if [ -n "$hits" ]; then echo "$hits"; echo "::error::a score, rating or passport is not something this project makes"; exit 1; fi
+          echo "clean"
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - name: CLAIMS.md is generated from the measured record, not typed
+        run: node worker/src/claims-doc.ts --check
       - name: claims stronger than the evidence
         # Only *assertions* are banned, never discussion. `AbsenceRegistry` explains at length why
         # proof of absence is impossible, and must stay able to say so.
@@ -59,6 +73,19 @@ jobs:
             echo "::error::a claim stronger than the evidence — see CLAIMS.md"; exit 1
           fi
           echo "clean"
+
+  worker:
+    name: worker — typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm ci || npm install
+        working-directory: worker
+      - run: npx tsc -p .
+        working-directory: worker
+        env: { NODE_ENV: '' }
 
   web:
     name: web — typecheck and build
@@ -83,12 +110,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
+        with: { node-version: 24 }
       - run: npm ci || npm install
         working-directory: worker
       - name: differential against the live precompile
         run: node src/differential.ts --limit 12
         working-directory: worker
-      - name: every published number still matches the chain
+      - name: every published number still matches the chain, on both source chains
         run: node src/measure.ts --check
         working-directory: worker
+      - name: the package verifies a second transaction cold, with no .env
+        run: |
+          npm install --no-audit --no-fund
+          env -i PATH="$PATH" HOME="$HOME" node packages/mirror/src/cli.js verify 0x1af4ba8e851472119a7ddb193a4fd29863afd005d59a31864dfb176b155c0a52
