@@ -119,7 +119,7 @@ const ok = await usable(claimId, exposureWei);          // Standing, and the bur
 
 Or without any code: `GET https://hindsight.run/api/assess?subject=0x…` returns the same verdicts as JSON and
 `/api/certificate` the same reading as a one-page PDF; `/openapi.json` describes both. For an agent,
-`npx -y hindsight-mcp` exposes them as MCP tools, none of which can spend.
+`npx -y hindsight-run-mcp` exposes them as MCP tools, none of which can spend.
 
 ## From Solidity, with nothing but the interfaces
 

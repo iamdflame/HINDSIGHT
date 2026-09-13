@@ -33,7 +33,7 @@ const PILLARS: Pillar[] = [
       '첫 번째 루프는 "지갑 연결, 점수 발행"이 아닙니다. "누군가 돈을 건 진술을 반박하는 트랜잭션을 찾아, 판돈의 절반을 받는 것"입니다.',
       '아직 일어나지 않은 것: 외부인이 주장을 반박하거나, 주소를 바인딩하거나, 대출을 받은 적이 없습니다. 리더보드의 모든 이름 옆에는 "the house"라고 적혀 있고, 사이트는 외부인이 중요한 모든 곳에서 "검증된 외부인 없음"이라고 말합니다.',
     ],
-    links: [{ label: '/hunt', href: '/hunt/' }, { label: 'hindsight-mcp', href: 'https://github.com/iamdflame/HINDSIGHT/tree/master/packages/mcp' }],
+    links: [{ label: '/hunt', href: '/hunt/' }, { label: 'hindsight-run-mcp', href: 'https://github.com/iamdflame/HINDSIGHT/tree/master/packages/mcp' }],
   },
   {
     title: '2 · Technical alignment',

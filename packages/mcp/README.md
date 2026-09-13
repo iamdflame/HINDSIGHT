@@ -1,4 +1,4 @@
-# hindsight-mcp
+# hindsight-run-mcp
 
 The desk, the archive and the hunt, as tools an agent can call. Every tool but one is a `view` on
 contracts deployed on Creditcoin: no key, no gas, no wallet, and nothing an agent can be talked into
@@ -7,7 +7,7 @@ spending.
 ```json
 {
   "mcpServers": {
-    "hindsight": { "command": "npx", "args": ["-y", "hindsight-mcp"] }
+    "hindsight": { "command": "npx", "args": ["-y", "hindsight-run-mcp"] }
   }
 }
 ```

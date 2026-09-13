@@ -38,7 +38,7 @@ git clone --recurse-submodules https://github.com/iamdflame/HINDSIGHT && cd HIND
 (cd contracts && forge test)                       # 프리컴파일을 삭제하는 테스트 포함
 npx hindsight-mirror verify 0x3a4b8bcf…            # 키 없이, 가스 없이: view 호출
 npx hindsight-mirror mandate assess 0x7562be20…    # 데스크의 판정, 모든 상품
-npx -y hindsight-mcp                                # 에이전트용 MCP 서버, 자금을 쓸 수 없음
+npx -y hindsight-run-mcp                                # 에이전트용 MCP 서버, 자금을 쓸 수 없음
 ```
 
 제품 얼굴은 [mandate.hindsight.run](https://mandate.hindsight.run)입니다. 같은 종이, 같은 밀랍, 같은 런타임. 그 화면에는 *프리컴파일*이라는 단어가 없습니다.

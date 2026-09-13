@@ -41,9 +41,9 @@ five pillars with measured figures, in English and (machine-assisted) Korean.
 - The ninety-second court: https://hindsight.run/judge/
 - The five pillars: https://hindsight.run/ceip/ · the one-question memo: https://hindsight.run/aella/
 - The honesty machine: https://hindsight.run/status/ (`/api/gates` answers 503 when a promise breaks)
-- API: `/api/assess`, `/api/certificate` (PDF), `/api/dump`, `/openapi.json`; Telegram webhook ready for a token
+- API: `/api/assess`, `/api/certificate` (PDF), `/api/dump`, `/openapi.json` · Telegram: **@MandateDeskBot** (`/assess`, `/hunt`, `/bounty`) and the Mini App at mandate.hindsight.run/tg
 - Repository: https://github.com/iamdflame/HINDSIGHT · grading: `CLAIMS.md` · runbook: `docs/OPERATIONS.md`
-- SDK and CLI: `hindsight-mirror` on npm · agents: `hindsight-mcp` · Solidity: `templates/foundry-consumer`
+- SDK and CLI: `hindsight-mirror` on npm · agents: `hindsight-run-mcp` · Solidity: `templates/foundry-consumer`
 - A consumer in another repository: https://github.com/iamdflame/hindsight-gate (same owner, interfaces only)
 
 **What is not claimed.** No stranger has refuted a claim, bound an Ethereum address, or borrowed; every name on

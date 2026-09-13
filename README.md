@@ -94,7 +94,7 @@ lent against, and an instrument may insist the borrower has signed for its Ether
 
 Nothing is minted, nothing is transferable, and there is no number. Ask about any address, no wallet:
 [mandate.hindsight.run](https://mandate.hindsight.run) — or `GET /api/assess?subject=0x…`, or
-`npx hindsight-mirror mandate assess 0x…`, or the `hindsight-mcp` tool `mandate_assess`, all the same view.
+`npx hindsight-mirror mandate assess 0x…`, or the `hindsight-run-mcp` tool `mandate_assess`, all the same view.
 
 **Mandate** is the product face: [assess](https://mandate.hindsight.run/mandate/) ·
 [files](https://mandate.hindsight.run/files/) · [cover](https://mandate.hindsight.run/cover/) ·
@@ -149,7 +149,7 @@ node worker/src/campaign.ts --chain 3 --follow  # keep the archive current (need
 ```
 contracts/   EthereumMirror · AbsenceRegistryV3 · UnderwritingDesk · MissingHeightBounty · frozen interfaces · tests
 worker/      campaign + follower · hunter · board seeder · desk demo · differential · measure · document renderer
-packages/    hindsight-mirror — the SDK and CLI (verify · assess · checks · usable · hunt · bind) · hindsight-mcp — the MCP server
+packages/    hindsight-mirror — the SDK and CLI (verify · assess · checks · usable · hunt · bind) · hindsight-run-mcp — the MCP server
 templates/   foundry-consumer — a consumer that deletes the precompile in its own tests and keeps working
 web/         hindsight.run: / · /verify · /record · /watch · /assess · /order · /judge · /claims · /enshrine · /integrate · /independence · /status
              mandate.hindsight.run: /mandate · /files · /cover · /versus · /hunt · /tg — and /api/assess · /api/certificate · /api/dump · /api/gates · /api/telegram · /openapi.json

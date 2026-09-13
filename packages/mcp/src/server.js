@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * hindsight-mcp — the desk, the archive and the hunt, as tools an agent can call.
+ * hindsight-run-mcp — the desk, the archive and the hunt, as tools an agent can call.
  *
- *   npx hindsight-mcp                      stdio transport; add to any MCP client's config
+ *   npx hindsight-run-mcp                      stdio transport; add to any MCP client's config
  *
  * Every tool but `hunt_refute` is a view on the deployed contracts: no key, no gas, no wallet, and
  * nothing an agent can be talked into spending. `hunt_refute` signs two transactions and only exists

@@ -1,10 +1,10 @@
 {
-  "name": "hindsight-mcp",
+  "name": "hindsight-run-mcp",
   "version": "0.1.0",
-  "description": "An MCP server for agents that need to know whether an Ethereum address would be lent to, whether a transaction happened, and which bounties are open \u2014 read from Creditcoin, no prover, no precompile, no wallet.",
+  "description": "MCP server for hindsight.run: would the desk lend to this Ethereum address, did this transaction happen, which bounties are open \u2014 read from Creditcoin, no prover, no precompile, no wallet.",
   "type": "module",
   "bin": {
-    "hindsight-mcp": "src/server.js"
+    "hindsight-run-mcp": "src/server.js"
   },
   "files": [
     "src",
