@@ -4,40 +4,41 @@ import { CountOnce } from '../shared/CountOnce';
 import type { ArchiveStats } from './useArchiveStats';
 
 type MastheadProps = {
-  /** The legend lives on the homepage masthead only (§3.2). */
+  /** The legend lives on the home masthead only. */
   withLegend: boolean;
   stats: ArchiveStats;
-  onDateline: () => void;
-  onHome?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 };
 
-/** §9.1 — lockup left, dateline right, baseline-aligned, then the 2px ink rule. */
-export function Masthead({ withLegend, stats, onDateline, onHome }: MastheadProps) {
+/**
+ * The register of record. Not a quiet library header: the live count of Ethereum heights whose
+ * root lives on Creditcoin, how far behind Ethereum's head the attestors are, and the fact that
+ * matters most -- that none of what follows needs the proving service.
+ */
+export function Masthead({ withLegend, stats }: MastheadProps) {
   return (
     <header className={`masthead${withLegend ? '' : ' masthead--no-legend'}`}>
-      <a className="lockup" href="/" onClick={onHome}>
-        {/* 28px is below where the outline seal's 1.25-unit rings survive; the spec's inverse
-            colourway keeps the mark a seal at masthead size. */}
+      <a className="lockup" href="/">
         <Seal size={28} inverse title="" />
         <Wordmark withLegend={withLegend} size={40} />
       </a>
       {stats.status === 'loading' ? (
         // The final shape, held invisibly: revealing it is an appearance, not a shift.
         <span className="dateline t-ui is-pending" aria-hidden="true">
-          CC3 · Ethereum mainnet · <span className="num">000</span> blocks · sealed <span className="num">0</span> · claims <span className="num">0</span>
+          mainnet <span className="num">000,000</span> · sepolia <span className="num">000,000</span> · lag <span className="num">00</span> · prover not in the loop
         </span>
       ) : stats.status === 'offline' ? (
-        <button type="button" className="dateline t-ui is-offline" onClick={onDateline}>CC3 · offline</button>
+        <a className="dateline t-ui is-offline" href="/record/">CC3 · offline</a>
       ) : (
-        <button type="button" className="dateline t-ui" onClick={onDateline}>
-          CC3 · Ethereum mainnet ·{' '}
-          <span className="num"><CountOnce value={stats.blocks} /></span> blocks
-          {(stats.spans > 0 || stats.claims > 0) && (
+        <a className="dateline t-ui" href="/record/" title="Heights held on Creditcoin, per source chain. Click for the record.">
+          mainnet <span className="num"><CountOnce value={stats.mainnet.held} /></span>
+          {' '}· sepolia <span className="num"><CountOnce value={stats.sepolia.held} /></span>
+          {stats.attestedLag !== null && (
             <>
-              {' '}· sealed <span className="num">{stats.spans}</span> · claims <span className="num">{stats.claims}</span>
+              {' '}· lag <span className="num">{stats.attestedLag}</span>
             </>
           )}
-        </button>
+          {' '}· <span className="quiet">prover not in the loop</span>
+        </a>
       )}
     </header>
   );

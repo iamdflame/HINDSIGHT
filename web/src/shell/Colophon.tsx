@@ -4,6 +4,7 @@ import deployments from '../../../deployments.json';
 import { Seal } from '../brand/Seal';
 import { Wordmark } from '../brand/Wordmark';
 import { LampToggle } from './LampToggle';
+import { MORE } from './Nav';
 import { prefersReducedMotion } from '../shared/motion';
 
 const EXPLORER = 'https://creditcoin-testnet.blockscout.com';
@@ -86,8 +87,10 @@ export function Colophon() {
         </div>
 
         <div className="band contracts">
-          <Address label="Archive" addr={deployments.contracts.EthereumMirror} />
-          <Address label="Registry" addr={deployments.contracts.AbsenceRegistry} />
+          <Address label="Mirror v2" addr={deployments.contracts.EthereumMirror} />
+          <Address label="Registry v3" addr={(deployments as any).contracts.AbsenceRegistryV3} />
+          <Address label="Desk" addr={(deployments as any).contracts.UnderwritingDesk} />
+          <Address label="Bounty" addr={(deployments as any).contracts.MissingHeightBounty} />
           <div className="contract-row">
             <span className="t-ui">Source</span>
             <span className="t-hash source-line">Ethereum mainnet · chainKey 3</span>
@@ -95,9 +98,17 @@ export function Colophon() {
         </div>
 
         <div className="band independence">
-          <p>Attestcoin notarises a block once.</p>
-          <p>After that this site can answer without the prover, the precompile, or us.</p>
-          <p>Kill the prover: the caption under Check the record is the proof.</p>
+          <p>Attestcoin already hashes every root in a continuity proof, then throws them away.</p>
+          <p>Hindsight is those roots, on Creditcoin, so the next question is a Merkle path.</p>
+          <p>Every other dApp on this chain is paying the tax we abolished. <a className="linkish" href="/enshrine/">We would rather it were in the node.</a></p>
+        </div>
+
+        <div className="band band-routes">
+          {MORE.map((r) => (
+            <a key={r.id} className="linkish t-ui" href={r.path}>{r.label}</a>
+          ))}
+          <a className="linkish t-ui" href="https://github.com/iamdflame/HINDSIGHT" target="_blank" rel="noreferrer">GitHub</a>
+          <a className="linkish t-ui" href="https://github.com/iamdflame/HINDSIGHT/tree/master/packages/mirror" target="_blank" rel="noreferrer">@hindsight/mirror</a>
         </div>
 
         <div className="band band-meta">
@@ -105,8 +116,7 @@ export function Colophon() {
             <Seal size={16} inverse title="" />
             <Wordmark size={14} />
           </a>
-          <a className="linkish t-ui" href="https://github.com/iamdflame/HINDSIGHT" target="_blank" rel="noreferrer">GitHub</a>
-          <a className="linkish t-ui claims-link" href="/judge/">CLAIMS.md</a>
+          <a className="linkish t-ui claims-link" href="/claims/">CLAIMS.md</a>
           <LampToggle />
           <span className="chain t-hash">Creditcoin testnet 102031</span>
         </div>

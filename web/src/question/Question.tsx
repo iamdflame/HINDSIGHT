@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ProofBundle } from '../lib/proof';
-import type { TabId } from '../shell/Tabs';
 import { LedgerField } from './LedgerField';
 import { Stamp } from './Stamp';
 import { Gloss } from './Gloss';
@@ -28,7 +27,7 @@ function shortReason(message: string): string {
   return /[.!?]$/.test(first) ? first : `${first}.`;
 }
 
-export function Question({ onTab }: { onTab: (t: TabId) => void }) {
+export function Question() {
   const [raw, setRaw] = useState('');
   const [emptySubmit, setEmptySubmit] = useState(false);
   const [source, setSource] = useState<Source>('prover');
@@ -186,7 +185,7 @@ export function Question({ onTab }: { onTab: (t: TabId) => void }) {
                 <div className="plain-state">
                   <p className="t-body">This block is not in the register.</p>
                   <p className="t-caption">
-                    <a className="linkish" href="?tab=record" onClick={(e) => { e.preventDefault(); onTab('record'); }}>see coverage</a>
+                    <a className="linkish" href="/record/">see coverage</a>
                     {pending?.block != null && <> · this site cannot answer until someone notarises block {pending.block}</>}
                   </p>
                 </div>

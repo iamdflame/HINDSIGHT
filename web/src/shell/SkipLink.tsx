@@ -1,8 +1,8 @@
-/** §9.3 — first tab stop. Always lands on the question, switching chapter if needed. */
-export function SkipLink({ onSkip }: { onSkip: () => void }) {
+/** First tab stop on every route: straight past the masthead and nav to the page's content. */
+export function SkipLink({ target = 'main' }: { target?: string }) {
   return (
-    <a className="skip" href="#question" onClick={(e) => { e.preventDefault(); onSkip(); }}>
-      Skip to the question
+    <a className="skip" href={`#${target}`}>
+      Skip to content
     </a>
   );
 }

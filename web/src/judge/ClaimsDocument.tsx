@@ -34,6 +34,27 @@ export function ClaimsDocument({ source }: { source: string }) {
   while (i < lines.length) {
     const line = lines[i];
     if (!line.trim()) { i++; continue; }
+    if (line.startsWith('```')) {
+      // Fenced code: rendered verbatim, never through the inline parser.
+      const lang = line.slice(3).trim();
+      const body: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith('```')) body.push(lines[i++]);
+      i++; // closing fence
+      blocks.push(
+        <pre key={b++} className="doc-code" data-lang={lang || undefined}>
+          <code>{body.join('\n')}</code>
+        </pre>,
+      );
+      continue;
+    }
+    if (line.startsWith('> ')) {
+      const quote: string[] = [];
+      while (i < lines.length && lines[i].startsWith('> ')) quote.push(lines[i++].slice(2));
+      blocks.push(<blockquote key={b++}>{inline(quote.join(' '))}</blockquote>);
+      continue;
+    }
+    if (line.startsWith('### ')) { blocks.push(<h3 key={b++} className="t-ui">{inline(line.slice(4))}</h3>); i++; continue; }
     if (line.startsWith('# ')) { blocks.push(<h1 key={b++} className="t-title">{inline(line.slice(2))}</h1>); i++; continue; }
     if (line.startsWith('## ')) { blocks.push(<h2 key={b++} className="t-ui section-head">{inline(line.slice(3))}</h2>); i++; continue; }
     if (/^-{3,}$/.test(line.trim())) { blocks.push(<hr key={b++} />); i++; continue; }

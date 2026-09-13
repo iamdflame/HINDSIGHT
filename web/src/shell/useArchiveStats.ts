@@ -1,16 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 
+export type ChainCoverage = { held: number; lowest: number; highest: number };
+
 export type ArchiveStats =
   | { status: 'loading' }
   | { status: 'offline' }
-  | { status: 'ok'; blocks: number; spans: number; claims: number };
+  | {
+      status: 'ok';
+      mainnet: ChainCoverage;
+      sepolia: ChainCoverage;
+      /** Blocks between Ethereum's head and the last height Attestcoin has attested. */
+      attestedLag: number | null;
+      spans: number;
+      claims: number;
+      /** Kept for the dateline's count-up: mainnet held. */
+      blocks: number;
+    };
 
 const MIN_REFRESH_MS = 30_000;
 
 /**
- * The old Standfirst's RPC reads, moved behind the dateline (§9.1). The chain layer is imported on
- * demand so the first paint never waits for ethers. No timers: it re-reads only when the page
- * becomes visible again or the chapter changes, and never more than once per 30s (§7.6).
+ * The register of record, read live. Mirror v2 counts a held empty block as held, so the number
+ * shown is the number that answers questions -- no subtraction, no footnote.
+ *
+ * The chain layer is imported on demand so the first paint never waits for ethers. No timers: it
+ * re-reads only when the page becomes visible again or the caller's key changes, never more than
+ * once per 30s.
  */
 export function useArchiveStats(refreshKey?: unknown): ArchiveStats {
   const [stats, setStats] = useState<ArchiveStats>({ status: 'loading' });
@@ -24,19 +39,43 @@ export function useArchiveStats(refreshKey?: unknown): ArchiveStats {
     inFlight.current = true;
     last.current = now;
     try {
-      const { mirrorContract, registryContract, CHAIN_KEY_ETH_MAINNET, EMPTY_BLOCK_COUNT } = await import('../lib/chain');
-      const [blocks, spans, claims] = await Promise.all([
-        mirrorContract().mirroredBlocks(CHAIN_KEY_ETH_MAINNET),
-        mirrorContract().spanCount(),
-        registryContract().claimCount(),
+      const chain = await import('../lib/chain');
+      const m = chain.mirrorContract();
+      const r = chain.registryContract();
+      const K = chain.CHAIN_KEY_ETH_MAINNET;
+      const S = chain.CHAIN_KEY_SEPOLIA;
+
+      const [mh, ml, mx, sh, sl, sx, spans, claims] = await Promise.all([
+        m.mirroredBlocks(K),
+        m.lowestMirrored(K),
+        m.highestMirrored(K),
+        m.mirroredBlocks(S),
+        m.lowestMirrored(S),
+        m.highestMirrored(S),
+        m.spanCount(),
+        r.claimCount(),
       ]);
+
+      // The lag is informational and must never make the register look offline if one of its two
+      // sources is slow, so it is read separately and tolerated.
+      let attestedLag: number | null = null;
+      try {
+        const [attested, ethHead] = await Promise.all([chain.attestedHead(K), chain.ethereum().getBlockNumber()]);
+        attestedLag = Math.max(0, ethHead - attested);
+      } catch {
+        attestedLag = null;
+      }
+
       everOk.current = true;
-      // `mirroredBlocks` counts every retained root, including the empty Ethereum blocks whose
-      // root is genuinely zero and which the contract therefore cannot answer questions about.
-      // The dateline shows the answerable count, so the site says the same number as CLAIMS.md.
-      // The subtraction is the CI-checked figure from deployments.json, not a guess.
-      const answerable = Math.max(0, Number(blocks) - EMPTY_BLOCK_COUNT);
-      setStats({ status: 'ok', blocks: answerable, spans: Number(spans), claims: Number(claims) });
+      setStats({
+        status: 'ok',
+        mainnet: { held: Number(mh), lowest: Number(ml), highest: Number(mx) },
+        sepolia: { held: Number(sh), lowest: Number(sl), highest: Number(sx) },
+        attestedLag,
+        spans: Number(spans),
+        claims: Number(claims),
+        blocks: Number(mh),
+      });
     } catch {
       // A failed refresh keeps the last honest reading; only a register never reached is offline.
       if (!everOk.current) setStats({ status: 'offline' });
@@ -47,13 +86,17 @@ export function useArchiveStats(refreshKey?: unknown): ArchiveStats {
 
   useEffect(() => {
     void read(true);
-    const onVisible = () => { if (document.visibilityState === 'visible') void read(); };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void read();
+    };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (last.current !== 0) void read();
+    if (refreshKey !== undefined) void read();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
   return stats;

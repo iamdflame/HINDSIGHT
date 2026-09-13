@@ -637,3 +637,112 @@ ol.hunt-steps .step-text { font-family: var(--serif); font-size: var(--t-body); 
 .indep-stamp { display: flex; flex-direction: column; gap: 0.9rem; align-items: flex-start; }
 .indep-stamp .t-caption { max-width: 26em; }
 .indep-error { color: var(--wax); margin-top: 1rem; }
+
+/* ── routes ────────────────────────────────────────────────────────────────────────────────────
+   The instrument's sections, under the register-of-record rule. Same weight as the old tabs:
+   Plex caps, ink for the current section, a 2px underline. Phone: one scrolling row. */
+.routes { display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 0; overflow-x: auto; white-space: nowrap; }
+.routes a { display: inline-block; padding: 0.85rem 1.1rem 0.75rem; font: 500 0.78rem/1 var(--mono); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-soft); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.routes a:first-child { padding-left: 0; }
+.routes a:hover { color: var(--ink); }
+.routes a.is-active { color: var(--ink); border-bottom-color: var(--ink); }
+.routes a:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--wax) 35%, transparent); }
+@media (max-width: 639px) { .routes a { padding-inline: 0.7rem; } .routes a:first-child { padding-left: 0.85rem; } }
+
+.dateline .quiet { color: var(--ink-faint); }
+.dateline { text-decoration: none; }
+.band-routes { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; padding-block: 1rem; border-top: 1px solid var(--rule); }
+
+.doc-code { overflow-x: auto; background: var(--paper-2); border-left: 2px solid var(--rule-firm); padding: 0.9rem 1rem;
+  font: 400 0.8rem/1.55 var(--mono); color: var(--ink); margin-block: 1rem; max-width: 100%; }
+.doc-code code { font: inherit; background: none; padding: 0; }
+blockquote { margin: 1.2rem 0; padding-left: 1rem; border-left: 2px solid var(--wax); color: var(--ink-soft); font-style: italic; }
+
+/* ── home ─────────────────────────────────────────────────────────────────────────────────── */
+.hero-home { padding-block: clamp(2rem, 5vw, 3.5rem) 1.5rem; max-width: 62rem; }
+.hero-home h1 { font-size: clamp(2.6rem, 6.4vw, 5.4rem); line-height: 0.98; letter-spacing: -0.02em; margin: 0 0 1.4rem; }
+.hero-home h1 em { font-style: italic; color: var(--ink); }
+.hero-home .lede { font-size: clamp(1.05rem, 1.6vw, 1.3rem); max-width: 40em; color: var(--ink); }
+.hero-home .sub { max-width: 44em; margin-top: 0.8rem; }
+.ctas { display: flex; flex-wrap: wrap; gap: 0.7rem 1rem; margin-top: 1.8rem; align-items: center; }
+.cta { display: inline-block; font: 500 0.82rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.95rem 1.3rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 2px;
+  text-decoration: none; cursor: pointer; }
+.cta:disabled { opacity: 0.55; cursor: default; }
+.cta--quiet { background: transparent; color: var(--ink); }
+.cta:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--wax) 35%, transparent); }
+.home-proof { border-top: 2px solid var(--ink); padding-top: 1.2rem; margin-top: 1rem; }
+/* The proof belongs in the first screen, not below it: side by side with the sentence on a desk. */
+@media (min-width: 1100px) {
+  .home-first { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 3rem; align-items: start; }
+  .home-first .hero-home h1 { font-size: clamp(2.8rem, 4.6vw, 4.6rem); }
+  .home-first .home-proof { border-top: 0; border-left: 2px solid var(--ink); padding: 2.4rem 0 0 2rem; margin-top: 0; }
+  .home-first .indep-split { grid-template-columns: 1fr; }
+  .home-first .indep-stamp { flex-direction: row; align-items: center; }
+  .home-first .indep-stamp .stamp { flex: none; }
+}
+.home-proof-foot { margin-top: 1rem; }
+.home-why { margin-block: 3rem 2rem; max-width: 60rem; }
+.why-grid { display: grid; gap: 1.5rem 3rem; margin-block: 1.2rem; }
+@media (min-width: 760px) { .why-grid { grid-template-columns: 1fr 1fr; } }
+.why-grid h3 { margin: 0 0 0.4rem; color: var(--ink-soft); }
+.indep-module.is-compact .indep-split { margin-block: 1rem 0.5rem; }
+
+/* ── record, board, assess ─────────────────────────────────────────────────────────────────── */
+.record { padding-top: 2rem; }
+.record-chain { margin-block: 2.2rem; }
+.record-chain h2 { display: flex; gap: 0.8rem; align-items: baseline; flex-wrap: wrap; }
+.record-summary { color: var(--ink-soft); margin-bottom: 0.8rem; }
+.record-foot { margin-top: 2.5rem; max-width: 46em; }
+.cov-row--archive { grid-template-columns: minmax(0, 13rem) 1fr; }
+.board-summary { color: var(--ink-soft); margin-bottom: 1rem; }
+.claim-chain { margin-left: 0.5rem; color: var(--ink-faint); font-size: 0.7rem; }
+.assess-form { display: grid; gap: 0.5rem; max-width: 40rem; margin-block: 1.5rem; }
+.assess-form .short { max-width: 10rem; }
+.assess-form .ledger-input { font: 400 1rem/1.4 var(--mono); color: var(--ink); background: transparent; border: 0;
+  border-bottom: 1px solid var(--rule-firm); padding: 0.45rem 0; width: 100%; border-radius: 0; }
+.assess-form .ledger-input:focus-visible { outline: none; border-bottom-color: var(--ink); box-shadow: 0 2px 0 0 color-mix(in srgb, var(--wax) 35%, transparent); }
+.assess-form .ledger-input[aria-invalid="true"] { border-bottom-color: var(--wax); }
+.assess .pane-title { margin-top: 0; }
+.assess-form .act { justify-self: start; margin-top: 0.6rem; }
+.field-error { color: var(--wax); }
+.assess-result { display: grid; gap: 2rem; margin-top: 2rem; align-items: start; }
+@media (min-width: 900px) { .assess-result.has-stamp { grid-template-columns: 12rem 1fr; } }
+.verdicts, .about { list-style: none; padding: 0; margin: 0 0 1.5rem; border-top: 1px solid var(--rule); }
+.verdicts li { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.8rem; padding: 0.8rem 0; border-bottom: 1px solid var(--rule); }
+.verdicts p { margin: 0 0 0.2rem; }
+.verdict-word { text-transform: uppercase; letter-spacing: 0.08em; }
+.verdicts .is-pay .verdict-word { color: var(--ink); }
+.verdicts .is-refuse .verdict-word { color: var(--ochre); }
+.verdicts .is-liar .verdict-word { color: var(--wax); }
+.about li { padding: 0.6rem 0; border-bottom: 1px solid var(--rule); }
+
+/* ── order ─────────────────────────────────────────────────────────────────────────────────── */
+.legs { list-style: none; padding: 0; margin: 1.5rem 0; display: grid; gap: 1.2rem; }
+.leg { border-top: 1px solid var(--rule); padding-top: 0.9rem; }
+.leg-head { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: baseline; }
+.laterality { margin-block: 0.7rem; overflow-x: auto; }
+.lat-row { display: flex; gap: 3px; align-items: stretch; }
+.lat-cell { display: grid; place-items: center; min-width: 1.7rem; padding: 0.3rem 0.2rem; border: 1px solid var(--rule-firm); }
+.lat-cell.is-right { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.lat-side { font-size: 0.8rem; }
+.lat-bit { font-size: 0.68rem; opacity: 0.75; }
+.lat-eq { align-self: center; margin-left: 0.8rem; font-size: 1.1rem; }
+.order-verdict { border-left: 2px solid var(--ink); padding-left: 1rem; }
+.tax { border-collapse: collapse; width: 100%; margin-block: 1rem; font-size: 0.95rem; }
+.tax th, .tax td { text-align: left; padding: 0.6rem 0.8rem 0.6rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.tax th { font: 500 0.72rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+@media (max-width: 639px) { .tax { display: block; overflow-x: auto; } }
+
+/* ── court ─────────────────────────────────────────────────────────────────────────────────── */
+.court { max-width: 68rem; }
+.court-head { padding-block: 2rem 1rem; }
+.court-head h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); margin: 0 0 1rem; }
+.beat { border-top: 1px solid var(--rule-firm); padding-block: 1.6rem 2rem; }
+.beat--key { border-top: 2px solid var(--ink); }
+.beat-n { color: var(--ink-soft); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.72rem; margin: 0 0 0.5rem; }
+.beat h2 { font-size: clamp(1.3rem, 2.4vw, 1.8rem); margin: 0 0 0.9rem; max-width: 36em; }
+.beat-links { list-style: none; padding: 0; display: grid; gap: 0.8rem; margin-top: 1rem; }
+.court-foot { margin-block: 2rem; }
+.enshrine-live { border-block: 2px solid var(--ink); padding-block: 1.2rem; margin-block: 2rem; }

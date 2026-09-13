@@ -1,122 +1,150 @@
 import { useEffect, useState } from 'react';
-import type { TabId } from '../shell/Tabs';
-import { CoverageStrip, type CoverageRun } from './CoverageStrip';
+import { ArchiveStrip } from './ArchiveStrip';
 import { SpanList, type SealedSpan } from './SpanList';
+import { Page } from '../shell/Page';
+
+type ChainView = {
+  chainKey: number;
+  name: string;
+  held: number;
+  lowest: number;
+  highest: number;
+  words: bigint[];
+  firstWord: number;
+  unheldInRange: number;
+  emptyBlocks: number | null;
+  spans: SealedSpan[];
+};
 
 type State =
-  | { k: 'loading' }
-  | { k: 'error'; msg: string }
+  | { k: 'loading'; note: string }
   | { k: 'empty' }
-  | { k: 'ok'; runs: CoverageRun[]; spans: SealedSpan[] };
+  | { k: 'error'; msg: string }
+  | { k: 'ok'; chains: ChainView[] };
 
-export function Record({ onTab }: { onTab: (t: TabId) => void }) {
-  const [s, setS] = useState<State>({ k: 'loading' });
+const WORD_BATCH = 96;
 
-  useEffect(() => { void load(); }, []);
+/**
+ * Coverage read straight from the mirror's held bitmap. One `heldWord` read covers 256 heights, so
+ * ninety days of Ethereum is ~2,500 reads -- batched by ethers into a handful of JSON-RPC requests
+ * -- rather than 648,000. Nothing here is cached or precomputed off-chain: what is drawn is what the
+ * contract says, as of this page load.
+ */
+export function Record() {
+  const [s, setS] = useState<State>({ k: 'loading', note: 'reading the held bitmap…' });
 
-  async function load() {
-    setS({ k: 'loading' });
-    try {
-      const { mirrorContract, CHAIN_KEY_ETH_MAINNET, DEPLOY_BLOCK } = await import('../lib/chain');
-      const m = mirrorContract();
-      const total = Number(await m.mirroredBlocks(CHAIN_KEY_ETH_MAINNET));
-      if (total === 0) { setS({ k: 'empty' }); return; }
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const chain = await import('../lib/chain');
+        const m = chain.mirrorContract();
+        const measured: any = (await import('../../../deployments.json')).default?.measured ?? {};
+        const views: ChainView[] = [];
 
-      // Coverage comes from the archive's own `BlocksMirrored` events, merged into contiguous runs.
-      const raw = await m.queryFilter(m.filters.BlocksMirrored(CHAIN_KEY_ETH_MAINNET), DEPLOY_BLOCK, 'latest');
-      const intervals = raw
-        .map((e: any) => ({ from: Number(e.args.fromBlock), to: Number(e.args.toBlock) }))
-        .sort((a, b) => a.from - b.from);
-      if (intervals.length === 0) throw new Error('NO_EVENTS');
+        for (const [chainKey, name] of [
+          [chain.CHAIN_KEY_ETH_MAINNET, 'Ethereum mainnet'],
+          [chain.CHAIN_KEY_SEPOLIA, 'Sepolia'],
+        ] as const) {
+          const held = Number(await m.mirroredBlocks(chainKey));
+          if (held === 0) continue;
+          const lowest = Number(await m.lowestMirrored(chainKey));
+          const highest = Number(await m.highestMirrored(chainKey));
 
-      const merged: { from: number; to: number }[] = [];
-      for (const iv of intervals) {
-        const last = merged[merged.length - 1];
-        if (last && iv.from <= last.to + 1) last.to = Math.max(last.to, iv.to);
-        else merged.push({ ...iv });
-      }
-      // Events say what was retained. They cannot see that a retained root of zero -- an empty
-      // Ethereum block -- reads as absent to `isMirrored` and cannot be sealed across. Those
-      // heights are measured off-chain by `worker/src/measure.ts`, checked by CI, and split in here
-      // so the strip shows the archive as it can actually be used rather than as one unbroken run.
-      const { EMPTY_BLOCK_HEIGHTS } = await import('../lib/chain');
-      const empties = [...EMPTY_BLOCK_HEIGHTS].sort((a, b) => a - b);
-      const pieces: { from: number; to: number; breakKind?: 'gap' | 'empty' }[] = [];
-      for (const r of merged) {
-        let from = r.from;
-        for (const e of empties) {
-          if (e < from || e > r.to) continue;
-          if (e > from) pieces.push({ from, to: e - 1, breakKind: 'empty' });
-          from = e + 1;
+          const firstWord = Math.floor(lowest / 256);
+          const lastWord = Math.floor(highest / 256);
+          const words: bigint[] = new Array(lastWord - firstWord + 1).fill(0n);
+          for (let w = firstWord; w <= lastWord; w += WORD_BATCH) {
+            const n = Math.min(WORD_BATCH, lastWord - w + 1);
+            const got = await Promise.all(Array.from({ length: n }, (_, i) => m.heldWord(chainKey, w + i) as Promise<bigint>));
+            got.forEach((v, i) => (words[w - firstWord + i] = BigInt(v)));
+            if (cancelled) return;
+            setS({ k: 'loading', note: `reading the held bitmap — ${name}, ${Math.round(((w + n - firstWord) / words.length) * 100)}%` });
+          }
+
+          const spanCount = Number(await m.spanCount());
+          const spans: SealedSpan[] = [];
+          for (let i = spanCount - 1; i >= 0 && spans.length < 16; i--) {
+            const sp = await m.spanOf(i);
+            if (Number(sp.chainKey) !== chainKey) continue;
+            spans.push({ id: i, from: Number(sp.fromBlock), to: Number(sp.toBlock) });
+          }
+          spans.reverse();
+
+          const perChain = measured.chains?.[String(chainKey)];
+          views.push({
+            chainKey,
+            name,
+            held,
+            lowest,
+            highest,
+            words,
+            firstWord,
+            unheldInRange: highest - lowest + 1 - held,
+            emptyBlocks: typeof perChain?.emptyBlocks === 'number' ? perChain.emptyBlocks : null,
+            spans,
+          });
         }
-        if (from <= r.to) pieces.push({ from, to: r.to });
+        if (cancelled) return;
+        setS(views.length ? { k: 'ok', chains: views } : { k: 'empty' });
+      } catch (e: any) {
+        if (!cancelled) setS({ k: 'error', msg: e?.shortMessage ?? e?.message ?? String(e) });
       }
-      const runs: CoverageRun[] = pieces.map((r, i) => {
-        const next = pieces[i + 1];
-        const gapAfter = next ? next.from - r.to - 1 : 0;
-        return {
-          from: r.from,
-          to: r.to,
-          ticks: r.to - r.from + 1,
-          gapAfter,
-          breakKind: gapAfter > 0 ? (r.breakKind ?? 'gap') : undefined,
-        };
-      });
-
-      const spanCount = Number(await m.spanCount());
-      const spans: SealedSpan[] = [];
-      for (let i = Math.max(0, spanCount - 24); i < spanCount; i++) {
-        const sp = await m.spanOf(i);
-        spans.push({ id: i, from: Number(sp.fromBlock), to: Number(sp.toBlock) });
-      }
-      setS({ k: 'ok', runs, spans });
-    } catch (e: any) {
-      const raw = e?.shortMessage ?? e?.message ?? String(e);
-      const msg = /coalesce|range|limit|too many|timeout|NO_EVENTS/i.test(raw)
-        ? 'The public Creditcoin RPC refused the log query for this range. Coverage is derived from the archive’s own events, so this is a node limit rather than missing history.'
-        : raw;
-      setS({ k: 'error', msg });
-    }
-  }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
-    <section id="panel-record" role="tabpanel" aria-labelledby="tab-record" className="pane">
-      <h1 className="t-title pane-title">What is held.</h1>
-      <p className="t-body pane-lead">
-        Gaps are the subject, not a blemish: a claim of absence is only meaningful over a run with no holes,
-        because a hole is exactly where a contradicting transaction could sit unseen.
-      </p>
+    <Page active="record">
+      <section className="record">
+        <h1>What is held.</h1>
+        <p className="lede">
+          Every Ethereum height whose transaction root lives on Creditcoin, read from the mirror’s bitmap as
+          this page loaded. A hole is exactly where a contradicting transaction could sit unseen, so a tick
+          containing even one unheld height is drawn in wax, however many blocks the tick stands for.
+        </p>
 
-      {s.k === 'loading' && <p className="t-caption">Reading the archive from Creditcoin…</p>}
+        {s.k === 'loading' && <p className="t-caption">{s.note}</p>}
+        {s.k === 'empty' && <p className="t-caption">Nothing is held yet.</p>}
+        {s.k === 'error' && <p className="t-caption">The public Creditcoin RPC refused the read: {s.msg}</p>}
 
-      {s.k === 'error' && (
-        <div className="plain-state">
-          <p className="t-body">{s.msg}</p>
-          <p className="t-caption"><button type="button" className="linkish" onClick={() => void load()}>Try again</button></p>
-        </div>
-      )}
+        {s.k === 'ok' &&
+          s.chains.map((c) => {
+            const isHeld = (h: number) => ((c.words[Math.floor(h / 256) - c.firstWord] >> BigInt(h % 256)) & 1n) === 1n;
+            return (
+              <div key={c.chainKey} className="record-chain">
+                <h2>
+                  {c.name} <span className="t-hash">chainKey {c.chainKey}</span>
+                </h2>
+                <p className="t-ui record-summary">
+                  <span className="num">{c.held.toLocaleString()}</span> heights held · ≈{' '}
+                  {((c.held * 12) / 86_400).toFixed(1)} days ·{' '}
+                  {c.unheldInRange === 0 ? 'no holes' : `${c.unheldInRange.toLocaleString()} unheld inside the range`}
+                  {c.emptyBlocks !== null && <> · {c.emptyBlocks.toLocaleString()} empty blocks, held</>}
+                </p>
+                <ArchiveStrip lowest={c.lowest} highest={c.highest} isHeld={isHeld} label={c.name} />
+                <p className="legend t-caption">
+                  <span><i className="tick tick--run is-inked" aria-hidden="true" /> every height in the tick held</span>
+                  <span><i className="tick tick--gap" aria-hidden="true" /> at least one height not held</span>
+                </p>
+                {c.spans.length > 0 && (
+                  <>
+                    <h3 className="t-ui">Sealed spans</h3>
+                    <SpanList spans={c.spans} />
+                  </>
+                )}
+              </div>
+            );
+          })}
 
-      {s.k === 'empty' && (
-        <div className="plain-state">
-          <p className="t-body">No Ethereum blocks have been notarised into this deployment yet.</p>
-        </div>
-      )}
-
-      {s.k === 'ok' && (
-        <>
-          <CoverageStrip runs={s.runs} />
-          <p className="legend">
-            <span><i className="tick is-inked" aria-hidden="true" /> notarised</span>
-            <span><i className="tick tick--gap" aria-hidden="true" /> gap (a contradiction could hide here)</span>
-            <span><i className="tick tick--empty" aria-hidden="true" /> empty block (nothing to hide; nothing to seal across)</span>
-          </p>
-
-          <h2 className="t-ui section-head">Sealed spans</h2>
-          {s.spans.length === 0
-            ? <p className="t-caption">No span has been proven gap-free yet.</p>
-            : <SpanList spans={s.spans} onTab={onTab} />}
-        </>
-      )}
-    </section>
+        <p className="t-caption record-foot">
+          An empty Ethereum block has a transaction root of zero. The first mirror could not tell that from
+          “not stored”, which cut its archive into 25 runs. This mirror keeps a separate bitmap, so an empty
+          block is held like any other height and a span seals straight across it.
+        </p>
+      </section>
+    </Page>
   );
 }

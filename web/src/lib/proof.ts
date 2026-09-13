@@ -12,7 +12,7 @@
  * history is free of them.
  */
 import sdk from '@gluwa/usc-sdk';
-import { ethereum, rotateEthereum, PROVER, CHAIN_KEY_ETH_MAINNET } from './chain';
+import { ethereum, rotateEthereum, sepolia, PROVER, CHAIN_KEY_ETH_MAINNET, CHAIN_KEY_SEPOLIA } from './chain';
 
 const anySdk = sdk as any;
 const { SimpleBlockProvider } = anySdk.proofProvider.raw.blockProvider;
@@ -72,13 +72,17 @@ export async function proofFromProver(txHash: string, onProgress?: Progress): Pr
  *
  * Slower by design — it is doing the prover's work in the browser. That it agrees is the point.
  */
-export async function proofFromEthereum(txHash: string, onProgress?: Progress): Promise<ProofBundle> {
+export async function proofFromEthereum(
+  txHash: string,
+  onProgress?: Progress,
+  chainKey: number = CHAIN_KEY_ETH_MAINNET,
+): Promise<ProofBundle> {
   const t0 = performance.now();
   let attempt = 0;
 
   for (;;) {
     try {
-      const eth = ethereum();
+      const eth = chainKey === CHAIN_KEY_SEPOLIA ? sepolia() : ethereum();
       onProgress?.('Locating the transaction on Ethereum…');
       const tx = await eth.getTransaction(txHash);
       if (!tx || tx.blockNumber == null) throw new Error('NOT_FOUND');
@@ -103,7 +107,7 @@ export async function proofFromEthereum(txHash: string, onProgress?: Progress): 
 
       return {
         source: 'local',
-        chainKey: CHAIN_KEY_ETH_MAINNET,
+        chainKey,
         blockNumber: tx.blockNumber,
         txHash,
         txIndex: idx,
@@ -114,10 +118,10 @@ export async function proofFromEthereum(txHash: string, onProgress?: Progress): 
         elapsedMs: performance.now() - t0,
       };
     } catch (e: any) {
-      if (e?.message === 'NOT_FOUND') throw new Error('No such transaction on Ethereum mainnet.');
+      if (e?.message === 'NOT_FOUND') throw new Error(`No such transaction on ${chainKey === CHAIN_KEY_SEPOLIA ? 'Sepolia' : 'Ethereum mainnet'}.`);
       if (e?.message === 'NOT_IN_BLOCK') throw new Error('The transaction was not present in the block it claims.');
       attempt += 1;
-      if (attempt > 2 || !rotateEthereum()) {
+      if (attempt > 2 || chainKey === CHAIN_KEY_SEPOLIA || !rotateEthereum()) {
         throw new Error(
           'Could not rebuild the proof from a public Ethereum node. Free endpoints often refuse ' +
           'whole-block receipt reads or archive history. Try the prover source, or a more recent block.',

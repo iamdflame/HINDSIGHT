@@ -8,7 +8,7 @@ export function tctc(wei: bigint): string {
   return `${cents / 100n}.${String(cents % 100n).padStart(2, '0')}`;
 }
 
-export function describeClaim(c: Claim, venues: readonly { label: string; address: string; events: readonly { label: string; topic0: string }[] }[]) {
+export function describeClaim(c: Pick<Claim, 'venue' | 'topic0' | 'subject' | 'subjectTopic'>, venues: readonly { label: string; address: string; events: readonly { label: string; topic0: string }[] }[]) {
   const v = venues.find((x) => x.address.toLowerCase() === c.venue.toLowerCase());
   const ev = v?.events.find((e) => e.topic0.toLowerCase() === c.topic0.toLowerCase());
   return {
@@ -27,10 +27,17 @@ export function ClaimRow({ claim, position, event, subject, selected, onSelect }
     <button type="button" className="claim-row" aria-pressed={selected} onClick={onSelect}>
       <span className="claim-index t-hash">{String(position).padStart(2, '0')}</span>
       <span className="claim-event">
-        no {event}{subject && <> of <Trunc v={subject} /></>}
+        {claim.kind === 1 ? (
+          <>all {claim.members} {event}{claim.members === 1 ? '' : 's'}{subject && <> of <Trunc v={subject} /></>}</>
+        ) : (
+          <>no {event}{subject && <> of <Trunc v={subject} /></>}</>
+        )}
+        <span className="claim-chain t-hash">{claim.chainKey === 1 ? 'sepolia' : 'mainnet'}</span>
       </span>
-      <span className="claim-range t-hash">{claim.spanFrom}–{claim.spanTo}</span>
-      <span className="claim-bond t-hash">{bond} tCTC</span>
+      <span className="claim-range t-hash" title={`${(claim.spanTo - claim.spanFrom + 1).toLocaleString()} blocks`}>
+        {claim.spanFrom.toLocaleString()}–{claim.spanTo.toLocaleString()}
+      </span>
+      <span className="claim-bond t-hash" title={`${tctc(claim.enforceableLoss)} tCTC is unrecoverable if refuted`}>{bond} tCTC</span>
       <span className={`claim-status assurance--${kind}`}>
         <MiniStamp kind={kind} />
         <span className="assurance-word">{assuranceWord(kind)}</span>

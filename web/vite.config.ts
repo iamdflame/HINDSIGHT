@@ -16,12 +16,23 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     chunkSizeWarningLimit: 1600,
-    // /judge ships as its own document so any static host serves it without rewrites.
-    rollupOptions: { input: {
-          main: here('./index.html'),
-          judge: here('./judge/index.html'),
-          independence: here('./independence/index.html'),
-        } },
+    // Every route is its own document, so any static host serves it without rewrites and each
+    // page loads only its own entry.
+    rollupOptions: {
+      input: {
+        main: here('./index.html'),
+        verify: here('./verify/index.html'),
+        record: here('./record/index.html'),
+        watch: here('./watch/index.html'),
+        assess: here('./assess/index.html'),
+        order: here('./order/index.html'),
+        judge: here('./judge/index.html'),
+        claims: here('./claims/index.html'),
+        enshrine: here('./enshrine/index.html'),
+        integrate: here('./integrate/index.html'),
+        independence: here('./independence/index.html'),
+      },
+    },
   },
   // deployments.json and CLAIMS.md live at the repo root and are the single source of truth,
   // shared by contracts, worker and this app. Allow reading them rather than duplicating them.

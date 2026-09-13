@@ -59,7 +59,7 @@ export function Wordmark({ withLegend = false, size = 40, className }: WordmarkP
           })}
         </svg>
       </span>
-      {withLegend && <span className="wordmark-legend">a register of Ethereum’s past</span>}
+      {withLegend && <span className="wordmark-legend">the cache Attestcoin forgot to keep</span>}
     </span>
   );
 }
